@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj" />
+  <Project Path="tests/CSweet.Agent.SDK.Tests/CSweet.Agent.SDK.Tests.csproj" />
+  <Project Path="samples/HelloAgent/HelloAgent.csproj" />
+</Solution>
