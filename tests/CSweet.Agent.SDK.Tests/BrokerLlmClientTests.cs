@@ -35,7 +35,8 @@ public sealed class BrokerLlmClientTests
         public string? RequestedCapability { get; private set; }
 
         public Task StartAsync(RegisterAgent registration, CancellationToken cancellationToken) => Task.CompletedTask;
-        public async IAsyncEnumerable<BrokerToAgentMessage> ReadAllAsync(CancellationToken cancellationToken)
+        public async IAsyncEnumerable<BrokerToAgentMessage> ReadAllAsync(
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
         {
             await Task.CompletedTask;
             yield break;
