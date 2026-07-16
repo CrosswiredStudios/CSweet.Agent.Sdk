@@ -7,7 +7,7 @@ platform services without receiving database credentials or provider secrets.
 ## Install
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 0.1.0
+dotnet add package CSweet.Agent.SDK --version 0.1.1
 ```
 
 Create an executable host, implement `ICSweetAgent` (or derive from `CSweetAgentBase`), and call:
@@ -32,6 +32,22 @@ enter the agent process.
 dotnet test CSweetAgentSdk.slnx
 dotnet pack src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj -c Release
 ```
+
+### Creating NuGet packages
+
+Run the batch file from the repository root to restore dependencies, run the test suite, and create the package and symbols package in a versioned directory such as `artifacts\packages\0.1.1`:
+
+```bat
+Create-NuGetPackages.bat
+```
+
+Pass a version and optional output root to override the project defaults. The version directory is appended automatically:
+
+```bat
+Create-NuGetPackages.bat 0.1.1 C:\packages\csweet-agent-sdk
+```
+
+Pushing a `v*` Git tag runs `.github\workflows\publish.yml`, which tests, packages, and publishes to NuGet.org using the repository's `NUGET_API_KEY` secret.
 
 ## Security
 
