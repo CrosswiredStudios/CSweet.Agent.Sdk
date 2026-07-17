@@ -4,6 +4,8 @@ public sealed class AgentManifest
 {
     public string ManifestVersion { get; init; } = "1.0";
 
+    public string Kind { get; init; } = "agent";
+
     public required string Id { get; init; }
 
     public required string Name { get; init; }
@@ -24,8 +26,23 @@ public sealed class AgentManifest
 
     public IReadOnlyList<string> RequestedPermissions { get; init; } = [];
 
+    /// <summary>Broker capabilities this agent may request. Populated from canonical manifest requires declarations.</summary>
+    public IReadOnlyList<string> RequestedCapabilities { get; init; } = [];
+
     public IReadOnlyList<string> RequestedNetworkAccess { get; init; } = [];
+
+    public IReadOnlyList<AgentProvidedCapability> Provides { get; init; } = [];
+
+    public IReadOnlyList<AgentRequiredCapability> Requires { get; init; } = [];
+
+    public AgentEventManifest Events { get; init; } = new([], []);
 }
+
+public sealed record AgentProvidedCapability(string Name);
+
+public sealed record AgentRequiredCapability(string Name, string? Scope = null, string? Purpose = null);
+
+public sealed record AgentEventManifest(IReadOnlyList<string> Subscribes, IReadOnlyList<string> Publishes);
 
 public sealed record AgentPublisher(
     string Id,

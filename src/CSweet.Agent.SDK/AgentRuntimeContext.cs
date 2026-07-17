@@ -5,4 +5,7 @@ public sealed record AgentRuntimeContext(
     string InstallationId,
     IAgentBrokerClient Broker,
     string RuntimeInstanceId = "",
-    string TickId = "");
+    string TickId = "")
+{
+    public PlatformCapabilityClient Platform => new(Broker);
+}

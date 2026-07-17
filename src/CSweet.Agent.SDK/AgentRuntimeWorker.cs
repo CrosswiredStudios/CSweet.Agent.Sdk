@@ -69,7 +69,28 @@ public sealed class AgentRuntimeWorker<TAgent> : BackgroundService
                     _agent.Version,
                     _options.BusinessId);
 
-                await ProcessMessagesAsync(broker, context, stoppingToken);
+                if (_agent is IAgentActivationHandler activationHandler)
+                {
+                    await activationHandler.OnActivatedAsync(
+                        new AgentActivationContext(
+                            ResolveActivationReason(manifest.Runtime.DefaultActivationMode),
+                            context.RuntimeInstanceId,
+                            context.TickId,
+                            DateTimeOffset.UtcNow),
+                        context,
+                        stoppingToken);
+                }
+
+                using var connected = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+                var messageTask = ProcessMessagesAsync(broker, context, connected.Token);
+                var serviceTask = _agent is IAgentConnectedService service
+                    ? service.RunConnectedAsync(context, connected.Token)
+                    : Task.Delay(Timeout.InfiniteTimeSpan, connected.Token);
+                var completed = await Task.WhenAny(messageTask, serviceTask);
+                connected.Cancel();
+                try { await Task.WhenAll(messageTask, serviceTask); }
+                catch (OperationCanceledException) when (connected.IsCancellationRequested) { }
+                if (completed.IsFaulted) await completed;
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -98,6 +119,14 @@ public sealed class AgentRuntimeWorker<TAgent> : BackgroundService
             }
         }
     }
+
+    private static AgentActivationReason ResolveActivationReason(string? mode) => mode switch
+    {
+        "AlwaysOn" => AgentActivationReason.AlwaysOnStartup,
+        "Periodic" => AgentActivationReason.Scheduled,
+        "Manual" => AgentActivationReason.Manual,
+        _ => AgentActivationReason.Unknown
+    };
 
     private RegisterAgent CreateRegistration(AgentManifest manifest)
     {

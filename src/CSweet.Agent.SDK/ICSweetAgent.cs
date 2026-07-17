@@ -18,3 +18,9 @@ public interface ICSweetAgent
         AgentRuntimeContext context,
         CancellationToken cancellationToken);
 }
+
+/// <summary>Optional lifecycle for always-on plugins that need to run while their broker session is connected.</summary>
+public interface IAgentConnectedService
+{
+    Task RunConnectedAsync(AgentRuntimeContext context, CancellationToken cancellationToken);
+}

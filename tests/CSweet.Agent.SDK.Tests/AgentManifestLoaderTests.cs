@@ -32,4 +32,39 @@ public sealed class AgentManifestLoaderTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public async Task LoadAsync_MapsCanonicalProvidesRequiresAndEvents()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllTextAsync(path, """
+            {
+              "manifestVersion": "1.0",
+              "kind": "agent",
+              "id": "com.example.chief",
+              "name": "Example Chief",
+              "version": "1.0.0",
+              "publisher": { "id": "example", "name": "Example" },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj" },
+              "protocol": { "minimumVersion": "1.0", "maximumVersion": "1.x" },
+              "provides": [{ "name": "management.check-in.v1" }],
+              "requires": [{ "name": "platform.business-profile.read.v1", "scope": "organization" }],
+              "events": { "subscribes": ["review.due.v1"], "publishes": ["status.reported.v1"] }
+            }
+            """);
+
+            var manifest = await AgentManifestLoader.LoadAsync(path, CancellationToken.None);
+
+            Assert.Contains("management.check-in.v1", manifest.Capabilities);
+            Assert.Contains(PlatformCapabilities.BusinessProfileRead, manifest.RequestedCapabilities);
+            Assert.Contains("review.due.v1", manifest.RequestedSubscriptions);
+            Assert.Contains("status.reported.v1", manifest.RequestedPublications);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 }
