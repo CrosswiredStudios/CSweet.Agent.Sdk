@@ -21,6 +21,12 @@ The repository should contain a root `csweet-plugin.json` using the canonical `k
 compatibility release. For source imports, set `runtime.type` to `dotnet-project` and
 `runtime.projectPath` to the relative project path.
 
+## Agent authoring guide
+
+Start with [Creating a C-Sweet agent](docs/creating-an-agent.md). It covers project structure,
+manifest grants, event handling, the required onboarding acknowledgement, idempotent side effects,
+bounded platform retries, failure notifications, and a practical test checklist.
+
 ## Broker-governed platform tools
 
 `AgentRuntimeContext.Platform` exposes typed clients for authoritative business and finance
