@@ -60,6 +60,11 @@ message RegistrationResult {
   repeated string granted_subscriptions = 5;
   repeated string granted_publications = 6;
   repeated string granted_permissions = 7;
+  string mcp_endpoint = 8;
+  string mcp_access_token = 9;
+  google.protobuf.Timestamp mcp_token_expires_at = 10;
+  int64 grant_revision = 11;
+  repeated string granted_requested_capabilities = 12;
 }
 
 message PublishEvent {

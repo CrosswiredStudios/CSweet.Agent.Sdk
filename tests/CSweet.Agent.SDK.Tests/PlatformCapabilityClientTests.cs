@@ -39,6 +39,25 @@ public sealed class PlatformCapabilityClientTests
     }
 
     [Fact]
+    public void PlatformToolAdapters_ExposeOnlyGrantedCapabilities()
+    {
+        var broker = new StubBroker(new CapabilityResult());
+        var platform = new PlatformCapabilityClient(broker);
+        var grants = new HashSet<string>(StringComparer.Ordinal)
+        {
+            PlatformCapabilities.WorkforceSearch,
+            PlatformCapabilities.ChatDecisionCreate
+        };
+
+        var tools = PlatformToolAdapters.Create(platform, grants);
+
+        Assert.Equal(2, tools.Count);
+        Assert.Contains(tools, tool => tool.Name == "search_workforce");
+        Assert.Contains(tools, tool => tool.Name == "create_executive_decision");
+        Assert.Empty(PlatformToolAdapters.Create(platform, new HashSet<string>()));
+    }
+
+    [Fact]
     public void ManagementContracts_DeserializeLegacyPayloadsWithBriefingDefaults()
     {
         const string legacy = """

@@ -16,13 +16,17 @@ public static class PlatformCapabilities
     public const string BudgetEvaluate = "platform.budget.evaluate.v1";
     public const string ApprovalPropose = "platform.approval.propose.v1";
     public const string ManagementCycleRead = "platform.management-cycle.read.v1";
+    public const string ChatDecisionCreate = "platform.chat-decision.create.v1";
+    public const string HiringRecommendationUpsert = "platform.hiring-recommendation.upsert.v1";
+    public const string HiringWorkflowStage = "platform.hiring-workflow.stage.v1";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
         BusinessProfileRead, BusinessProfileUpdateExplicit, BusinessProfileProposeUpdate,
         OrganizationSnapshotRead, BusinessPatternSearch, WorkstreamPlanPropose,
         WorkforceSearch, WorkforcePlanPropose, FinanceProfileRead,
-        FinanceProfileProposeUpdate, BudgetEvaluate, ApprovalPropose, ManagementCycleRead
+        FinanceProfileProposeUpdate, BudgetEvaluate, ApprovalPropose, ManagementCycleRead,
+        ChatDecisionCreate, HiringRecommendationUpsert, HiringWorkflowStage
     };
 }
 

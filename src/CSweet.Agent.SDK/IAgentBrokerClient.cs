@@ -4,6 +4,13 @@ namespace CSweet.Agent.SDK;
 
 public interface IAgentBrokerClient : IAsyncDisposable
 {
+    /// <summary>
+    /// The accepted registration, including the capabilities granted to this runtime session.
+    /// Custom broker clients may leave this unavailable; model-visible adapters should then
+    /// default to exposing no broker tools.
+    /// </summary>
+    RegistrationResult? Registration => null;
+
     Task StartAsync(RegisterAgent registration, CancellationToken cancellationToken);
 
     IAsyncEnumerable<BrokerToAgentMessage> ReadAllAsync(CancellationToken cancellationToken);

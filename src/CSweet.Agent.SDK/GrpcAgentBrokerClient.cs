@@ -22,6 +22,8 @@ public sealed class GrpcAgentBrokerClient : IAgentBrokerClient
     private Task? _receiveTask;
     private int _started;
 
+    public RegistrationResult? Registration { get; private set; }
+
     public GrpcAgentBrokerClient(
         AgentBroker.AgentBrokerClient client,
         ILogger<GrpcAgentBrokerClient> logger)
@@ -66,6 +68,7 @@ public sealed class GrpcAgentBrokerClient : IAgentBrokerClient
             throw new InvalidOperationException(
                 $"The broker rejected agent registration: {result.RejectionReason}");
         }
+        Registration = result;
 
         _logger.LogInformation(
             "Agent registered with broker session {SessionId}.",

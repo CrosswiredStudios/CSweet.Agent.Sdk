@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "csweet-agent-sdk"
+version = "0.3.0"
+description = "Language-neutral C-Sweet broker registration and MCP helpers"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+maf = ["agent-framework>=1.0.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["csweet_agent_sdk*"]

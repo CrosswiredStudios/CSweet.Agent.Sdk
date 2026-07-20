@@ -191,6 +191,64 @@ public sealed record WorkforcePlanProposalRequest(
     string Rationale,
     string IdempotencyKey);
 
+public sealed record CreateExecutiveDecisionOption(string Id, string Label, string? Description = null);
+
+public sealed record CreateExecutiveDecisionRequest(
+    Guid ConversationId,
+    Guid ChatTurnId,
+    string Prompt,
+    IReadOnlyList<CreateExecutiveDecisionOption> Options,
+    string RecommendedOptionId,
+    string IdempotencyKey);
+
+public sealed record ExecutiveDecisionOptionResponse(
+    string Id, string Label, string? Description, bool Recommended);
+
+public sealed record ExecutiveDecisionResponse(
+    Guid Id,
+    string Prompt,
+    string Status,
+    IReadOnlyList<ExecutiveDecisionOptionResponse> Options,
+    string RecommendedOptionId,
+    string? SelectedOptionId,
+    string? FreeTextAnswer,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? AnsweredAt);
+
+public sealed record UpsertHiringRecommendationRequest(
+    string Title,
+    string Objective,
+    Guid? WorkstreamId,
+    IReadOnlyList<string> CandidateReferences,
+    string RecommendedCandidateReference,
+    string IdempotencyKey);
+
+public sealed record HiringCandidateResponse(
+    string CandidateReference, string Source, string DisplayName, string ResourceType,
+    IReadOnlyList<string> Capabilities, IReadOnlyList<string> Credentials, decimal FitScore,
+    decimal? Price, string? Currency, string Trust, bool Available, string InstallationState,
+    IReadOnlyList<string> RequiredGrants, string Rationale);
+
+public sealed record HiringRecommendationResponse(
+    Guid Id, Guid? WorkstreamId, string Title, string Objective, string Status,
+    string RecommendedCandidateReference, IReadOnlyList<HiringCandidateResponse> Candidates,
+    DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt)
+{
+    public string HiringUrl { get; init; } = string.Empty;
+}
+
+public sealed record StageHiringWorkflowRequest(
+    Guid RecommendationId,
+    string CandidateReference,
+    string RoleTitle,
+    Guid? ReportsToOrganizationUserId,
+    IReadOnlyList<string>? RequiredGrants,
+    string IdempotencyKey);
+
+public sealed record HiringWorkflowResponse(
+    Guid Id, Guid RecommendationId, string CandidateReference, string RoleTitle,
+    string Status, string Message, DateTimeOffset CreatedAt, Guid? ResultOrganizationUserId = null);
+
 public sealed record ProposedStaffingAssignment(
     string PositionKey,
     string Title,
