@@ -17,6 +17,7 @@ public static class PlatformCapabilities
     public const string ApprovalPropose = "platform.approval.propose.v1";
     public const string ManagementCycleRead = "platform.management-cycle.read.v1";
     public const string UserInputRequest = "platform.user-input.request.v1";
+    public const string HiringRecommendationList = "platform.hiring-recommendation.list.v1";
     public const string HiringRecommendationUpsert = "platform.hiring-recommendation.upsert.v1";
     public const string HiringWorkflowStage = "platform.hiring-workflow.stage.v1";
 
@@ -26,7 +27,7 @@ public static class PlatformCapabilities
         OrganizationSnapshotRead, BusinessPatternSearch, WorkstreamPlanPropose,
         WorkforceSearch, WorkforcePlanPropose, FinanceProfileRead,
         FinanceProfileProposeUpdate, BudgetEvaluate, ApprovalPropose, ManagementCycleRead,
-        UserInputRequest, HiringRecommendationUpsert, HiringWorkflowStage
+        UserInputRequest, HiringRecommendationList, HiringRecommendationUpsert, HiringWorkflowStage
     };
 
     /// <summary>

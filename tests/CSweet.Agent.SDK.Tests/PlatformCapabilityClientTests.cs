@@ -40,6 +40,18 @@ public sealed class PlatformCapabilityClientTests
     }
 
     [Fact]
+    public async Task ListHiringRecommendationsAsync_UsesInstallationScopedCapability()
+    {
+        var expected = new HiringBacklogResponse([]);
+        var broker = new StubBroker(CapabilityResultFor(expected));
+
+        var actual = await new PlatformCapabilityClient(broker).ListHiringRecommendationsAsync();
+
+        Assert.Empty(actual.Recommendations);
+        Assert.Equal(PlatformCapabilities.HiringRecommendationList, broker.LastCapability);
+    }
+
+    [Fact]
     public void PlatformToolAdapters_ExposeOnlyGrantedCapabilities()
     {
         var broker = new StubBroker(new CapabilityResult());

@@ -53,9 +53,12 @@ public static class PlatformToolAdapters
             (PlatformCapabilities.UserInputRequest, AIFunctionFactory.Create(
             (AskUserRequest request, CancellationToken cancellationToken) => platform.AskUserAsync(request, cancellationToken),
             "ask_user", "Ask one multiple-choice question with two to four mutually exclusive options and one recommendation. The UI adds Something else.")),
+            (PlatformCapabilities.HiringRecommendationList, AIFunctionFactory.Create(
+            (CancellationToken cancellationToken) => platform.ListHiringRecommendationsAsync(cancellationToken),
+            "list_hiring_recommendations", "Read this agent installation's role backlog in priority order.")),
             (PlatformCapabilities.HiringRecommendationUpsert, AIFunctionFactory.Create(
             (UpsertHiringRecommendationRequest request, CancellationToken cancellationToken) => platform.UpsertHiringRecommendationAsync(request, cancellationToken),
-            "upsert_hiring_recommendation", "Maintain a ranked HR hiring recommendation using opaque candidate references from search_workforce.")),
+            "upsert_hiring_recommendation", "Create or update a prioritized role backlog item. Candidates may be empty until sourcing begins.")),
             (PlatformCapabilities.HiringWorkflowStage, AIFunctionFactory.Create(
             (StageHiringWorkflowRequest request, CancellationToken cancellationToken) => platform.StageHiringWorkflowAsync(request, cancellationToken),
             "stage_hiring_workflow", "Stage a combined install-and-hire workflow for organization-owner approval. This does not install or hire directly."))

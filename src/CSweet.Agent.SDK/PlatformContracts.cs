@@ -220,8 +220,11 @@ public sealed record UpsertHiringRecommendationRequest(
     string Objective,
     Guid? WorkstreamId,
     IReadOnlyList<string> CandidateReferences,
-    string RecommendedCandidateReference,
-    string IdempotencyKey);
+    string? RecommendedCandidateReference,
+    string IdempotencyKey)
+{
+    public int Priority { get; init; } = 50;
+}
 
 public sealed record HiringCandidateResponse(
     string CandidateReference, string Source, string DisplayName, string ResourceType,
@@ -231,11 +234,14 @@ public sealed record HiringCandidateResponse(
 
 public sealed record HiringRecommendationResponse(
     Guid Id, Guid? WorkstreamId, string Title, string Objective, string Status,
-    string RecommendedCandidateReference, IReadOnlyList<HiringCandidateResponse> Candidates,
+    string? RecommendedCandidateReference, IReadOnlyList<HiringCandidateResponse> Candidates,
     DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt)
 {
+    public int Priority { get; init; } = 50;
     public string HiringUrl { get; init; } = string.Empty;
 }
+
+public sealed record HiringBacklogResponse(IReadOnlyList<HiringRecommendationResponse> Recommendations);
 
 public sealed record StageHiringWorkflowRequest(
     Guid RecommendationId,

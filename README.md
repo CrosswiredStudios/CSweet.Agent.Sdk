@@ -7,7 +7,7 @@ platform services without receiving database credentials or provider secrets.
 ## Install
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 0.3.0
+dotnet add package CSweet.Agent.SDK --version 0.4.0
 ```
 
 Create an executable host, implement `ICSweetAgent` (or derive from `CSweetAgentBase`), and call:
@@ -47,6 +47,11 @@ Platform failures use stable codes including `Denied`, `Unavailable`, `NotFound`
 `IWorkforceCatalogProvider`; disconnected marketplaces must return an unavailable result rather
 than synthetic candidates.
 
+Staffing agents can use the installation-scoped hiring backlog to read their current role to-dos,
+upsert candidate-free prioritized roles, attach ranked candidates when sourcing begins, and stage
+a selected candidate for owner approval. The platform persists and governs these records without
+prescribing how an agent assesses or discusses staffing.
+
 Agents can implement `IAgentActivationHandler` to distinguish interactive, scheduled, manual,
 and always-on activation, or `IAgentConnectedService` for work that should run while connected.
 
@@ -71,7 +76,7 @@ dotnet pack src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj -c Release
 
 ### Creating NuGet packages
 
-Run the batch file from the repository root to restore dependencies, run the test suite, and create the package and symbols package in a versioned directory such as `artifacts\packages\0.3.0`:
+Run the batch file from the repository root to restore dependencies, run the test suite, and create the package and symbols package in a versioned directory such as `artifacts\packages\0.4.0`:
 
 ```bat
 Create-NuGetPackages.bat
@@ -80,7 +85,7 @@ Create-NuGetPackages.bat
 Pass a version and optional output root to override the project defaults. The version directory is appended automatically:
 
 ```bat
-Create-NuGetPackages.bat 0.3.0 C:\packages\csweet-agent-sdk
+Create-NuGetPackages.bat 0.4.0 C:\packages\csweet-agent-sdk
 ```
 
 Pushing a `v*` Git tag runs `.github\workflows\publish.yml`, which tests, packages, and publishes to NuGet.org using the repository's `NUGET_API_KEY` secret.
