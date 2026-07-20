@@ -9,7 +9,8 @@ public sealed record McpConnectionInfo(
     string AccessToken,
     DateTimeOffset ExpiresAt,
     long GrantRevision,
-    IReadOnlyList<string> GrantedRequestedCapabilities)
+    IReadOnlyList<string> GrantedRequestedCapabilities,
+    IReadOnlyList<string> GlobalCapabilities)
 {
     public static McpConnectionInfo FromRegistration(RegistrationResult registration)
     {
@@ -18,7 +19,8 @@ public sealed record McpConnectionInfo(
             throw new InvalidOperationException("Broker registration did not include a valid MCP session.");
         return new(new Uri(registration.McpEndpoint, UriKind.Absolute), registration.McpAccessToken,
             registration.McpTokenExpiresAt.ToDateTimeOffset(), registration.GrantRevision,
-            registration.GrantedRequestedCapabilities.ToList());
+            registration.GrantedRequestedCapabilities.ToList(),
+            registration.GlobalCapabilities.ToList());
     }
 
     public HttpClient CreateHttpClient(HttpMessageHandler? handler = null)

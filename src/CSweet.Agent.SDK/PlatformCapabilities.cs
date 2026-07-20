@@ -16,7 +16,7 @@ public static class PlatformCapabilities
     public const string BudgetEvaluate = "platform.budget.evaluate.v1";
     public const string ApprovalPropose = "platform.approval.propose.v1";
     public const string ManagementCycleRead = "platform.management-cycle.read.v1";
-    public const string ChatDecisionCreate = "platform.chat-decision.create.v1";
+    public const string UserInputRequest = "platform.user-input.request.v1";
     public const string HiringRecommendationUpsert = "platform.hiring-recommendation.upsert.v1";
     public const string HiringWorkflowStage = "platform.hiring-workflow.stage.v1";
 
@@ -26,7 +26,16 @@ public static class PlatformCapabilities
         OrganizationSnapshotRead, BusinessPatternSearch, WorkstreamPlanPropose,
         WorkforceSearch, WorkforcePlanPropose, FinanceProfileRead,
         FinanceProfileProposeUpdate, BudgetEvaluate, ApprovalPropose, ManagementCycleRead,
-        ChatDecisionCreate, HiringRecommendationUpsert, HiringWorkflowStage
+        UserInputRequest, HiringRecommendationUpsert, HiringWorkflowStage
+    };
+
+    /// <summary>
+    /// Safe platform tools exposed to every authenticated, active installation without a
+    /// manifest-requested capability grant. The broker remains authoritative.
+    /// </summary>
+    public static readonly IReadOnlySet<string> Global = new HashSet<string>(StringComparer.Ordinal)
+    {
+        UserInputRequest
     };
 }
 

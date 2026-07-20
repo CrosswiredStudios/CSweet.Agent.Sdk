@@ -51,8 +51,8 @@ public sealed class PlatformCapabilityClient
     public Task<ManagementCycleResponse> ReadManagementCycleAsync(CancellationToken token = default) =>
         InvokeAsync<object, ManagementCycleResponse>(PlatformCapabilities.ManagementCycleRead, new { }, token);
 
-    public Task<ExecutiveDecisionResponse> CreateExecutiveDecisionAsync(CreateExecutiveDecisionRequest request, CancellationToken token = default) =>
-        InvokeAsync<CreateExecutiveDecisionRequest, ExecutiveDecisionResponse>(PlatformCapabilities.ChatDecisionCreate, request, token);
+    public Task<UserQuestionResponse> AskUserAsync(AskUserRequest request, CancellationToken token = default) =>
+        InvokeAsync<AskUserRequest, UserQuestionResponse>(PlatformCapabilities.UserInputRequest, request, token);
 
     public Task<HiringRecommendationResponse> UpsertHiringRecommendationAsync(UpsertHiringRecommendationRequest request, CancellationToken token = default) =>
         InvokeAsync<UpsertHiringRecommendationRequest, HiringRecommendationResponse>(PlatformCapabilities.HiringRecommendationUpsert, request, token);

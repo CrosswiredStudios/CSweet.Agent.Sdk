@@ -65,6 +65,7 @@ message RegistrationResult {
   google.protobuf.Timestamp mcp_token_expires_at = 10;
   int64 grant_revision = 11;
   repeated string granted_requested_capabilities = 12;
+  repeated string global_capabilities = 13;
 }
 
 message PublishEvent {

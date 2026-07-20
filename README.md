@@ -7,7 +7,7 @@ platform services without receiving database credentials or provider secrets.
 ## Install
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 0.2.0
+dotnet add package CSweet.Agent.SDK --version 0.3.0
 ```
 
 Create an executable host, implement `ICSweetAgent` (or derive from `CSweetAgentBase`), and call:
@@ -34,6 +34,13 @@ profiles, organization snapshots, patterns, workstream and workforce proposals, 
 approvals, and management cycles. `PlatformToolAdapters.Create(context.Platform)` converts the
 same clients into Microsoft Agent Framework tools; extensions do not need to reimplement JSON or
 authorization behavior.
+
+The broker publishes global capabilities separately from installation grants. Global tools are
+safe platform interactions available to every authenticated, active installation; they must not
+be listed in a package manifest. The initial global tool is `ask_user`
+(`platform.user-input.request.v1`), which creates a structured 2–4 option question in
+Communications. Passing registration grants to `PlatformToolAdapters.Create` still includes SDK-
+known global tools while filtering unapproved grant-required tools. The broker remains authoritative.
 
 Platform failures use stable codes including `Denied`, `Unavailable`, `NotFound`, `Conflict`,
 `ValidationFailed`, `ApprovalRequired`, and `BudgetExceeded`. Workforce catalogs plug in through
@@ -64,7 +71,7 @@ dotnet pack src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj -c Release
 
 ### Creating NuGet packages
 
-Run the batch file from the repository root to restore dependencies, run the test suite, and create the package and symbols package in a versioned directory such as `artifacts\packages\0.2.0`:
+Run the batch file from the repository root to restore dependencies, run the test suite, and create the package and symbols package in a versioned directory such as `artifacts\packages\0.3.0`:
 
 ```bat
 Create-NuGetPackages.bat
@@ -73,7 +80,7 @@ Create-NuGetPackages.bat
 Pass a version and optional output root to override the project defaults. The version directory is appended automatically:
 
 ```bat
-Create-NuGetPackages.bat 0.2.0 C:\packages\csweet-agent-sdk
+Create-NuGetPackages.bat 0.3.0 C:\packages\csweet-agent-sdk
 ```
 
 Pushing a `v*` Git tag runs `.github\workflows\publish.yml`, which tests, packages, and publishes to NuGet.org using the repository's `NUGET_API_KEY` secret.

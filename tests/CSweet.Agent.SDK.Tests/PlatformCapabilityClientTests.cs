@@ -1,6 +1,7 @@
 using System.Text.Json;
 using CSweet.Agent.Contracts.Grpc;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 
 namespace CSweet.Agent.SDK.Tests;
 
@@ -45,16 +46,37 @@ public sealed class PlatformCapabilityClientTests
         var platform = new PlatformCapabilityClient(broker);
         var grants = new HashSet<string>(StringComparer.Ordinal)
         {
-            PlatformCapabilities.WorkforceSearch,
-            PlatformCapabilities.ChatDecisionCreate
+            PlatformCapabilities.WorkforceSearch
         };
 
         var tools = PlatformToolAdapters.Create(platform, grants);
 
         Assert.Equal(2, tools.Count);
         Assert.Contains(tools, tool => tool.Name == "search_workforce");
-        Assert.Contains(tools, tool => tool.Name == "create_executive_decision");
-        Assert.Empty(PlatformToolAdapters.Create(platform, new HashSet<string>()));
+        Assert.Contains(tools, tool => tool.Name == "ask_user");
+        var globalOnly = PlatformToolAdapters.Create(platform, new HashSet<string>());
+        Assert.Single(globalOnly);
+        Assert.Equal("ask_user", globalOnly[0].Name);
+    }
+
+    [Fact]
+    public void McpRegistration_ReportsGlobalCapabilitiesSeparatelyFromGrants()
+    {
+        var registration = new RegistrationResult
+        {
+            Accepted = true,
+            McpEndpoint = "https://platform.example/mcp",
+            McpAccessToken = "session-token",
+            McpTokenExpiresAt = Timestamp.FromDateTimeOffset(DateTimeOffset.UtcNow.AddMinutes(10)),
+            GrantRevision = 7
+        };
+        registration.GrantedRequestedCapabilities.Add(PlatformCapabilities.WorkforceSearch);
+        registration.GlobalCapabilities.Add(PlatformCapabilities.UserInputRequest);
+
+        var connection = McpConnectionInfo.FromRegistration(registration);
+
+        Assert.Equal([PlatformCapabilities.WorkforceSearch], connection.GrantedRequestedCapabilities);
+        Assert.Equal([PlatformCapabilities.UserInputRequest], connection.GlobalCapabilities);
     }
 
     [Fact]

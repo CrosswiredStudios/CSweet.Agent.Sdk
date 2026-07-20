@@ -191,24 +191,24 @@ public sealed record WorkforcePlanProposalRequest(
     string Rationale,
     string IdempotencyKey);
 
-public sealed record CreateExecutiveDecisionOption(string Id, string Label, string? Description = null);
+public sealed record AskUserOption(string Id, string Label, string? Description = null);
 
-public sealed record CreateExecutiveDecisionRequest(
+public sealed record AskUserRequest(
     Guid ConversationId,
     Guid ChatTurnId,
     string Prompt,
-    IReadOnlyList<CreateExecutiveDecisionOption> Options,
+    IReadOnlyList<AskUserOption> Options,
     string RecommendedOptionId,
     string IdempotencyKey);
 
-public sealed record ExecutiveDecisionOptionResponse(
+public sealed record UserQuestionOptionResponse(
     string Id, string Label, string? Description, bool Recommended);
 
-public sealed record ExecutiveDecisionResponse(
+public sealed record UserQuestionResponse(
     Guid Id,
     string Prompt,
     string Status,
-    IReadOnlyList<ExecutiveDecisionOptionResponse> Options,
+    IReadOnlyList<UserQuestionOptionResponse> Options,
     string RecommendedOptionId,
     string? SelectedOptionId,
     string? FreeTextAnswer,

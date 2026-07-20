@@ -12,6 +12,7 @@ class McpConnectionInfo:
     expires_at: datetime
     grant_revision: int
     granted_requested_capabilities: tuple[str, ...]
+    global_capabilities: tuple[str, ...]
 
     @classmethod
     def from_registration(cls, registration: Any) -> "McpConnectionInfo":
@@ -27,6 +28,7 @@ class McpConnectionInfo:
             expires_at,
             registration.grant_revision,
             tuple(registration.granted_requested_capabilities),
+            tuple(getattr(registration, "global_capabilities", ())),
         )
 
     def header_provider(self) -> dict[str, str]:

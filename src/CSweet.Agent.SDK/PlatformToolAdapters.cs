@@ -50,9 +50,9 @@ public static class PlatformToolAdapters
             (PlatformCapabilities.ManagementCycleRead, AIFunctionFactory.Create(
             (CancellationToken cancellationToken) => platform.ReadManagementCycleAsync(cancellationToken),
             "read_management_cycle", "Read the durable management cadence and quiet hours.")),
-            (PlatformCapabilities.ChatDecisionCreate, AIFunctionFactory.Create(
-            (CreateExecutiveDecisionRequest request, CancellationToken cancellationToken) => platform.CreateExecutiveDecisionAsync(request, cancellationToken),
-            "create_executive_decision", "Present one structured executive decision with two to four mutually exclusive options. The UI adds Something else.")),
+            (PlatformCapabilities.UserInputRequest, AIFunctionFactory.Create(
+            (AskUserRequest request, CancellationToken cancellationToken) => platform.AskUserAsync(request, cancellationToken),
+            "ask_user", "Ask one multiple-choice question with two to four mutually exclusive options and one recommendation. The UI adds Something else.")),
             (PlatformCapabilities.HiringRecommendationUpsert, AIFunctionFactory.Create(
             (UpsertHiringRecommendationRequest request, CancellationToken cancellationToken) => platform.UpsertHiringRecommendationAsync(request, cancellationToken),
             "upsert_hiring_recommendation", "Maintain a ranked HR hiring recommendation using opaque candidate references from search_workforce.")),
@@ -62,7 +62,9 @@ public static class PlatformToolAdapters
         ];
 
         return tools
-            .Where(item => grantedCapabilities is null || grantedCapabilities.Contains(item.Capability))
+            .Where(item => grantedCapabilities is null ||
+                           PlatformCapabilities.Global.Contains(item.Capability) ||
+                           grantedCapabilities.Contains(item.Capability))
             .Select(item => item.Tool)
             .ToList();
     }
