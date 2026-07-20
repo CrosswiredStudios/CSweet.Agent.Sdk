@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <PackageId>CSweet.Agent.SDK</PackageId>
-    <Version>0.4.0</Version>
+    <Version>0.4.1</Version>
     <Authors>C-Sweet</Authors>
     <Company>C-Sweet</Company>
     <Description>SDK for building broker-governed third-party C-Sweet agents.</Description>
