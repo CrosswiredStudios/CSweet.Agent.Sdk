@@ -61,7 +61,10 @@ public sealed class AgentRuntimeWorker<TAgent> : BackgroundService
                     _options.InstallationId,
                     broker,
                     _options.RuntimeInstanceId,
-                    _options.TickId);
+                    _options.TickId)
+                {
+                    Identity = AgentIdentity.FromRegistration(broker.Registration!)
+                };
 
                 _logger.LogInformation(
                     "Agent {AgentId} version {AgentVersion} is connected for business {BusinessId}.",

@@ -6,6 +6,36 @@ from typing import Any
 
 
 @dataclass(frozen=True)
+class AgentIdentity:
+    employee_id: str
+    display_name: str
+    role_id: str | None
+    role_name: str | None
+    role_description: str | None
+    role_responsibilities: tuple[str, ...]
+    authority_level: str | None
+    manager_employee_id: str | None
+    manager_display_name: str | None
+
+    @classmethod
+    def from_registration(cls, registration: Any) -> "AgentIdentity | None":
+        identity = getattr(registration, "employee_identity", None)
+        if identity is None or not identity.employee_id or not identity.display_name:
+            return None
+        return cls(
+            identity.employee_id,
+            identity.display_name,
+            identity.role_id or None,
+            identity.role_name or None,
+            identity.role_description or None,
+            tuple(identity.role_responsibilities),
+            identity.authority_level or None,
+            identity.manager_employee_id or None,
+            identity.manager_display_name or None,
+        )
+
+
+@dataclass(frozen=True)
 class McpConnectionInfo:
     endpoint: str
     access_token: str
@@ -13,6 +43,7 @@ class McpConnectionInfo:
     grant_revision: int
     granted_requested_capabilities: tuple[str, ...]
     global_capabilities: tuple[str, ...]
+    identity: AgentIdentity | None = None
 
     @classmethod
     def from_registration(cls, registration: Any) -> "McpConnectionInfo":
@@ -29,6 +60,7 @@ class McpConnectionInfo:
             registration.grant_revision,
             tuple(registration.granted_requested_capabilities),
             tuple(getattr(registration, "global_capabilities", ())),
+            AgentIdentity.from_registration(registration),
         )
 
     def header_provider(self) -> dict[str, str]:

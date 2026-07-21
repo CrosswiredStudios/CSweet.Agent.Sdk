@@ -7,3 +7,8 @@ When `expires_at` is reached, reconnect to the broker to obtain a new session-bo
 Registration reports `global_capabilities` separately from `granted_requested_capabilities`.
 Global tools, currently `ask_user`, require no package-manifest grant but still require a live,
 authenticated installation and pass through the same broker authorization path.
+
+`AgentIdentity.from_registration()` returns the organization employee identity assigned at hire,
+including the hired name, role, responsibilities, authority level, and manager. The same value is
+available as `McpConnectionInfo.identity`. It is `None` for an installation that has not been hired
+or when connecting to an older broker.

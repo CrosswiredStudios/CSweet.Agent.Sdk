@@ -83,6 +83,14 @@ the broker will actually allow. Request the smallest set of capabilities and eve
 Set `supportsMultipleInstallations` only when separate installations can safely maintain separate
 identity, configuration, state, and conversation context.
 
+### Package identity and employee identity
+
+`AgentId` and the manifest name identify the software package. After the installation is hired,
+`AgentRuntimeContext.Identity` identifies the employee that the agent is inside the current
+organization. Use its display name and role when presenting or reasoning about yourself. When an
+organization snapshot contains the same employee ID or installation ID, that entry is you rather
+than another worker. The broker reinforces this automatically for broker-mediated LLM calls.
+
 ## 3. Handle employee onboarding
 
 After C-Sweet creates the agent employee, its protected direct conversation, participants, grants,

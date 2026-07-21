@@ -80,8 +80,20 @@ public sealed class PlatformCapabilityClientTests
             McpEndpoint = "https://platform.example/mcp",
             McpAccessToken = "session-token",
             McpTokenExpiresAt = Timestamp.FromDateTimeOffset(DateTimeOffset.UtcNow.AddMinutes(10)),
-            GrantRevision = 7
+            GrantRevision = 7,
+            EmployeeIdentity = new AgentEmployeeIdentity
+            {
+                EmployeeId = Guid.NewGuid().ToString("D"),
+                DisplayName = "Avery",
+                RoleId = Guid.NewGuid().ToString("D"),
+                RoleName = "Operations Lead",
+                RoleDescription = "Own operations.",
+                AuthorityLevel = "ExecutionWithApproval",
+                ManagerEmployeeId = Guid.NewGuid().ToString("D"),
+                ManagerDisplayName = "Morgan"
+            }
         };
+        registration.EmployeeIdentity.RoleResponsibilities.Add("Coordinate delivery");
         registration.GrantedRequestedCapabilities.Add(PlatformCapabilities.WorkforceSearch);
         registration.GlobalCapabilities.Add(PlatformCapabilities.UserInputRequest);
 
@@ -89,6 +101,20 @@ public sealed class PlatformCapabilityClientTests
 
         Assert.Equal([PlatformCapabilities.WorkforceSearch], connection.GrantedRequestedCapabilities);
         Assert.Equal([PlatformCapabilities.UserInputRequest], connection.GlobalCapabilities);
+        var identity = AgentIdentity.FromRegistration(registration);
+        Assert.NotNull(identity);
+        Assert.Equal("Avery", identity.DisplayName);
+        Assert.Equal("Operations Lead", identity.RoleName);
+        Assert.Equal(["Coordinate delivery"], identity.RoleResponsibilities);
+        Assert.Equal("Morgan", identity.ManagerDisplayName);
+    }
+
+    [Fact]
+    public void AgentIdentity_MissingRegistrationFieldIsBackwardCompatible()
+    {
+        var registration = new RegistrationResult { Accepted = true };
+
+        Assert.Null(AgentIdentity.FromRegistration(registration));
     }
 
     [Fact]

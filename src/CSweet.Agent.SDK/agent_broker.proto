@@ -66,6 +66,19 @@ message RegistrationResult {
   int64 grant_revision = 11;
   repeated string granted_requested_capabilities = 12;
   repeated string global_capabilities = 13;
+  AgentEmployeeIdentity employee_identity = 14;
+}
+
+message AgentEmployeeIdentity {
+  string employee_id = 1;
+  string display_name = 2;
+  string role_id = 3;
+  string role_name = 4;
+  string role_description = 5;
+  repeated string role_responsibilities = 6;
+  string authority_level = 7;
+  string manager_employee_id = 8;
+  string manager_display_name = 9;
 }
 
 message PublishEvent {
