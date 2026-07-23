@@ -8,7 +8,7 @@ namespace CSweet.Agent.SDK;
 
 public static class BrokerLlmCapabilities
 {
-    public const string ChatStream = "platform.llm.chat-stream.v1";
+    public const string ChatStream = CapabilityNames.Platform.LlmChatStream;
 }
 
 public sealed record BrokerLlmContent(

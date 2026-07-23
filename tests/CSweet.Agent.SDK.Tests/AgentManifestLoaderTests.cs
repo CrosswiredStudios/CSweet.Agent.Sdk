@@ -67,4 +67,38 @@ public sealed class AgentManifestLoaderTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public async Task LoadAsync_RejectsCapabilityMissingFromSdkCatalog()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllTextAsync(path, """
+            {
+              "manifestVersion": "1.0",
+              "kind": "agent",
+              "id": "com.example.unknown-grant",
+              "name": "Unknown Grant",
+              "version": "1.0.0",
+              "publisher": { "id": "example", "name": "Example" },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj" },
+              "protocol": { "minimumVersion": "1.0", "maximumVersion": "1.x" },
+              "provides": [{ "name": "example.unregistered.v1" }],
+              "requires": [],
+              "events": { "subscribes": [], "publishes": [] }
+            }
+            """);
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => AgentManifestLoader.LoadAsync(path, CancellationToken.None));
+
+            Assert.Contains("example.unregistered.v1", exception.Message);
+            Assert.Contains("not registered in CSweet.Agent.SDK", exception.Message);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 }

@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <PackageId>CSweet.Agent.SDK</PackageId>
-    <Version>0.5.0</Version>
+    <Version>0.6.0</Version>
     <Authors>C-Sweet</Authors>
     <Company>C-Sweet</Company>
     <Description>SDK for building broker-governed third-party C-Sweet agents.</Description>
@@ -31,5 +31,6 @@
   <ItemGroup>
     <Protobuf Include="agent_broker.proto" GrpcServices="Both" />
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\GRANTS.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>

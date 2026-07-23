@@ -106,5 +106,17 @@ public static class AgentManifestLoader
             throw new InvalidOperationException(
                 "Agent manifest runtime.maximumConcurrentJobs must be at least one.");
         }
+
+        var unknownCapabilities = manifest.Capabilities
+            .Concat(manifest.RequestedCapabilities)
+            .Where(capability => !CapabilityCatalog.IsKnown(capability))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        if (unknownCapabilities.Length > 0)
+        {
+            throw new InvalidOperationException(
+                $"Agent manifest contains capabilities that are not registered in CSweet.Agent.SDK: {string.Join(", ", unknownCapabilities)}.");
+        }
     }
 }

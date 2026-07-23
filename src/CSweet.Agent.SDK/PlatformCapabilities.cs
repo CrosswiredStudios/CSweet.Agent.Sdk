@@ -3,23 +3,24 @@ namespace CSweet.Agent.SDK;
 /// <summary>Stable broker capability names implemented by the trusted C-Sweet platform.</summary>
 public static class PlatformCapabilities
 {
-    public const string BusinessProfileRead = "platform.business-profile.read.v1";
-    public const string BusinessProfileUpdateExplicit = "platform.business-profile.update-explicit.v1";
-    public const string BusinessProfileProposeUpdate = "platform.business-profile.propose-update.v1";
-    public const string OrganizationSnapshotRead = "platform.organization.snapshot.read.v1";
-    public const string BusinessPatternSearch = "platform.business-pattern.search.v1";
-    public const string WorkstreamPlanPropose = "platform.workstream.plan.propose.v1";
-    public const string WorkforceSearch = "platform.workforce.search.v1";
-    public const string WorkforcePlanPropose = "platform.workforce-plan.propose.v1";
-    public const string FinanceProfileRead = "platform.finance-profile.read.v1";
-    public const string FinanceProfileProposeUpdate = "platform.finance-profile.propose-update.v1";
-    public const string BudgetEvaluate = "platform.budget.evaluate.v1";
-    public const string ApprovalPropose = "platform.approval.propose.v1";
-    public const string ManagementCycleRead = "platform.management-cycle.read.v1";
-    public const string UserInputRequest = "platform.user-input.request.v1";
-    public const string HiringRecommendationList = "platform.hiring-recommendation.list.v1";
-    public const string HiringRecommendationUpsert = "platform.hiring-recommendation.upsert.v1";
-    public const string HiringWorkflowStage = "platform.hiring-workflow.stage.v1";
+    public const string LlmChatStream = CapabilityNames.Platform.LlmChatStream;
+    public const string BusinessProfileRead = CapabilityNames.Platform.BusinessProfileRead;
+    public const string BusinessProfileUpdateExplicit = CapabilityNames.Platform.BusinessProfileUpdateExplicit;
+    public const string BusinessProfileProposeUpdate = CapabilityNames.Platform.BusinessProfileProposeUpdate;
+    public const string OrganizationSnapshotRead = CapabilityNames.Platform.OrganizationSnapshotRead;
+    public const string BusinessPatternSearch = CapabilityNames.Platform.BusinessPatternSearch;
+    public const string WorkstreamPlanPropose = CapabilityNames.Platform.WorkstreamPlanPropose;
+    public const string WorkforceSearch = CapabilityNames.Platform.WorkforceSearch;
+    public const string WorkforcePlanPropose = CapabilityNames.Platform.WorkforcePlanPropose;
+    public const string FinanceProfileRead = CapabilityNames.Platform.FinanceProfileRead;
+    public const string FinanceProfileProposeUpdate = CapabilityNames.Platform.FinanceProfileProposeUpdate;
+    public const string BudgetEvaluate = CapabilityNames.Platform.BudgetEvaluate;
+    public const string ApprovalPropose = CapabilityNames.Platform.ApprovalPropose;
+    public const string ManagementCycleRead = CapabilityNames.Platform.ManagementCycleRead;
+    public const string UserInputRequest = CapabilityNames.Platform.UserInputRequest;
+    public const string HiringRecommendationList = CapabilityNames.Platform.HiringRecommendationList;
+    public const string HiringRecommendationUpsert = CapabilityNames.Platform.HiringRecommendationUpsert;
+    public const string HiringWorkflowStage = CapabilityNames.Platform.HiringWorkflowStage;
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -42,7 +43,10 @@ public static class PlatformCapabilities
 
 public static class ManagementCapabilities
 {
-    public const string CheckIn = "management.check-in.v1";
+    public const string CheckIn = CapabilityNames.Management.CheckIn;
+    public const string ProductRoleBrief = CapabilityNames.Management.ProductRoleBrief;
+    public const string ProductPlanReview = CapabilityNames.Management.ProductPlanReview;
+    public const string ProductEscalation = CapabilityNames.Management.ProductEscalation;
 }
 
 public static class ManagementEvents

@@ -34,8 +34,8 @@ public sealed record AgentConfigurationUpdateResponse(
 
 public static class AgentConfigurationCapabilities
 {
-    public const string Describe = "agent.configuration.describe.v1";
-    public const string Update = "agent.configuration.update.v1";
+    public const string Describe = CapabilityNames.Agent.ConfigurationDescribe;
+    public const string Update = CapabilityNames.Agent.ConfigurationUpdate;
 }
 
 public static class AgentConfigurationFieldTypes

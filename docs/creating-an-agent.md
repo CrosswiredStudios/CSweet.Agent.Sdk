@@ -148,7 +148,7 @@ private static async Task HandleOnboardedAsync(
     var send = await context.Broker.InvokeCapabilityAsync(new RequestCapability
     {
         RequestId = Guid.NewGuid().ToString("N"),
-        Capability = "communication.message.send.v1",
+        Capability = CommunicationCapabilities.MessageSend,
         ContentType = "application/json",
         Payload = ByteString.CopyFrom(JsonSerializer.SerializeToUtf8Bytes(new
         {
@@ -163,7 +163,7 @@ private static async Task HandleOnboardedAsync(
     var acknowledgement = await context.Broker.InvokeCapabilityAsync(new RequestCapability
     {
         RequestId = Guid.NewGuid().ToString("N"),
-        Capability = "agent.onboarding.complete.v1",
+        Capability = AgentLifecycleCapabilities.CompleteOnboarding,
         ContentType = "application/json",
         Payload = ByteString.CopyFrom(JsonSerializer.SerializeToUtf8Bytes(
             new { eventId }, JsonOptions))
@@ -173,8 +173,9 @@ private static async Task HandleOnboardedAsync(
 }
 ```
 
-Add the necessary imports for `CSweet.Agent.Contracts.Grpc`, `Google.Protobuf`, and
-`System.Text.Json`.
+Add the necessary imports for `CSweet.Agent.Contracts.Grpc`, `CSweet.Agent.SDK`,
+`Google.Protobuf`, and `System.Text.Json`. Capability names in executable code must come from the
+SDK catalog; only the JSON manifest contains their serialized wire names.
 
 ## 4. Design for duplicates and failure
 
