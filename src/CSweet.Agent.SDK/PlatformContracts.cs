@@ -201,6 +201,7 @@ public enum AgentCatalogSource
 public enum AgentAvailabilityState
 {
     AvailableToInstall,
+    Planned,
     InstalledDisabled,
     InstalledEnabled,
     Unavailable

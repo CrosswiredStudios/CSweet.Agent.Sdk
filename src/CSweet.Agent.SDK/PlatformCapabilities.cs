@@ -1,6 +1,6 @@
 namespace CSweet.Agent.SDK;
 
-/// <summary>Stable broker capability names implemented by the trusted C-Sweet platform.</summary>
+/// <summary>Stable capability names implemented by the trusted C-Sweet platform.</summary>
 public static class PlatformCapabilities
 {
     public const string LlmChatStream = CapabilityNames.Platform.LlmChatStream;
@@ -29,15 +29,6 @@ public static class PlatformCapabilities
         WorkforceSearch, AgentCatalogCapabilities.Search, WorkforcePlanPropose, FinanceProfileRead,
         FinanceProfileProposeUpdate, BudgetEvaluate, ApprovalPropose, ManagementCycleRead,
         UserInputRequest, HiringRecommendationList, HiringRecommendationUpsert, HiringWorkflowStage
-    };
-
-    /// <summary>
-    /// Safe platform tools exposed to every authenticated, active installation without a
-    /// manifest-requested capability grant. The broker remains authoritative.
-    /// </summary>
-    public static readonly IReadOnlySet<string> Global = new HashSet<string>(StringComparer.Ordinal)
-    {
-        UserInputRequest
     };
 }
 

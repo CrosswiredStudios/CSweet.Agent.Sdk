@@ -44,11 +44,10 @@ public sealed class CapabilityCatalogTests
     }
 
     [Fact]
-    public void AgentCatalogSearch_IsCanonicalAndNotGlobal()
+    public void AgentCatalogSearch_IsCanonical()
     {
         Assert.Equal("platform.agent-catalog.search.v1", AgentCatalogCapabilities.Search);
         Assert.True(CapabilityCatalog.IsKnown(AgentCatalogCapabilities.Search));
         Assert.Contains(AgentCatalogCapabilities.Search, PlatformCapabilities.All);
-        Assert.DoesNotContain(AgentCatalogCapabilities.Search, PlatformCapabilities.Global);
     }
 }

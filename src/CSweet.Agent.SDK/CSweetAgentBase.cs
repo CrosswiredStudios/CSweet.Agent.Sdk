@@ -1,6 +1,4 @@
 using System.Text.Json;
-using CSweet.Agent.Contracts.Grpc;
-using Google.Protobuf;
 
 namespace CSweet.Agent.SDK;
 
@@ -31,20 +29,19 @@ public abstract class CSweetAgentBase : ICSweetAgent
     }
 
     public virtual Task HandleEventAsync(
-        DeliveredEvent message,
+        AgentEventEnvelope message,
         AgentRuntimeContext context,
         CancellationToken cancellationToken) =>
         Task.CompletedTask;
 
-    public async Task<AgentCapabilityExecutionResult> ExecuteCapabilityAsync(
-        CapabilityRequest request,
+    public async Task<AgentWorkResult> ExecuteCapabilityAsync(
+        AgentCapabilityRequest request,
         AgentRuntimeContext context,
         CancellationToken cancellationToken)
     {
         if (request.Capability == AgentConfigurationCapabilities.Describe)
         {
-            return AgentCapabilityExecutionResult.Success(
-                JsonSerializer.SerializeToUtf8Bytes(CreateConfigurationSchema(), SerializerOptions));
+            return AgentWorkResult.Success(CreateConfigurationSchema());
         }
 
         if (request.Capability == AgentConfigurationCapabilities.Update)
@@ -55,11 +52,11 @@ public abstract class CSweetAgentBase : ICSweetAgent
         return await ExecuteCapabilityCoreAsync(request, context, cancellationToken);
     }
 
-    protected virtual Task<AgentCapabilityExecutionResult> ExecuteCapabilityCoreAsync(
-        CapabilityRequest request,
+    protected virtual Task<AgentWorkResult> ExecuteCapabilityCoreAsync(
+        AgentCapabilityRequest request,
         AgentRuntimeContext context,
         CancellationToken cancellationToken) =>
-        Task.FromResult(AgentCapabilityExecutionResult.Failure(
+        Task.FromResult(AgentWorkResult.Failure(
             $"Capability '{request.Capability}' is not supported by this agent."));
 
     protected virtual AgentConfigurationBuilder Configure(AgentConfigurationBuilder builder) => builder;
@@ -70,15 +67,11 @@ public abstract class CSweetAgentBase : ICSweetAgent
         AgentSettings currentSettings) =>
         null;
 
-    protected static T? DeserializePayload<T>(ByteString payload)
-    {
-        return JsonSerializer.Deserialize<T>(
-            payload.ToByteArray(),
-            SerializerOptions);
-    }
+    protected static T? DeserializePayload<T>(JsonElement payload) =>
+        payload.Deserialize<T>(SerializerOptions);
 
-    protected static byte[] SerializePayload<T>(T payload) =>
-        JsonSerializer.SerializeToUtf8Bytes(payload, SerializerOptions);
+    protected static JsonElement SerializePayload<T>(T payload) =>
+        JsonSerializer.SerializeToElement(payload, SerializerOptions);
 
     private AgentConfigurationSchemaResponse CreateConfigurationSchema()
     {
@@ -94,21 +87,21 @@ public abstract class CSweetAgentBase : ICSweetAgent
         }
     }
 
-    private AgentCapabilityExecutionResult UpdateConfiguration(CapabilityRequest request)
+    private AgentWorkResult UpdateConfiguration(AgentCapabilityRequest request)
     {
         UpdateAgentConfigurationRequest? update;
         try
         {
-            update = DeserializePayload<UpdateAgentConfigurationRequest>(request.Payload);
+            update = DeserializePayload<UpdateAgentConfigurationRequest>(request.Arguments);
         }
         catch (JsonException)
         {
-            return AgentCapabilityExecutionResult.Failure("The configuration payload is not valid JSON.");
+            return AgentWorkResult.Failure("The configuration payload is not valid JSON.");
         }
 
         if (update is null)
         {
-            return AgentCapabilityExecutionResult.Failure("The configuration payload is required.");
+            return AgentWorkResult.Failure("The configuration payload is required.");
         }
 
         lock (_settingsLock)
@@ -117,7 +110,7 @@ public abstract class CSweetAgentBase : ICSweetAgent
             var validationError = ValidateSettings(configuration, update.Settings);
             if (validationError is not null)
             {
-                return AgentCapabilityExecutionResult.Failure(validationError);
+                return AgentWorkResult.Failure(validationError);
             }
 
             _settings = MergeSettings(_settings!, update.Settings);
@@ -126,7 +119,7 @@ public abstract class CSweetAgentBase : ICSweetAgent
                 "Agent settings updated.",
                 CloneSettings(_settings));
 
-            return AgentCapabilityExecutionResult.Success(SerializePayload(response));
+            return new AgentWorkResult(true, SerializePayload(response));
         }
     }
 

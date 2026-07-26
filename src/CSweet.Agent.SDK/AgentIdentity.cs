@@ -1,5 +1,3 @@
-using CSweet.Agent.Contracts.Grpc;
-
 namespace CSweet.Agent.SDK;
 
 /// <summary>
@@ -16,30 +14,4 @@ public sealed record AgentIdentity(
     string? AuthorityLevel,
     string? ManagerEmployeeId,
     string? ManagerDisplayName)
-{
-    public static AgentIdentity? FromRegistration(RegistrationResult registration)
-    {
-        ArgumentNullException.ThrowIfNull(registration);
-        if (registration.EmployeeIdentity is null ||
-            string.IsNullOrWhiteSpace(registration.EmployeeIdentity.EmployeeId) ||
-            string.IsNullOrWhiteSpace(registration.EmployeeIdentity.DisplayName))
-        {
-            return null;
-        }
-
-        var identity = registration.EmployeeIdentity;
-        return new AgentIdentity(
-            identity.EmployeeId,
-            identity.DisplayName,
-            NullIfWhiteSpace(identity.RoleId),
-            NullIfWhiteSpace(identity.RoleName),
-            NullIfWhiteSpace(identity.RoleDescription),
-            identity.RoleResponsibilities.ToList(),
-            NullIfWhiteSpace(identity.AuthorityLevel),
-            NullIfWhiteSpace(identity.ManagerEmployeeId),
-            NullIfWhiteSpace(identity.ManagerDisplayName));
-    }
-
-    private static string? NullIfWhiteSpace(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value;
-}
+;

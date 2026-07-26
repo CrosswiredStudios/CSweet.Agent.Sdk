@@ -1,15 +1,26 @@
-# Authoritative capability catalog
+# Generated capability reference
 
-`CSweet.Agent.SDK.CapabilityNames` is the authoritative source for serialized C-Sweet capability
-and grant names. Agent and service code must use the typed constants exposed by the SDK rather than
-repeat wire-name strings.
+This file is checked against `CSweet.Agent.SDK.CapabilityCatalog` by
+`CapabilityReferenceDocumentationTests`; adding a capability without documenting it fails the SDK
+test gate. Agent and service code must use typed SDK constants rather than repeat wire names.
 
 `CapabilityCatalog.ByService` provides the same names grouped by owning service or feature, while
 `CapabilityCatalog.All` and `CapabilityCatalog.IsKnown(...)` support manifest validation and audit
 tests.
 
-The broker remains authoritative for whether a known capability is global, requested, granted, and
-allowed for a particular installation. Being listed here does not grant access.
+The platform runtime registry supplies the tool name, full input/output JSON Schemas, scope
+resolver, risk class, timeout and size limits, quota class, approval behavior, and owning service.
+Provider capabilities supply those fields in their signed manifest-v2 descriptor. `tools/list`
+returns only the intersection of this registry, the approved manifest revision, the live
+installation grant, and an active same-organization provider binding. Being listed here never
+grants access; even baseline operations such as `ask_user` require an explicit grant.
+
+| Capability class | Scope | Risk | Approval | Schema source | Owner |
+|---|---|---|---|---|---|
+| Read/query | Server-resolved organization or installation | Read-only | None | Runtime registry | Named platform service |
+| Explicit low-risk mutation | Server-resolved resource | Advisory write | Policy-dependent | Runtime registry | Named platform service |
+| Proposal/action staging | Server-resolved resource | Sensitive write | Always creates an approval | Runtime registry | Named platform service |
+| Provider capability | Bound provider installation in the same organization | Manifest-declared | Manifest/policy-declared | Hashed manifest-v2 descriptor | Provider package |
 
 ## Assistant
 
@@ -28,7 +39,7 @@ allowed for a particular installation. Being listed here does not grant access.
 - `AgentCatalogCapabilities.Search` — `platform.agent-catalog.search.v1`
 
 This read-only grant allows an agent to search installed, local-directory, first-party, and
-marketplace agent listings through the brokered MCP tool. It does not authorize preview, import,
+marketplace agent listings through the SDK-managed platform tool. It does not authorize preview, import,
 installation, grant changes, hiring, assignment, or spending.
 
 ## Platform
@@ -94,6 +105,7 @@ installation, grant changes, hiring, assignment, or spending.
 
 ## Contribution rule
 
-Every new capability must be added to `CapabilityNames`, exposed through an appropriate typed
-helper, included in `CapabilityCatalog.ByService`, documented here, and used by manifest-audit
-tests before an agent or service requests or provides it.
+Every new platform capability must be added to the runtime registry and `CapabilityNames`, exposed
+through an appropriate typed helper, included in `CapabilityCatalog.ByService`, documented here,
+and covered by authorization, schema, quota, approval, and audit tests. Provider descriptors must
+be valid, hashed manifest-v2 declarations.

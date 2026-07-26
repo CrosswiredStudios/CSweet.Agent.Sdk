@@ -1,16 +1,23 @@
 using System.Text.Json;
-using CSweet.Agent.Contracts.Grpc;
-using Google.Protobuf;
+using Microsoft.Extensions.AI;
 
 namespace CSweet.Agent.SDK;
 
-/// <summary>Typed, broker-governed access to authoritative C-Sweet platform services.</summary>
+/// <summary>Typed, grant-governed access to authoritative C-Sweet platform services.</summary>
 public sealed class PlatformCapabilityClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly IAgentBrokerClient _broker;
+    private readonly IPlatformToolInvoker _tools;
 
-    public PlatformCapabilityClient(IAgentBrokerClient broker) => _broker = broker;
+    internal PlatformCapabilityClient(IPlatformToolInvoker tools)
+    {
+        _tools = tools;
+        Memory = new PlatformMemoryClient(tools);
+    }
+
+    internal IPlatformToolInvoker Tools => _tools;
+
+    public PlatformMemoryClient Memory { get; }
 
     public Task<BusinessProfileResponse> ReadBusinessProfileAsync(CancellationToken token = default) =>
         InvokeAsync<object, BusinessProfileResponse>(PlatformCapabilities.BusinessProfileRead, new { }, token);
@@ -68,22 +75,13 @@ public sealed class PlatformCapabilityClient
         TRequest payload,
         CancellationToken cancellationToken = default)
     {
-        var result = await _broker.InvokeCapabilityAsync(new RequestCapability
-        {
-            RequestId = Guid.NewGuid().ToString("N"),
-            Capability = capability,
-            ContentType = "application/json",
-            Payload = ByteString.CopyFrom(JsonSerializer.SerializeToUtf8Bytes(payload, JsonOptions))
-        }, cancellationToken: cancellationToken);
-
-        if (!result.Succeeded)
-        {
-            throw PlatformCapabilityException.FromResult(capability, result);
-        }
-
+        var result = await _tools.InvokeAsync(
+            capability,
+            JsonSerializer.SerializeToElement(payload, JsonOptions),
+            cancellationToken);
         try
         {
-            return JsonSerializer.Deserialize<TResponse>(result.Payload.Span, JsonOptions)
+            return result.Deserialize<TResponse>(JsonOptions)
                 ?? throw new PlatformCapabilityException(capability, PlatformCapabilityErrorCode.ValidationFailed,
                     "The platform capability returned an empty response.");
         }
@@ -93,6 +91,85 @@ public sealed class PlatformCapabilityClient
                 "The platform capability returned invalid JSON.", exception);
         }
     }
+
+    public async Task<IReadOnlyList<AITool>> GetModelToolsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var descriptors = await _tools.ListToolsAsync(cancellationToken);
+        return descriptors
+            .Where(descriptor => descriptor.ModelVisible)
+            .Select(descriptor => (AITool)new RemotePlatformFunction(_tools, descriptor))
+            .ToList();
+    }
+
+    private sealed class RemotePlatformFunction(
+        IPlatformToolInvoker tools,
+        AgentToolDescriptor descriptor) : AIFunction
+    {
+        public override string Name => descriptor.Name;
+        public override string Description => descriptor.Description;
+        public override JsonElement JsonSchema => descriptor.InputSchema;
+        public override JsonElement? ReturnJsonSchema => descriptor.OutputSchema;
+
+        protected override async ValueTask<object?> InvokeCoreAsync(
+            AIFunctionArguments arguments,
+            CancellationToken cancellationToken)
+        {
+            var payload = JsonSerializer.SerializeToElement(
+                arguments.ToDictionary(x => x.Key, x => x.Value, StringComparer.Ordinal),
+                JsonOptions);
+            return await tools.InvokeAsync(descriptor.Capability, payload, cancellationToken);
+        }
+    }
+}
+
+public sealed class PlatformMemoryClient
+{
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly IPlatformToolInvoker _tools;
+
+    internal PlatformMemoryClient(IPlatformToolInvoker tools) => _tools = tools;
+
+    public async Task<T> ExecuteAsync<T>(
+        string access,
+        string operation,
+        object payload,
+        CancellationToken cancellationToken = default)
+    {
+        var capability = access switch
+        {
+            "query" => "platform.memory.query.v1",
+            "write" => "platform.memory.write.v1",
+            "manage" => "platform.memory.manage.v1",
+            "export" => "platform.memory.export.v1",
+            _ => throw new ArgumentOutOfRangeException(nameof(access), "Memory access must be query, write, manage, or export.")
+        };
+        var result = await _tools.InvokeAsync(
+            capability,
+            JsonSerializer.SerializeToElement(new
+            {
+                operation,
+                payload = JsonSerializer.SerializeToElement(payload, JsonOptions)
+            }, JsonOptions),
+            cancellationToken);
+        return result.Deserialize<T>(JsonOptions)
+            ?? throw new PlatformCapabilityException(
+                capability,
+                PlatformCapabilityErrorCode.ValidationFailed,
+                "The memory capability returned an empty response.");
+    }
+}
+
+public sealed class AgentPlatformAccessor
+{
+    private PlatformCapabilityClient? _current;
+
+    public PlatformCapabilityClient Current =>
+        Volatile.Read(ref _current)
+        ?? throw new InvalidOperationException("The agent runtime has not established a platform session.");
+
+    internal void SetCurrent(PlatformCapabilityClient platform) =>
+        Volatile.Write(ref _current, platform);
 }
 
 public sealed class PlatformCapabilityException : Exception
@@ -107,29 +184,4 @@ public sealed class PlatformCapabilityException : Exception
     public string Capability { get; }
     public PlatformCapabilityErrorCode Code { get; }
 
-    internal static PlatformCapabilityException FromResult(string capability, CapabilityResult result)
-    {
-        try
-        {
-            var error = result.Payload.Length == 0
-                ? null
-                : JsonSerializer.Deserialize<PlatformCapabilityError>(result.Payload.Span, new JsonSerializerOptions(JsonSerializerDefaults.Web));
-            return new PlatformCapabilityException(capability, error?.Code ?? InferCode(result.Error), error?.Message ?? result.Error);
-        }
-        catch (JsonException)
-        {
-            return new PlatformCapabilityException(capability, InferCode(result.Error), result.Error);
-        }
-    }
-
-    private static PlatformCapabilityErrorCode InferCode(string error)
-    {
-        if (error.Contains("grant", StringComparison.OrdinalIgnoreCase) || error.Contains("denied", StringComparison.OrdinalIgnoreCase))
-            return PlatformCapabilityErrorCode.Denied;
-        if (error.Contains("not found", StringComparison.OrdinalIgnoreCase)) return PlatformCapabilityErrorCode.NotFound;
-        if (error.Contains("budget", StringComparison.OrdinalIgnoreCase)) return PlatformCapabilityErrorCode.BudgetExceeded;
-        if (error.Contains("revision", StringComparison.OrdinalIgnoreCase) || error.Contains("conflict", StringComparison.OrdinalIgnoreCase))
-            return PlatformCapabilityErrorCode.Conflict;
-        return PlatformCapabilityErrorCode.Unavailable;
-    }
 }

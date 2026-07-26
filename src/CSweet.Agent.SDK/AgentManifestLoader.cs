@@ -44,14 +44,22 @@ public static class AgentManifestLoader
     private static AgentManifest ReadCanonicalPluginManifest(JsonElement root)
     {
         var kind = root.GetProperty("kind").GetString();
-        if (root.GetProperty("manifestVersion").GetString() != "1.0" || kind is not ("agent" or "service"))
-            throw new InvalidOperationException("Plugin manifest must use version 1.0 and kind agent or service.");
+        if (root.GetProperty("manifestVersion").GetString() != "2.0" || kind is not ("agent" or "service"))
+            throw new InvalidOperationException("Executable plugins must use manifest version 2.0 and kind agent or service.");
         var publisher = root.GetProperty("publisher");
         var runtime = root.GetProperty("runtime");
         var protocol = root.GetProperty("protocol");
         var events = root.GetProperty("events");
         var provides = root.GetProperty("provides").EnumerateArray()
-            .Select(x => new AgentProvidedCapability(x.GetProperty("name").GetString()!)).ToArray();
+            .Select(x => new AgentProvidedCapability(
+                x.GetProperty("name").GetString()!,
+                x.GetProperty("description").GetString()!,
+                x.GetProperty("inputSchema").Clone(),
+                x.GetProperty("outputSchema").Clone(),
+                x.GetProperty("executionTimeoutSeconds").GetInt32(),
+                x.TryGetProperty("idempotency", out var idempotency)
+                    ? idempotency.GetString() ?? "required"
+                    : "required")).ToArray();
         var requires = root.TryGetProperty("requires", out var requiredCapabilities)
             ? requiredCapabilities.EnumerateArray().Select(x => new AgentRequiredCapability(
                 x.GetProperty("name").GetString()!,
@@ -59,10 +67,9 @@ public static class AgentManifestLoader
                 x.TryGetProperty("purpose", out var purpose) ? purpose.GetString() : null)).ToArray()
             : [];
         var subscribes = events.GetProperty("subscribes").EnumerateArray().Select(x => x.GetString()!).ToArray();
-        var publishes = events.GetProperty("publishes").EnumerateArray().Select(x => x.GetString()!).ToArray();
         return new AgentManifest
         {
-            ManifestVersion = "1.0",
+            ManifestVersion = "2.0",
             Kind = kind!,
             Id = root.GetProperty("id").GetString()!,
             Name = root.GetProperty("name").GetString()!,
@@ -80,12 +87,10 @@ public static class AgentManifestLoader
             Protocol = new AgentProtocolManifest(protocol.GetProperty("minimumVersion").GetString()!, protocol.GetProperty("maximumVersion").GetString()!),
             Capabilities = provides.Select(x => x.Name).ToArray(),
             RequestedSubscriptions = subscribes,
-            RequestedPublications = publishes,
             RequestedCapabilities = requires.Select(x => x.Name).ToArray(),
             Provides = provides,
             Requires = requires,
-            Events = new AgentEventManifest(subscribes, publishes),
-            RequestedPermissions = []
+            Events = new AgentEventManifest(subscribes)
         };
     }
 
@@ -105,6 +110,29 @@ public static class AgentManifestLoader
         {
             throw new InvalidOperationException(
                 "Agent manifest runtime.maximumConcurrentJobs must be at least one.");
+        }
+
+        if (manifest.ManifestVersion != "2.0")
+        {
+            throw new InvalidOperationException("Executable agents must use manifest version 2.0.");
+        }
+
+        if (!Version.TryParse(manifest.Protocol.MinimumVersion, out var protocolMinimum) ||
+            protocolMinimum.Major < 2)
+        {
+            throw new InvalidOperationException("Executable agents must require protocol version 2.0 or newer.");
+        }
+
+        foreach (var capability in manifest.Provides)
+        {
+            if (string.IsNullOrWhiteSpace(capability.Description) ||
+                capability.InputSchema.ValueKind != JsonValueKind.Object ||
+                capability.OutputSchema.ValueKind != JsonValueKind.Object ||
+                capability.ExecutionTimeoutSeconds is < 1 or > 3600)
+            {
+                throw new InvalidOperationException(
+                    $"Provided capability '{capability.Name}' must declare description, input/output schemas, and an execution timeout from 1 to 3600 seconds.");
+            }
         }
 
         var unknownCapabilities = manifest.Capabilities

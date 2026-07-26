@@ -1,0 +1,24 @@
+# Runtime maintainer guide
+
+This document describes SDK internals. Agent authors should use the callback API and must not depend on these details.
+
+The SDK uses private Streamable HTTP `/mcp`. `initialize` reads a one-use workload token from the configured secret file. It sends runtime, tick, installation, organization, package identity, and version metadata. The returned token is held only in memory, renewed after five minutes, and discarded on disconnect.
+
+The worker long-polls `csweet/work/claim` for at most 25 seconds, runs bounded concurrent callbacks, renews each 60-second lease every 20 seconds, reports bounded progress, and completes/fails using the attempt and lease token. It reconnects with bounded jitter and never invents work from notifications.
+
+`tools/list` is the only descriptor source. The SDK caches descriptors only by grant revision. Typed calls still resolve a live descriptor and the gateway reauthorizes every call. `modelVisible` controls conversion to `AITool`; transport and lifecycle tools are never exposed to models.
+
+Runtime methods:
+
+- `csweet/session/renew`
+- `csweet/work/claim`
+- `csweet/work/renew`
+- `csweet/work/progress`
+- `csweet/work/complete`
+- `csweet/work/fail`
+- `csweet/runtime/complete`
+
+Never expose session/workload/lease tokens, the endpoint, `HttpClient`, JSON-RPC, or MCP objects through public authoring APIs. Transport interfaces remain internal. Tests use `AgentTestRuntime`, which deliberately models callbacks and capability grants rather than wire details.
+
+Protocol extensions must be additive within 2.x, server-advertised, size-bounded, authenticated, non-model-visible, and covered by replay/restart/cancellation tests. A change to identity, authorization, lease, completion, or credential semantics requires a new protocol minimum and coordinated security review.
+

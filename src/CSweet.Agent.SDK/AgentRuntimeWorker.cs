@@ -1,99 +1,71 @@
 using CSweet.Agent.Contracts.Packaging;
-using CSweet.Agent.Contracts.Grpc;
-using Google.Protobuf;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace CSweet.Agent.SDK;
 
-public sealed class AgentRuntimeWorker<TAgent> : BackgroundService
+internal sealed class AgentRuntimeWorker<TAgent>(
+    TAgent agent,
+    IAgentRuntimeTransport runtime,
+    AgentPlatformAccessor platformAccessor,
+    IOptions<AgentRuntimeOptions> options,
+    ILogger<AgentRuntimeWorker<TAgent>> logger) : BackgroundService
     where TAgent : class, ICSweetAgent
 {
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(5);
-
-    private readonly TAgent _agent;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly AgentBrokerOptions _options;
-    private readonly ILogger<AgentRuntimeWorker<TAgent>> _logger;
-
-    public AgentRuntimeWorker(
-        TAgent agent,
-        IServiceProvider serviceProvider,
-        IOptions<AgentBrokerOptions> options,
-        ILogger<AgentRuntimeWorker<TAgent>> logger)
-    {
-        _agent = agent;
-        _serviceProvider = serviceProvider;
-        _options = options.Value;
-        _logger = logger;
-    }
+    private readonly AgentRuntimeOptions _options = options.Value;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var manifest = await AgentManifestLoader.LoadAsync(
-            _options.ManifestPath,
-            stoppingToken);
-
-        if (!string.Equals(manifest.Id, _agent.AgentId, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                $"Manifest agent id '{manifest.Id}' does not match implementation id '{_agent.AgentId}'.");
-        }
-
-        if (!string.Equals(manifest.Version, _agent.Version, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                $"Manifest version '{manifest.Version}' does not match implementation version '{_agent.Version}'.");
-        }
+        var manifest = await AgentManifestLoader.LoadAsync(_options.ManifestPath, stoppingToken);
+        ValidateIdentity(manifest);
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            await using var broker = _serviceProvider.GetRequiredService<GrpcAgentBrokerClient>();
-
             try
             {
-                await broker.StartAsync(CreateRegistration(manifest), stoppingToken);
+                var session = await runtime.InitializeAsync(manifest, stoppingToken);
+                var platform = new PlatformCapabilityClient(runtime);
+                platformAccessor.SetCurrent(platform);
+                var connectedContext = CreateContext(platform, session.Identity, UnavailableProgressReporter.Instance);
 
-                var context = new AgentRuntimeContext(
-                    _options.BusinessId,
-                    _options.InstallationId,
-                    broker,
-                    _options.RuntimeInstanceId,
-                    _options.TickId)
+                logger.LogInformation(
+                    "Agent {AgentId} {Version} established MCP runtime session {SessionId} for installation {InstallationId}.",
+                    agent.AgentId,
+                    agent.Version,
+                    session.SessionId,
+                    _options.InstallationId);
+
+                if (agent is IAgentActivationHandler activation)
                 {
-                    Identity = AgentIdentity.FromRegistration(broker.Registration!)
-                };
-
-                _logger.LogInformation(
-                    "Agent {AgentId} version {AgentVersion} is connected for business {BusinessId}.",
-                    _agent.AgentId,
-                    _agent.Version,
-                    _options.BusinessId);
-
-                if (_agent is IAgentActivationHandler activationHandler)
-                {
-                    await activationHandler.OnActivatedAsync(
+                    await activation.OnActivatedAsync(
                         new AgentActivationContext(
                             ResolveActivationReason(manifest.Runtime.DefaultActivationMode),
-                            context.RuntimeInstanceId,
-                            context.TickId,
+                            _options.RuntimeInstanceId,
+                            _options.TickId,
                             DateTimeOffset.UtcNow),
-                        context,
+                        connectedContext,
                         stoppingToken);
                 }
 
                 using var connected = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-                var messageTask = ProcessMessagesAsync(broker, context, connected.Token);
-                var serviceTask = _agent is IAgentConnectedService service
-                    ? service.RunConnectedAsync(context, connected.Token)
+                var workTask = RunWorkLoopAsync(
+                    manifest,
+                    platform,
+                    session.Identity,
+                    connected.Token);
+                var serviceTask = agent is IAgentConnectedService service
+                    ? service.RunConnectedAsync(connectedContext, connected.Token)
                     : Task.Delay(Timeout.InfiniteTimeSpan, connected.Token);
-                var completed = await Task.WhenAny(messageTask, serviceTask);
-                connected.Cancel();
-                try { await Task.WhenAll(messageTask, serviceTask); }
+                var completed = await Task.WhenAny(workTask, serviceTask);
+                if (completed == serviceTask && serviceTask.IsCompletedSuccessfully)
+                    await runtime.CompleteRuntimeAsync(AgentWorkResult.Success(new { }), stoppingToken);
+                await connected.CancelAsync();
+                try { await Task.WhenAll(workTask, serviceTask); }
                 catch (OperationCanceledException) when (connected.IsCancellationRequested) { }
-                if (completed.IsFaulted) await completed;
+                if (completed.IsFaulted)
+                    await completed;
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -101,26 +73,152 @@ public sealed class AgentRuntimeWorker<TAgent> : BackgroundService
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
+                logger.LogWarning(
                     exception,
-                    "Agent {AgentId} broker connection failed. Retrying in {RetryDelaySeconds} seconds.",
-                    _agent.AgentId,
+                    "Agent {AgentId} MCP runtime failed. Reconnecting in {RetrySeconds} seconds.",
+                    agent.AgentId,
                     RetryDelay.TotalSeconds);
             }
-            finally
+
+            await Task.Delay(RetryDelay, stoppingToken);
+        }
+    }
+
+    private async Task RunWorkLoopAsync(
+        AgentManifest manifest,
+        PlatformCapabilityClient platform,
+        AgentIdentity? identity,
+        CancellationToken cancellationToken)
+    {
+        var maximumConcurrency = Math.Max(1, manifest.Runtime.MaximumConcurrentJobs);
+        var running = new HashSet<Task>();
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            running.RemoveWhere(task => task.IsCompleted);
+            if (running.Count >= maximumConcurrency)
             {
-                await StopBrokerAsync(broker);
+                await Task.WhenAny(running);
+                continue;
             }
 
-            try
-            {
-                await Task.Delay(RetryDelay, stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                return;
-            }
+            var lease = await runtime.ClaimAsync(maximumConcurrency - running.Count, cancellationToken);
+            if (lease is null)
+                continue;
+            var task = ProcessLeaseAsync(lease, platform, identity, cancellationToken);
+            running.Add(task);
+            _ = task.ContinueWith(
+                completed =>
+                {
+                    if (completed.IsFaulted)
+                        logger.LogError(completed.Exception, "Agent work {WorkId} failed outside the lease handler.", lease.WorkId);
+                },
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
         }
+        await Task.WhenAll(running);
+    }
+
+    private async Task ProcessLeaseAsync(
+        AgentWorkLease lease,
+        PlatformCapabilityClient platform,
+        AgentIdentity? identity,
+        CancellationToken runtimeCancellation)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(runtimeCancellation);
+        var remaining = lease.Deadline - DateTimeOffset.UtcNow;
+        if (remaining <= TimeSpan.Zero)
+        {
+            await runtime.FailAsync(lease, "The work deadline elapsed before execution.", runtimeCancellation);
+            return;
+        }
+        deadline.CancelAfter(remaining);
+        var progress = new LeaseProgressReporter(runtime, lease);
+        var context = CreateContext(platform, identity, progress);
+        var renewal = RenewLeaseAsync(lease, deadline.Token);
+        try
+        {
+            AgentWorkResult result = lease.Kind switch
+            {
+                AgentWorkKind.Capability => await agent.ExecuteCapabilityAsync(
+                    new AgentCapabilityRequest(
+                        lease.WorkId,
+                        lease.Name,
+                        lease.Payload,
+                        lease.CorrelationId),
+                    context,
+                    deadline.Token),
+                AgentWorkKind.Event => await HandleEventAsync(lease, context, deadline.Token),
+                AgentWorkKind.Shutdown => AgentWorkResult.Success(new { acknowledged = true }),
+                _ => AgentWorkResult.Failure($"Unsupported work kind '{lease.Kind}'.")
+            };
+            await runtime.CompleteAsync(lease, result, runtimeCancellation);
+        }
+        catch (OperationCanceledException) when (deadline.IsCancellationRequested && !runtimeCancellation.IsCancellationRequested)
+        {
+            await runtime.FailAsync(lease, "The agent work deadline elapsed.", runtimeCancellation);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Agent {AgentId} failed work {WorkId} ({WorkName}).", agent.AgentId, lease.WorkId, lease.Name);
+            await runtime.FailAsync(lease, "The agent failed while processing the work item.", runtimeCancellation);
+        }
+        finally
+        {
+            await deadline.CancelAsync();
+            try { await renewal; }
+            catch (OperationCanceledException) when (deadline.IsCancellationRequested) { }
+        }
+    }
+
+    private async Task<AgentWorkResult> HandleEventAsync(
+        AgentWorkLease lease,
+        AgentRuntimeContext context,
+        CancellationToken cancellationToken)
+    {
+        await agent.HandleEventAsync(
+            new AgentEventEnvelope(
+                lease.WorkId,
+                lease.Name,
+                lease.Payload,
+                DateTimeOffset.UtcNow,
+                lease.CorrelationId),
+            context,
+            cancellationToken);
+        return AgentWorkResult.Success(new { acknowledged = true });
+    }
+
+    private async Task RenewLeaseAsync(AgentWorkLease lease, CancellationToken cancellationToken)
+    {
+        var interval = TimeSpan.FromSeconds(Math.Clamp(_options.LeaseRenewalSeconds, 5, 30));
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            await Task.Delay(interval, cancellationToken);
+            await runtime.RenewWorkAsync(lease, cancellationToken);
+        }
+    }
+
+    private AgentRuntimeContext CreateContext(
+        PlatformCapabilityClient platform,
+        AgentIdentity? identity,
+        IAgentProgressReporter progress) =>
+        new(
+            _options.BusinessId,
+            _options.InstallationId,
+            _options.RuntimeInstanceId,
+            _options.TickId,
+            platform,
+            progress,
+            identity);
+
+    private void ValidateIdentity(AgentManifest manifest)
+    {
+        if (!string.Equals(manifest.Id, agent.AgentId, StringComparison.Ordinal) ||
+            !string.Equals(manifest.Version, agent.Version, StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "The agent implementation identity/version does not match csweet-plugin.json.");
+        if (!Version.TryParse(manifest.Protocol.MinimumVersion, out var minimum) || minimum.Major < 2)
+            throw new InvalidOperationException("Executable agents must declare protocol minimumVersion 2.0 or newer.");
     }
 
     private static AgentActivationReason ResolveActivationReason(string? mode) => mode switch
@@ -131,149 +229,25 @@ public sealed class AgentRuntimeWorker<TAgent> : BackgroundService
         _ => AgentActivationReason.Unknown
     };
 
-    private RegisterAgent CreateRegistration(AgentManifest manifest)
+    private sealed class LeaseProgressReporter(
+        IAgentRuntimeTransport runtime,
+        AgentWorkLease lease) : IAgentProgressReporter
     {
-        var registration = new RegisterAgent
-        {
-            AgentId = manifest.Id,
-            AgentVersion = manifest.Version,
-            InstallationId = _options.InstallationId,
-            BusinessId = _options.BusinessId,
-            RuntimeInstanceId = _options.RuntimeInstanceId,
-            TickId = _options.TickId,
-            WorkloadToken = _options.WorkloadToken
-        };
-        registration.DeclaredCapabilities.AddRange(manifest.Capabilities);
-        registration.RequestedSubscriptions.AddRange(manifest.RequestedSubscriptions);
-        registration.RequestedPublications.AddRange(manifest.RequestedPublications);
-        registration.RequestedPermissions.AddRange(manifest.RequestedPermissions);
+        private long _sequence;
 
-        return registration;
-    }
-
-    private async Task ProcessMessagesAsync(
-        IAgentBrokerClient broker,
-        AgentRuntimeContext context,
-        CancellationToken stoppingToken)
-    {
-        await foreach (var message in broker.ReadAllAsync(stoppingToken))
-        {
-            switch (message.PayloadCase)
-            {
-                case BrokerToAgentMessage.PayloadOneofCase.Event:
-                    await HandleEventAsync(message.Event, context, stoppingToken);
-                    break;
-
-                case BrokerToAgentMessage.PayloadOneofCase.CapabilityRequest:
-                    await ExecuteCapabilityAsync(
-                        broker,
-                        message.CapabilityRequest,
-                        message.CorrelationId,
-                        context,
-                        stoppingToken);
-                    break;
-
-                case BrokerToAgentMessage.PayloadOneofCase.Error:
-                    _logger.LogWarning(
-                        "Broker rejected an agent message. Code: {Code}. Message: {Message}",
-                        message.Error.Code,
-                        message.Error.Message);
-                    break;
-
-                case BrokerToAgentMessage.PayloadOneofCase.Shutdown:
-                    _logger.LogInformation(
-                        "Broker requested agent shutdown: {Reason}",
-                        message.Shutdown.Reason);
-                    return;
-            }
-        }
-    }
-
-    private async Task HandleEventAsync(
-        DeliveredEvent message,
-        AgentRuntimeContext context,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _agent.HandleEventAsync(message, context, cancellationToken);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            _logger.LogError(
-                exception,
-                "Agent {AgentId} failed while handling event {EventType}.",
-                _agent.AgentId,
-                message.EventType);
-        }
-    }
-
-    private async Task ExecuteCapabilityAsync(
-        IAgentBrokerClient broker,
-        CapabilityRequest request,
-        string correlationId,
-        AgentRuntimeContext context,
-        CancellationToken cancellationToken)
-    {
-        CapabilityResult result;
-
-        try
-        {
-            var execution = await _agent.ExecuteCapabilityAsync(
-                request,
-                context,
+        public Task ReportAsync(object? value, CancellationToken cancellationToken = default) =>
+            runtime.ReportProgressAsync(
+                lease,
+                Interlocked.Increment(ref _sequence),
+                System.Text.Json.JsonSerializer.SerializeToElement(value),
                 cancellationToken);
-
-            result = new CapabilityResult
-            {
-                RequestId = request.RequestId,
-                Succeeded = execution.Succeeded,
-                ContentType = execution.ContentType,
-                Payload = ByteString.CopyFrom(execution.Payload),
-                Error = execution.Error ?? string.Empty
-            };
-        }
-        catch (Exception exception)
-        {
-            _logger.LogError(
-                exception,
-                "Agent {AgentId} failed capability {Capability}.",
-                _agent.AgentId,
-                request.Capability);
-
-            result = new CapabilityResult
-            {
-                RequestId = request.RequestId,
-                Succeeded = false,
-                ContentType = "application/json",
-                Error = "The agent failed while processing the capability request."
-            };
-        }
-
-        await broker.SendCapabilityResultAsync(
-            result,
-            correlationId,
-            cancellationToken);
     }
 
-    private async Task StopBrokerAsync(IAgentBrokerClient broker)
+    private sealed class UnavailableProgressReporter : IAgentProgressReporter
     {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        public static readonly UnavailableProgressReporter Instance = new();
 
-        try
-        {
-            await broker.StopAsync(timeout.Token);
-        }
-        catch (OperationCanceledException) when (timeout.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception)
-        {
-            _logger.LogDebug(exception, "Agent broker client did not stop cleanly.");
-        }
+        public Task ReportAsync(object? value, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Progress can be reported only while processing leased work.");
     }
 }

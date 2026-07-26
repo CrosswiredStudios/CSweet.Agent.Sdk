@@ -1,6 +1,10 @@
 # C-Sweet Python runtime helper
 
-Generate the gRPC client from `agent_broker.proto`, register the container, then create `McpConnectionInfo` from the accepted registration result. `create_maf_tool()` supplies the dedicated MCP bearer credential through MAF's `header_provider`; the credential never becomes a prompt or tool argument.
+# Python support
+
+Python agent authoring is not part of SDK 1.0. Executable marketplace agents must currently use the .NET SDK, manifest v2, and the SDK-managed outbound runtime. Do not generate transport clients, handle workload credentials, or connect to the private MCP endpoint directly.
+
+Future Python support will expose the same transport-neutral callbacks and typed platform clients as the .NET SDK.
 
 When `expires_at` is reached, reconnect to the broker to obtain a new session-bound credential. Tool visibility is still filtered and re-authorized by the C-Sweet broker on every call.
 

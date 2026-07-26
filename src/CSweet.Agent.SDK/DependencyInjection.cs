@@ -1,67 +1,59 @@
-using CSweet.Agent.Contracts.Grpc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CSweet.Agent.SDK;
 
 public static class DependencyInjection
 {
-    private static readonly HashSet<string> SupportedGrpcSchemes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        Uri.UriSchemeHttps,
-        Uri.UriSchemeHttp
-    };
-
     public static IHostApplicationBuilder AddCSweetAgent<TAgent>(
         this IHostApplicationBuilder builder)
         where TAgent : class, ICSweetAgent
     {
-        var section = builder.Configuration.GetSection(AgentBrokerOptions.SectionName);
-        var brokerEndpoint = section[nameof(AgentBrokerOptions.BrokerEndpoint)]
-            ?? "https+http://agenthost";
+        var section = builder.Configuration.GetSection(AgentRuntimeOptions.SectionName);
 
         builder.Services
-            .AddOptions<AgentBrokerOptions>()
+            .AddOptions<AgentRuntimeOptions>()
             .Bind(section)
             .Validate(
-                options => !string.IsNullOrWhiteSpace(options.InstallationId),
-                "CSweet:Agent:InstallationId is required.")
+                options => Guid.TryParse(options.InstallationId, out _),
+                "CSweet:Agent:InstallationId must be a UUID.")
             .Validate(
-                options => !string.IsNullOrWhiteSpace(options.BusinessId),
-                "CSweet:Agent:BusinessId is required.")
+                options => Guid.TryParse(options.BusinessId, out _),
+                "CSweet:Agent:BusinessId must be a UUID.")
+            .Validate(
+                options => Uri.TryCreate(options.McpEndpoint, UriKind.Absolute, out var endpoint) &&
+                           (endpoint.Scheme == Uri.UriSchemeHttp ||
+                            endpoint.Scheme == Uri.UriSchemeHttps),
+                "CSweet:Agent:McpEndpoint must be an absolute HTTP(S) URI.")
+            .Validate(
+                options => !string.IsNullOrWhiteSpace(options.WorkloadTokenFile),
+                "CSweet:Agent:WorkloadTokenFile is required.")
+            .Validate(
+                options => Guid.TryParse(options.RuntimeInstanceId, out _),
+                "CSweet:Agent:RuntimeInstanceId must be a UUID.")
+            .Validate(
+                options => Guid.TryParse(options.TickId, out _),
+                "CSweet:Agent:TickId must be a UUID.")
             .ValidateOnStart();
 
-        builder.Services.AddGrpcClient<AgentBroker.AgentBrokerClient>(options =>
+        builder.Services.AddHttpClient("CSweet.Agent.Runtime", client =>
         {
-            options.Address = CreateGrpcAddress(brokerEndpoint);
+            client.Timeout = Timeout.InfiniteTimeSpan;
         });
-
+        builder.Services.AddSingleton<McpAgentRuntimeClient>(services =>
+            new McpAgentRuntimeClient(
+                services.GetRequiredService<IHttpClientFactory>()
+                    .CreateClient("CSweet.Agent.Runtime"),
+                services.GetRequiredService<IOptions<AgentRuntimeOptions>>(),
+                services.GetRequiredService<ILogger<McpAgentRuntimeClient>>()));
+        builder.Services.AddSingleton<IAgentRuntimeTransport>(
+            services => services.GetRequiredService<McpAgentRuntimeClient>());
+        builder.Services.AddSingleton<AgentPlatformAccessor>();
         builder.Services.AddSingleton<TAgent>();
-        builder.Services.AddTransient<GrpcAgentBrokerClient>();
-        builder.Services.AddTransient<IAgentBrokerClient, GrpcAgentBrokerClient>();
         builder.Services.AddHostedService<AgentRuntimeWorker<TAgent>>();
 
         return builder;
-    }
-
-    public static Uri CreateGrpcAddress(string brokerEndpoint)
-    {
-        var endpoint = new Uri(brokerEndpoint.Trim(), UriKind.Absolute);
-        if (SupportedGrpcSchemes.Contains(endpoint.Scheme))
-        {
-            return endpoint;
-        }
-
-        var scheme = endpoint.Scheme
-            .Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .FirstOrDefault(SupportedGrpcSchemes.Contains);
-
-        if (scheme is null)
-        {
-            throw new InvalidOperationException(
-                $"Agent broker endpoint scheme '{endpoint.Scheme}' is not supported. Use http, https, or an Aspire composite scheme such as https+http.");
-        }
-
-        return new Uri($"{scheme}://{endpoint.Authority}{endpoint.PathAndQuery}{endpoint.Fragment}", UriKind.Absolute);
     }
 }

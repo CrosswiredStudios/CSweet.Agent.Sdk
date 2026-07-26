@@ -1,8 +1,10 @@
+using System.Text.Json;
+
 namespace CSweet.Agent.Contracts.Packaging;
 
 public sealed class AgentManifest
 {
-    public string ManifestVersion { get; init; } = "1.0";
+    public string ManifestVersion { get; init; } = "2.0";
 
     public string Kind { get; init; } = "agent";
 
@@ -22,11 +24,7 @@ public sealed class AgentManifest
 
     public IReadOnlyList<string> RequestedSubscriptions { get; init; } = [];
 
-    public IReadOnlyList<string> RequestedPublications { get; init; } = [];
-
-    public IReadOnlyList<string> RequestedPermissions { get; init; } = [];
-
-    /// <summary>Broker capabilities this agent may request. Populated from canonical manifest requires declarations.</summary>
+    /// <summary>Platform and provider capabilities requested by this package revision.</summary>
     public IReadOnlyList<string> RequestedCapabilities { get; init; } = [];
 
     public IReadOnlyList<string> RequestedNetworkAccess { get; init; } = [];
@@ -35,14 +33,20 @@ public sealed class AgentManifest
 
     public IReadOnlyList<AgentRequiredCapability> Requires { get; init; } = [];
 
-    public AgentEventManifest Events { get; init; } = new([], []);
+    public AgentEventManifest Events { get; init; } = new([]);
 }
 
-public sealed record AgentProvidedCapability(string Name);
+public sealed record AgentProvidedCapability(
+    string Name,
+    string Description,
+    JsonElement InputSchema,
+    JsonElement OutputSchema,
+    int ExecutionTimeoutSeconds,
+    string Idempotency);
 
 public sealed record AgentRequiredCapability(string Name, string? Scope = null, string? Purpose = null);
 
-public sealed record AgentEventManifest(IReadOnlyList<string> Subscribes, IReadOnlyList<string> Publishes);
+public sealed record AgentEventManifest(IReadOnlyList<string> Subscribes);
 
 public sealed record AgentPublisher(
     string Id,

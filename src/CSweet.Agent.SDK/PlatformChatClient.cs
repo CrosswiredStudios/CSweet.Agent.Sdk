@@ -1,17 +1,15 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using CSweet.Agent.Contracts.Grpc;
-using Google.Protobuf;
 using Microsoft.Extensions.AI;
 
 namespace CSweet.Agent.SDK;
 
-public static class BrokerLlmCapabilities
+internal static class PlatformChatCapabilities
 {
     public const string ChatStream = CapabilityNames.Platform.LlmChatStream;
 }
 
-public sealed record BrokerLlmContent(
+internal sealed record PlatformChatContent(
     string Kind,
     string? Text = null,
     string? CallId = null,
@@ -19,39 +17,39 @@ public sealed record BrokerLlmContent(
     IReadOnlyDictionary<string, JsonElement>? Arguments = null,
     JsonElement? Result = null);
 
-public sealed record BrokerLlmMessage(
+internal sealed record PlatformChatMessage(
     string Role,
     string? Text = null,
-    IReadOnlyList<BrokerLlmContent>? Contents = null);
+    IReadOnlyList<PlatformChatContent>? Contents = null);
 
-public sealed record BrokerLlmTool(
+internal sealed record PlatformChatTool(
     string Name,
     string Description,
     JsonElement JsonSchema);
 
-public sealed record BrokerLlmRequest(
+internal sealed record PlatformChatRequest(
     Guid ProviderProfileId,
     string? Model,
-    IReadOnlyList<BrokerLlmMessage> Messages,
+    IReadOnlyList<PlatformChatMessage> Messages,
     string? Instructions = null,
-    IReadOnlyList<BrokerLlmTool>? Tools = null);
+    IReadOnlyList<PlatformChatTool>? Tools = null);
 
-public sealed record BrokerLlmChunk(
+internal sealed record PlatformChatChunk(
     string? Text,
     long? InputTokenCount = null,
     long? OutputTokenCount = null,
     string? Role = null,
-    IReadOnlyList<BrokerLlmContent>? Contents = null);
+    IReadOnlyList<PlatformChatContent>? Contents = null);
 
-public sealed class BrokerLlmClient : IChatClient
+public sealed class PlatformChatClient : IChatClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly IAgentBrokerClient _broker;
+    private readonly IPlatformToolInvoker _tools;
     private readonly AgentLlmSelection _selection;
 
-    public BrokerLlmClient(IAgentBrokerClient broker, AgentLlmSelection selection)
+    public PlatformChatClient(PlatformCapabilityClient platform, AgentLlmSelection selection)
     {
-        _broker = broker;
+        _tools = platform.Tools;
         _selection = selection;
     }
 
@@ -74,47 +72,24 @@ public sealed class BrokerLlmClient : IChatClient
         ChatOptions? options = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var payload = new BrokerLlmRequest(
+        var payload = new PlatformChatRequest(
             _selection.ProviderProfileId,
             _selection.Model,
             messages.Select(ToBrokerMessage).ToList(),
             options?.Instructions,
             options?.Tools?
                 .OfType<AIFunctionDeclaration>()
-                .Select(tool => new BrokerLlmTool(
+                .Select(tool => new PlatformChatTool(
                     tool.Name,
                     tool.Description,
                     tool.JsonSchema.Clone()))
                 .ToList());
-        var request = new RequestCapability
-        {
-            RequestId = Guid.NewGuid().ToString("N"),
-            Capability = BrokerLlmCapabilities.ChatStream,
-            ContentType = "application/json",
-            Payload = ByteString.CopyFrom(JsonSerializer.SerializeToUtf8Bytes(payload, JsonOptions))
-        };
-
-        await foreach (var result in _broker.InvokeStreamingCapabilityAsync(
-            request,
-            request.RequestId,
+        await foreach (var result in _tools.InvokeStreamingAsync(
+            PlatformChatCapabilities.ChatStream,
+            JsonSerializer.SerializeToElement(payload, JsonOptions),
             cancellationToken))
         {
-            if (!result.Succeeded)
-            {
-                throw new InvalidOperationException(
-                    string.IsNullOrWhiteSpace(result.Error)
-                        ? "The platform LLM capability failed."
-                        : result.Error);
-            }
-
-            if (result.Payload.IsEmpty)
-            {
-                continue;
-            }
-
-            var chunk = JsonSerializer.Deserialize<BrokerLlmChunk>(
-                result.Payload.Span,
-                JsonOptions);
+            var chunk = result.Deserialize<PlatformChatChunk>(JsonOptions);
             if (chunk is null)
             {
                 continue;
@@ -152,15 +127,15 @@ public sealed class BrokerLlmClient : IChatClient
     {
     }
 
-    private static BrokerLlmMessage ToBrokerMessage(ChatMessage message) => new(
+    private static PlatformChatMessage ToBrokerMessage(ChatMessage message) => new(
         message.Role.ToString(),
         message.Text,
         message.Contents.Select(ToBrokerContent).ToList());
 
-    private static BrokerLlmContent ToBrokerContent(AIContent content) => content switch
+    private static PlatformChatContent ToBrokerContent(AIContent content) => content switch
     {
-        TextContent text => new BrokerLlmContent("text", Text: text.Text),
-        FunctionCallContent call => new BrokerLlmContent(
+        TextContent text => new PlatformChatContent("text", Text: text.Text),
+        FunctionCallContent call => new PlatformChatContent(
             "function_call",
             CallId: call.CallId,
             Name: call.Name,
@@ -168,15 +143,15 @@ public sealed class BrokerLlmClient : IChatClient
                 argument => argument.Key,
                 argument => SerializeElement(argument.Value),
                 StringComparer.Ordinal)),
-        FunctionResultContent result => new BrokerLlmContent(
+        FunctionResultContent result => new PlatformChatContent(
             "function_result",
             CallId: result.CallId,
             Result: SerializeElement(result.Result)),
         _ => throw new NotSupportedException(
-            $"Brokered LLM messages do not support {content.GetType().Name} content.")
+            $"Platform chat messages do not support {content.GetType().Name} content.")
     };
 
-    private static AIContent ToAiContent(BrokerLlmContent content) => content.Kind switch
+    private static AIContent ToAiContent(PlatformChatContent content) => content.Kind switch
     {
         "text" => new TextContent(content.Text ?? string.Empty),
         "function_call" when !string.IsNullOrWhiteSpace(content.CallId) &&
@@ -190,7 +165,7 @@ public sealed class BrokerLlmClient : IChatClient
         "function_result" when !string.IsNullOrWhiteSpace(content.CallId) =>
             new FunctionResultContent(content.CallId, content.Result?.Clone()),
         _ => throw new InvalidOperationException(
-            $"The broker returned unsupported or incomplete '{content.Kind}' content.")
+            $"The platform returned unsupported or incomplete '{content.Kind}' content.")
     };
 
     private static JsonElement SerializeElement(object? value) =>
