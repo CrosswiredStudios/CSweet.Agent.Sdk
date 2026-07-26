@@ -27,6 +27,7 @@ public sealed class CapabilityCatalogTests
         Assert.Equal(
             [
                 "agent",
+                "agent-catalog",
                 "assistant",
                 "communication",
                 "management",
@@ -40,5 +41,14 @@ public sealed class CapabilityCatalogTests
         Assert.All(
             CapabilityCatalog.ByService,
             group => Assert.All(group.Value, capability => Assert.True(CapabilityCatalog.IsKnown(capability))));
+    }
+
+    [Fact]
+    public void AgentCatalogSearch_IsCanonicalAndNotGlobal()
+    {
+        Assert.Equal("platform.agent-catalog.search.v1", AgentCatalogCapabilities.Search);
+        Assert.True(CapabilityCatalog.IsKnown(AgentCatalogCapabilities.Search));
+        Assert.Contains(AgentCatalogCapabilities.Search, PlatformCapabilities.All);
+        Assert.DoesNotContain(AgentCatalogCapabilities.Search, PlatformCapabilities.Global);
     }
 }

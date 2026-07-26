@@ -177,9 +177,79 @@ public sealed record WorkforceCandidate(
     string? Currency,
     decimal Score,
     string Rationale,
-    bool RequiresSeparateApproval);
+    bool RequiresSeparateApproval)
+{
+    /// <summary>
+    /// Optional installable source for agent candidates. The hiring workflow must preview and pin
+    /// the resolved manifest digest before presenting an owner approval.
+    /// </summary>
+    public string? RepositoryUrl { get; init; }
+}
 
 public sealed record RejectedWorkforceCandidate(string CandidateId, string Name, string Source, IReadOnlyList<string> Reasons);
+
+/// <summary>The authoritative source categories used by the unified agent catalog.</summary>
+public enum AgentCatalogSource
+{
+    Installed,
+    LocalDirectory,
+    FirstPartyCatalog,
+    Marketplace
+}
+
+/// <summary>The installation state of an agent visible through the catalog.</summary>
+public enum AgentAvailabilityState
+{
+    AvailableToInstall,
+    InstalledDisabled,
+    InstalledEnabled,
+    Unavailable
+}
+
+/// <summary>Source-independent agent catalog search criteria.</summary>
+public sealed record AvailableAgentSearchQuery(
+    string? Role = null,
+    string? SearchString = null,
+    IReadOnlyList<string>? RequiredCapabilities = null,
+    string? Category = null,
+    decimal? MaximumPrice = null,
+    string? Currency = null,
+    string? Sort = null,
+    int Limit = 25);
+
+/// <summary>A safe, source-independent agent listing. Local filesystem paths are never returned.</summary>
+public sealed record AvailableAgent(
+    string AgentReference,
+    string? AgentId,
+    AgentCatalogSource Source,
+    IReadOnlyList<AgentCatalogSource> AlternateSources,
+    AgentAvailabilityState Availability,
+    Guid? InstallationId,
+    string Name,
+    string Summary,
+    string Publisher,
+    string Category,
+    IReadOnlyList<string> RoleAliases,
+    IReadOnlyList<string> Keywords,
+    IReadOnlyList<string> Capabilities,
+    decimal? Price,
+    string? Currency,
+    decimal? Rating,
+    int RatingCount,
+    string? DocumentationUrl,
+    string? RepositoryUrl,
+    decimal Score,
+    string Trust);
+
+/// <summary>Health information for one catalog source. A failed source does not fail the aggregate search.</summary>
+public sealed record AgentCatalogSourceHealth(
+    AgentCatalogSource Source,
+    bool Available,
+    string? Message = null);
+
+public sealed record AvailableAgentSearchResult(
+    IReadOnlyList<AvailableAgent> Agents,
+    IReadOnlyList<AgentCatalogSourceHealth> Sources);
 
 public sealed record WorkforcePlanProposalRequest(
     Guid WorkstreamId,

@@ -23,6 +23,14 @@ allowed for a particular installation. Being listed here does not grant access.
 - `AgentConfigurationCapabilities.Update` — `agent.configuration.update.v1`
 - `AgentLifecycleCapabilities.CompleteOnboarding` — `agent.onboarding.complete.v1`
 
+## Agent catalog
+
+- `AgentCatalogCapabilities.Search` — `platform.agent-catalog.search.v1`
+
+This read-only grant allows an agent to search installed, local-directory, first-party, and
+marketplace agent listings through the brokered MCP tool. It does not authorize preview, import,
+installation, grant changes, hiring, assignment, or spending.
+
 ## Platform
 
 - `PlatformCapabilities.LlmChatStream` — `platform.llm.chat-stream.v1`

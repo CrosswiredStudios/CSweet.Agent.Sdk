@@ -26,7 +26,7 @@ public static class PlatformCapabilities
     {
         BusinessProfileRead, BusinessProfileUpdateExplicit, BusinessProfileProposeUpdate,
         OrganizationSnapshotRead, BusinessPatternSearch, WorkstreamPlanPropose,
-        WorkforceSearch, WorkforcePlanPropose, FinanceProfileRead,
+        WorkforceSearch, AgentCatalogCapabilities.Search, WorkforcePlanPropose, FinanceProfileRead,
         FinanceProfileProposeUpdate, BudgetEvaluate, ApprovalPropose, ManagementCycleRead,
         UserInputRequest, HiringRecommendationList, HiringRecommendationUpsert, HiringWorkflowStage
     };

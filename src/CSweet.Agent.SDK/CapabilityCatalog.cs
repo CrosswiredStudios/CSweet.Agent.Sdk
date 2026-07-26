@@ -42,6 +42,11 @@ public static class CapabilityNames
         public const string HiringWorkflowStage = "platform.hiring-workflow.stage.v1";
     }
 
+    public static class AgentCatalog
+    {
+        public const string Search = "platform.agent-catalog.search.v1";
+    }
+
     public static class Memory
     {
         public const string BusinessRead = "memory.business.read.v1";
@@ -108,6 +113,8 @@ public static class CapabilityCatalog
                 CapabilityNames.Agent.ConfigurationDescribe,
                 CapabilityNames.Agent.ConfigurationUpdate,
                 CapabilityNames.Agent.CompleteOnboarding),
+            ["agent-catalog"] = Set(
+                CapabilityNames.AgentCatalog.Search),
             ["platform"] = Set(
                 CapabilityNames.Platform.LlmChatStream,
                 CapabilityNames.Platform.BusinessProfileRead,
@@ -175,6 +182,12 @@ public static class AssistantCapabilities
     public const string Converse = CapabilityNames.Assistant.Converse;
     public const string SummarizeActivity = CapabilityNames.Assistant.SummarizeActivity;
     public const string PlanWork = CapabilityNames.Assistant.PlanWork;
+}
+
+/// <summary>Read-only discovery capabilities for installable and installed agents.</summary>
+public static class AgentCatalogCapabilities
+{
+    public const string Search = CapabilityNames.AgentCatalog.Search;
 }
 
 public static class AgentLifecycleCapabilities
