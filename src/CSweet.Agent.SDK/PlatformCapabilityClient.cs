@@ -67,6 +67,12 @@ public sealed class PlatformCapabilityClient
     public Task<HiringRecommendationResponse> UpsertHiringRecommendationAsync(UpsertHiringRecommendationRequest request, CancellationToken token = default) =>
         InvokeAsync<UpsertHiringRecommendationRequest, HiringRecommendationResponse>(PlatformCapabilities.HiringRecommendationUpsert, request, token);
 
+    public Task<HiringRecommendationResponse> ResolveHiringRecommendationAsync(ResolveHiringRecommendationRequest request, CancellationToken token = default) =>
+        InvokeAsync<ResolveHiringRecommendationRequest, HiringRecommendationResponse>(PlatformCapabilities.HiringRecommendationResolve, request, token);
+
+    public Task<SuggestedUserActionResponse> SuggestUserActionAsync(SuggestUserActionRequest request, CancellationToken token = default) =>
+        InvokeAsync<SuggestUserActionRequest, SuggestedUserActionResponse>(PlatformCapabilities.UserActionSuggest, request, token);
+
     public Task<HiringWorkflowResponse> StageHiringWorkflowAsync(StageHiringWorkflowRequest request, CancellationToken token = default) =>
         InvokeAsync<StageHiringWorkflowRequest, HiringWorkflowResponse>(PlatformCapabilities.HiringWorkflowStage, request, token);
 

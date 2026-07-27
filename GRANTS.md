@@ -61,7 +61,9 @@ installation, grant changes, hiring, assignment, or spending.
 - `PlatformCapabilities.UserInputRequest` — `platform.user-input.request.v1`
 - `PlatformCapabilities.HiringRecommendationList` — `platform.hiring-recommendation.list.v1`
 - `PlatformCapabilities.HiringRecommendationUpsert` — `platform.hiring-recommendation.upsert.v1`
+- `PlatformCapabilities.HiringRecommendationResolve` — `platform.hiring-recommendation.resolve.v1`
 - `PlatformCapabilities.HiringWorkflowStage` — `platform.hiring-workflow.stage.v1`
+- `PlatformCapabilities.UserActionSuggest` — `platform.user-action.suggest.v1`
 
 ## Memory
 

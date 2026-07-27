@@ -39,7 +39,9 @@ public static class CapabilityNames
         public const string UserInputRequest = "platform.user-input.request.v1";
         public const string HiringRecommendationList = "platform.hiring-recommendation.list.v1";
         public const string HiringRecommendationUpsert = "platform.hiring-recommendation.upsert.v1";
+        public const string HiringRecommendationResolve = "platform.hiring-recommendation.resolve.v1";
         public const string HiringWorkflowStage = "platform.hiring-workflow.stage.v1";
+        public const string UserActionSuggest = "platform.user-action.suggest.v1";
     }
 
     public static class AgentCatalog
@@ -133,6 +135,8 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.UserInputRequest,
                 CapabilityNames.Platform.HiringRecommendationList,
                 CapabilityNames.Platform.HiringRecommendationUpsert,
+                CapabilityNames.Platform.HiringRecommendationResolve,
+                CapabilityNames.Platform.UserActionSuggest,
                 CapabilityNames.Platform.HiringWorkflowStage),
             ["memory"] = Set(
                 CapabilityNames.Memory.BusinessRead,

@@ -310,9 +310,46 @@ public sealed record HiringRecommendationResponse(
 {
     public int Priority { get; init; } = 50;
     public string HiringUrl { get; init; } = string.Empty;
+    public string? SuggestedBy { get; init; }
 }
 
 public sealed record HiringBacklogResponse(IReadOnlyList<HiringRecommendationResponse> Recommendations);
+
+public sealed record ResolveHiringRecommendationRequest(
+    Guid RecommendationId,
+    Guid ResultOrganizationUserId,
+    string IdempotencyKey);
+
+public sealed record EmployeeHiredEvent(
+    Guid OrganizationId,
+    Guid OrganizationUserId,
+    string EmployeeType,
+    Guid? RoleId,
+    string? RoleTitle,
+    Guid? AgentInstallationId,
+    Guid? WorkerId,
+    Guid? ReportsToOrganizationUserId,
+    Guid? HiringOrganizationUserId,
+    string Source,
+    DateTimeOffset OccurredAt);
+
+public sealed record SuggestUserActionRequest(
+    Guid? MessageId,
+    Guid? ChatTurnId,
+    string WorkflowType,
+    string Label,
+    string? Description,
+    JsonElement Parameters,
+    string IdempotencyKey);
+
+public sealed record SuggestedUserActionResponse(
+    Guid Id,
+    string WorkflowType,
+    string Label,
+    string? Description,
+    string NavigationUri,
+    string Status,
+    DateTimeOffset CreatedAt);
 
 public sealed record StageHiringWorkflowRequest(
     Guid RecommendationId,

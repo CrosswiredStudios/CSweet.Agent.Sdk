@@ -20,7 +20,9 @@ public static class PlatformCapabilities
     public const string UserInputRequest = CapabilityNames.Platform.UserInputRequest;
     public const string HiringRecommendationList = CapabilityNames.Platform.HiringRecommendationList;
     public const string HiringRecommendationUpsert = CapabilityNames.Platform.HiringRecommendationUpsert;
+    public const string HiringRecommendationResolve = CapabilityNames.Platform.HiringRecommendationResolve;
     public const string HiringWorkflowStage = CapabilityNames.Platform.HiringWorkflowStage;
+    public const string UserActionSuggest = CapabilityNames.Platform.UserActionSuggest;
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -28,8 +30,19 @@ public static class PlatformCapabilities
         OrganizationSnapshotRead, BusinessPatternSearch, WorkstreamPlanPropose,
         WorkforceSearch, AgentCatalogCapabilities.Search, WorkforcePlanPropose, FinanceProfileRead,
         FinanceProfileProposeUpdate, BudgetEvaluate, ApprovalPropose, ManagementCycleRead,
-        UserInputRequest, HiringRecommendationList, HiringRecommendationUpsert, HiringWorkflowStage
+        UserInputRequest, HiringRecommendationList, HiringRecommendationUpsert,
+        HiringRecommendationResolve, HiringWorkflowStage, UserActionSuggest
     };
+}
+
+public static class HiringEvents
+{
+    public const string EmployeeHired = "com.csweet.employee.hired.v1";
+}
+
+public static class UserActionWorkflows
+{
+    public const string HiringMarketplaceBrowse = "hiring.marketplace.browse.v1";
 }
 
 public static class ManagementCapabilities
