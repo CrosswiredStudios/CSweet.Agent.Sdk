@@ -3,7 +3,7 @@
 `CSweet.Agent.SDK` 1.0 is the transport-neutral .NET authoring API for C-Sweet agents and service plugins. Implement callbacks and use typed platform clients; the SDK privately manages the outbound runtime, authentication, live grants, durable work, retries, progress, and shutdown.
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 1.0.0
+dotnet add package CSweet.Agent.SDK --version 1.0.1
 ```
 
 ```csharp
