@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <PackageId>CSweet.Agent.SDK</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Authors>C-Sweet</Authors>
     <Company>C-Sweet</Company>
     <Description>Transport-neutral SDK for building MCP-governed C-Sweet agents.</Description>
