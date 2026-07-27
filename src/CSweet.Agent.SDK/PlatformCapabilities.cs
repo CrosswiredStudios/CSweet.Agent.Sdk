@@ -21,6 +21,10 @@ public static class PlatformCapabilities
     public const string HiringRecommendationList = CapabilityNames.Platform.HiringRecommendationList;
     public const string HiringRecommendationUpsert = CapabilityNames.Platform.HiringRecommendationUpsert;
     public const string HiringRecommendationResolve = CapabilityNames.Platform.HiringRecommendationResolve;
+    public const string HiringRecommendationWithdraw = CapabilityNames.Platform.HiringRecommendationWithdraw;
+    public const string ResourceChangePropose = CapabilityNames.Platform.ResourceChangePropose;
+    public const string ResourceChangeRead = CapabilityNames.Platform.ResourceChangeRead;
+    public const string ResourceChangeDecide = CapabilityNames.Platform.ResourceChangeDecide;
     public const string HiringWorkflowStage = CapabilityNames.Platform.HiringWorkflowStage;
     public const string UserActionSuggest = CapabilityNames.Platform.UserActionSuggest;
 
@@ -31,7 +35,8 @@ public static class PlatformCapabilities
         WorkforceSearch, AgentCatalogCapabilities.Search, WorkforcePlanPropose, FinanceProfileRead,
         FinanceProfileProposeUpdate, BudgetEvaluate, ApprovalPropose, ManagementCycleRead,
         UserInputRequest, HiringRecommendationList, HiringRecommendationUpsert,
-        HiringRecommendationResolve, HiringWorkflowStage, UserActionSuggest
+        HiringRecommendationResolve, HiringRecommendationWithdraw, ResourceChangePropose,
+        ResourceChangeRead, ResourceChangeDecide, HiringWorkflowStage, UserActionSuggest
     };
 }
 
@@ -60,4 +65,6 @@ public static class ManagementEvents
     public const string ResourceNeedReported = "com.csweet.management.resource-need.reported.v1";
     public const string WorkstreamChanged = "com.csweet.workstream.changed.v1";
     public const string WorkforcePlanDecided = "com.csweet.workforce-plan.decided.v1";
+    public const string ResourceChangeRequested = "com.csweet.management.resource-change.requested.v1";
+    public const string ResourceChangeDecided = "com.csweet.management.resource-change.decided.v1";
 }

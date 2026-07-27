@@ -295,6 +295,9 @@ public sealed record UpsertHiringRecommendationRequest(
     string IdempotencyKey)
 {
     public int Priority { get; init; } = 50;
+    public string? RoleKey { get; init; }
+    public int Headcount { get; init; } = 1;
+    public Guid? SourceResourceChangeRequestId { get; init; }
 }
 
 public sealed record HiringCandidateResponse(
@@ -311,6 +314,9 @@ public sealed record HiringRecommendationResponse(
     public int Priority { get; init; } = 50;
     public string HiringUrl { get; init; } = string.Empty;
     public string? SuggestedBy { get; init; }
+    public string? RoleKey { get; init; }
+    public int Headcount { get; init; } = 1;
+    public Guid? SourceResourceChangeRequestId { get; init; }
 }
 
 public sealed record HiringBacklogResponse(IReadOnlyList<HiringRecommendationResponse> Recommendations);
@@ -319,6 +325,91 @@ public sealed record ResolveHiringRecommendationRequest(
     Guid RecommendationId,
     Guid ResultOrganizationUserId,
     string IdempotencyKey);
+
+public sealed record WithdrawHiringRecommendationRequest(
+    Guid RecommendationId,
+    string Reason,
+    string IdempotencyKey);
+
+public sealed record ResourceChangeRole(
+    string RoleKey,
+    string Team,
+    string Title,
+    string Purpose,
+    int Headcount,
+    int Priority,
+    string Timing,
+    IReadOnlyList<string> RequiredCapabilities,
+    bool HumanRequired,
+    Guid? ReportsToOrganizationUserId,
+    string? ReportsToRoleKey);
+
+public sealed record ResourceChangeProposalRequest(
+    Guid ConversationId,
+    Guid ChatTurnId,
+    string ProductGoal,
+    string Rationale,
+    long ContextRevision,
+    IReadOnlyList<ResourceChangeRole> Roles,
+    IReadOnlyList<string> Assumptions,
+    IReadOnlyList<string> Constraints,
+    Guid? SupersedesRequestId,
+    string IdempotencyKey);
+
+public sealed record ResourceChangeRoleDelta(
+    string ChangeKind,
+    ResourceChangeRole Role,
+    ResourceChangeRole? PreviousRole);
+
+public sealed record ResourceChangeRequestResponse(
+    Guid Id,
+    Guid OrganizationId,
+    Guid RequesterOrganizationUserId,
+    Guid RequesterInstallationId,
+    Guid ManagerOrganizationUserId,
+    Guid ConversationId,
+    Guid ChatTurnId,
+    string ProductGoal,
+    string Rationale,
+    long ContextRevision,
+    IReadOnlyList<ResourceChangeRole> Roles,
+    IReadOnlyList<ResourceChangeRoleDelta> Deltas,
+    IReadOnlyList<string> Assumptions,
+    IReadOnlyList<string> Constraints,
+    Guid? SupersedesRequestId,
+    string Status,
+    string DeliveryStatus,
+    string? DecisionComment,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? DecidedAt);
+
+public sealed record ResourceChangeReadRequest(
+    Guid? RequestId = null,
+    IReadOnlyList<string>? Statuses = null);
+
+public sealed record ResourceChangeReadResponse(
+    IReadOnlyList<ResourceChangeRequestResponse> Requests);
+
+public static class ResourceChangeDecisionKinds
+{
+    public const string Approve = "Approve";
+    public const string RequestRevision = "RequestRevision";
+    public const string Reject = "Reject";
+}
+
+public sealed record ResourceChangeDecisionRequest(
+    Guid RequestId,
+    string Decision,
+    string? Comment,
+    string IdempotencyKey);
+
+public sealed record ResourceChangeDecisionEvent(
+    Guid RequestId,
+    Guid OrganizationId,
+    Guid RequesterOrganizationUserId,
+    Guid ManagerOrganizationUserId,
+    string Status,
+    DateTimeOffset OccurredAt);
 
 public sealed record EmployeeHiredEvent(
     Guid OrganizationId,

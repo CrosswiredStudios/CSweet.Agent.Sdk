@@ -70,6 +70,18 @@ public sealed class PlatformCapabilityClient
     public Task<HiringRecommendationResponse> ResolveHiringRecommendationAsync(ResolveHiringRecommendationRequest request, CancellationToken token = default) =>
         InvokeAsync<ResolveHiringRecommendationRequest, HiringRecommendationResponse>(PlatformCapabilities.HiringRecommendationResolve, request, token);
 
+    public Task<HiringRecommendationResponse> WithdrawHiringRecommendationAsync(WithdrawHiringRecommendationRequest request, CancellationToken token = default) =>
+        InvokeAsync<WithdrawHiringRecommendationRequest, HiringRecommendationResponse>(PlatformCapabilities.HiringRecommendationWithdraw, request, token);
+
+    public Task<ResourceChangeRequestResponse> ProposeResourceChangeAsync(ResourceChangeProposalRequest request, CancellationToken token = default) =>
+        InvokeAsync<ResourceChangeProposalRequest, ResourceChangeRequestResponse>(PlatformCapabilities.ResourceChangePropose, request, token);
+
+    public Task<ResourceChangeReadResponse> ReadResourceChangesAsync(ResourceChangeReadRequest request, CancellationToken token = default) =>
+        InvokeAsync<ResourceChangeReadRequest, ResourceChangeReadResponse>(PlatformCapabilities.ResourceChangeRead, request, token);
+
+    public Task<ResourceChangeRequestResponse> DecideResourceChangeAsync(ResourceChangeDecisionRequest request, CancellationToken token = default) =>
+        InvokeAsync<ResourceChangeDecisionRequest, ResourceChangeRequestResponse>(PlatformCapabilities.ResourceChangeDecide, request, token);
+
     public Task<SuggestedUserActionResponse> SuggestUserActionAsync(SuggestUserActionRequest request, CancellationToken token = default) =>
         InvokeAsync<SuggestUserActionRequest, SuggestedUserActionResponse>(PlatformCapabilities.UserActionSuggest, request, token);
 

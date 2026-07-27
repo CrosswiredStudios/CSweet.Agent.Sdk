@@ -40,6 +40,10 @@ public static class CapabilityNames
         public const string HiringRecommendationList = "platform.hiring-recommendation.list.v1";
         public const string HiringRecommendationUpsert = "platform.hiring-recommendation.upsert.v1";
         public const string HiringRecommendationResolve = "platform.hiring-recommendation.resolve.v1";
+        public const string HiringRecommendationWithdraw = "platform.hiring-recommendation.withdraw.v1";
+        public const string ResourceChangePropose = "platform.management.resource-change.propose.v1";
+        public const string ResourceChangeRead = "platform.management.resource-change.read.v1";
+        public const string ResourceChangeDecide = "platform.management.resource-change.decide.v1";
         public const string HiringWorkflowStage = "platform.hiring-workflow.stage.v1";
         public const string UserActionSuggest = "platform.user-action.suggest.v1";
     }
@@ -136,6 +140,10 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.HiringRecommendationList,
                 CapabilityNames.Platform.HiringRecommendationUpsert,
                 CapabilityNames.Platform.HiringRecommendationResolve,
+                CapabilityNames.Platform.HiringRecommendationWithdraw,
+                CapabilityNames.Platform.ResourceChangePropose,
+                CapabilityNames.Platform.ResourceChangeRead,
+                CapabilityNames.Platform.ResourceChangeDecide,
                 CapabilityNames.Platform.UserActionSuggest,
                 CapabilityNames.Platform.HiringWorkflowStage),
             ["memory"] = Set(

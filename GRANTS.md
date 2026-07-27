@@ -62,6 +62,10 @@ installation, grant changes, hiring, assignment, or spending.
 - `PlatformCapabilities.HiringRecommendationList` — `platform.hiring-recommendation.list.v1`
 - `PlatformCapabilities.HiringRecommendationUpsert` — `platform.hiring-recommendation.upsert.v1`
 - `PlatformCapabilities.HiringRecommendationResolve` — `platform.hiring-recommendation.resolve.v1`
+- `PlatformCapabilities.HiringRecommendationWithdraw` — `platform.hiring-recommendation.withdraw.v1`
+- `PlatformCapabilities.ResourceChangePropose` — `platform.management.resource-change.propose.v1`
+- `PlatformCapabilities.ResourceChangeRead` — `platform.management.resource-change.read.v1`
+- `PlatformCapabilities.ResourceChangeDecide` — `platform.management.resource-change.decide.v1`
 - `PlatformCapabilities.HiringWorkflowStage` — `platform.hiring-workflow.stage.v1`
 - `PlatformCapabilities.UserActionSuggest` — `platform.user-action.suggest.v1`
 
