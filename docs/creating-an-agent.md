@@ -35,6 +35,41 @@ The root `csweet-plugin.json` must use `manifestVersion: "2.0"` and protocol `2.
 
 Use typed methods on `context.Platform` for normal platform calls. Use `context.GetModelToolsAsync()` to obtain only live, model-visible tools from the current grant revision. Use `context.CreateChatClient(selection)` for platform-governed model streaming. Never cache tools beyond the revision returned by the SDK.
 
+Agent-facing work request and response types live in `CSweet.WorkManagement.Contracts`, a
+dependency-light package shared by the SDK and platform broker. Use those DTOs at the API boundary;
+keep agent-specific and platform-domain models behind that boundary.
+
+For agents that receive and complete operational work, request only the work capabilities they
+actually use:
+
+```json
+{
+  "requires": [
+    {
+      "name": "work.board.read",
+      "scope": "board",
+      "purpose": "Discover the boards assigned to this agent."
+    },
+    {
+      "name": "work.item.read",
+      "scope": "board",
+      "purpose": "Read assigned work and its current revision."
+    },
+    {
+      "name": "work.item.complete",
+      "scope": "board",
+      "purpose": "Mark successfully delivered work complete."
+    }
+  ]
+}
+```
+
+The manifest request is only the package-level gate. An organization administrator must also
+grant the installation those actions on specific boards. Use
+`context.Platform.Work.ListBoardsAsync()` and `ReadBoardAsync()` to obtain canonical work items,
+then pass the returned revision to mutations such as `CompleteAsync()`. Reusing the same
+idempotency key safely replays the original mutation result.
+
 Progress must be useful, bounded, and ordered; the SDK assigns monotonic sequence numbers. Honor the callback cancellation token. Make external side effects idempotent with the domain key supplied by the work item, because work is delivered at least once after a crash or expired lease.
 
 Tests require no network credential:

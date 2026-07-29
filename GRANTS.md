@@ -98,6 +98,35 @@ installation, grant changes, hiring, assignment, or spending.
 - `ProductManagementCapabilities.Plan` — `product-management.plan.v1`
 - `ProductManagementCapabilities.ContextUpdate` — `product-management.context.update.v1`
 
+## Work management
+
+Work-management capabilities require both an approved package capability and a live scoped grant
+on the organization or board. SDK calls never bypass the board grant model. Mutation requests
+include an idempotency key and, where applicable, the last observed resource revision.
+
+- `WorkBoardCapabilities.Read` — `work.board.read`
+- `WorkBoardCapabilities.Create` — `work.board.create`
+- `WorkItemCapabilities.Read` — `work.item.read`
+- `WorkItemCapabilities.Create` — `work.item.create`
+- `WorkItemCapabilities.Comment` — `work.item.comment`
+- `WorkItemCapabilities.Estimate` — `work.item.estimate`
+- `WorkItemCapabilities.Move` — `work.item.move`
+- `WorkItemCapabilities.Complete` — `work.item.complete`
+- `WorkItemCapabilities.Cancel` — `work.item.cancel`
+- `WorkItemCapabilities.Reopen` — `work.item.reopen`
+- `WorkItemCapabilities.Transfer` — `work.item.transfer`
+- `WorkSprintCapabilities.Read` — `work.sprint.read`
+- `WorkSprintCapabilities.Create` — `work.sprint.create`
+- `WorkSprintCapabilities.Start` — `work.sprint.start`
+- `WorkSprintCapabilities.Complete` — `work.sprint.complete`
+- `WorkSprintCapabilities.Cancel` — `work.sprint.cancel`
+- `WorkSprintCapabilities.ManageScope` — `work.sprint.scope.manage`
+- `WorkSprintCapabilities.ManageCapacity` — `work.sprint.capacity.manage`
+- `WorkSprintCapabilities.CarryOver` — `work.sprint.carryover`
+- `WorkSprintCapabilities.ReadReports` — `work.sprint.report.read`
+- `WorkAutomationCapabilities.Read` — `work.automation.read`
+- `WorkAutomationCapabilities.Manage` — `work.automation.manage`
+
 ## Web proxy
 
 - `WebCapabilities.Fetch` — `web.fetch.v1`

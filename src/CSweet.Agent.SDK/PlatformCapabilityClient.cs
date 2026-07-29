@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CSweet.Agent.SDK.WorkManagement;
 using Microsoft.Extensions.AI;
 
 namespace CSweet.Agent.SDK;
@@ -13,11 +14,13 @@ public sealed class PlatformCapabilityClient
     {
         _tools = tools;
         Memory = new PlatformMemoryClient(tools);
+        Work = new PlatformWorkClient(tools);
     }
 
     internal IPlatformToolInvoker Tools => _tools;
 
     public PlatformMemoryClient Memory { get; }
+    public PlatformWorkClient Work { get; }
 
     public Task<BusinessProfileResponse> ReadBusinessProfileAsync(CancellationToken token = default) =>
         InvokeAsync<object, BusinessProfileResponse>(PlatformCapabilities.BusinessProfileRead, new { }, token);

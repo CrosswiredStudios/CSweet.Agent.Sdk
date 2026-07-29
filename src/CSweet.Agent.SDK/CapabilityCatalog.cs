@@ -1,3 +1,5 @@
+using CSweet.WorkManagement.Contracts;
+
 namespace CSweet.Agent.SDK;
 
 /// <summary>
@@ -89,6 +91,32 @@ public static class CapabilityNames
         public const string ContextUpdate = "product-management.context.update.v1";
     }
 
+    public static class WorkManagement
+    {
+        public const string BoardRead = WorkManagementCapabilityNames.BoardRead;
+        public const string BoardCreate = WorkManagementCapabilityNames.BoardCreate;
+        public const string ItemRead = WorkManagementCapabilityNames.ItemRead;
+        public const string ItemCreate = WorkManagementCapabilityNames.ItemCreate;
+        public const string ItemComment = WorkManagementCapabilityNames.ItemComment;
+        public const string ItemEstimate = WorkManagementCapabilityNames.ItemEstimate;
+        public const string ItemMove = WorkManagementCapabilityNames.ItemMove;
+        public const string ItemComplete = WorkManagementCapabilityNames.ItemComplete;
+        public const string ItemCancel = WorkManagementCapabilityNames.ItemCancel;
+        public const string ItemReopen = WorkManagementCapabilityNames.ItemReopen;
+        public const string ItemTransfer = WorkManagementCapabilityNames.ItemTransfer;
+        public const string SprintRead = WorkManagementCapabilityNames.SprintRead;
+        public const string SprintCreate = WorkManagementCapabilityNames.SprintCreate;
+        public const string SprintStart = WorkManagementCapabilityNames.SprintStart;
+        public const string SprintComplete = WorkManagementCapabilityNames.SprintComplete;
+        public const string SprintCancel = WorkManagementCapabilityNames.SprintCancel;
+        public const string SprintManageScope = WorkManagementCapabilityNames.SprintManageScope;
+        public const string SprintManageCapacity = WorkManagementCapabilityNames.SprintManageCapacity;
+        public const string SprintCarryOver = WorkManagementCapabilityNames.SprintCarryOver;
+        public const string SprintReadReports = WorkManagementCapabilityNames.SprintReadReports;
+        public const string AutomationRead = WorkManagementCapabilityNames.AutomationRead;
+        public const string AutomationManage = WorkManagementCapabilityNames.AutomationManage;
+    }
+
     public static class Web
     {
         public const string Fetch = "web.fetch.v1";
@@ -170,6 +198,29 @@ public static class CapabilityCatalog
             ["product-management"] = Set(
                 CapabilityNames.ProductManagement.Plan,
                 CapabilityNames.ProductManagement.ContextUpdate),
+            ["work-management"] = Set(
+                CapabilityNames.WorkManagement.BoardRead,
+                CapabilityNames.WorkManagement.BoardCreate,
+                CapabilityNames.WorkManagement.ItemRead,
+                CapabilityNames.WorkManagement.ItemCreate,
+                CapabilityNames.WorkManagement.ItemComment,
+                CapabilityNames.WorkManagement.ItemEstimate,
+                CapabilityNames.WorkManagement.ItemMove,
+                CapabilityNames.WorkManagement.ItemComplete,
+                CapabilityNames.WorkManagement.ItemCancel,
+                CapabilityNames.WorkManagement.ItemReopen,
+                CapabilityNames.WorkManagement.ItemTransfer,
+                CapabilityNames.WorkManagement.SprintRead,
+                CapabilityNames.WorkManagement.SprintCreate,
+                CapabilityNames.WorkManagement.SprintStart,
+                CapabilityNames.WorkManagement.SprintComplete,
+                CapabilityNames.WorkManagement.SprintCancel,
+                CapabilityNames.WorkManagement.SprintManageScope,
+                CapabilityNames.WorkManagement.SprintManageCapacity,
+                CapabilityNames.WorkManagement.SprintCarryOver,
+                CapabilityNames.WorkManagement.SprintReadReports,
+                CapabilityNames.WorkManagement.AutomationRead,
+                CapabilityNames.WorkManagement.AutomationManage),
             ["web"] = Set(
                 CapabilityNames.Web.Fetch,
                 CapabilityNames.Web.Request,
@@ -236,6 +287,44 @@ public static class ProductManagementCapabilities
     public const string Escalation = CapabilityNames.Management.ProductEscalation;
     public const string Plan = CapabilityNames.ProductManagement.Plan;
     public const string ContextUpdate = CapabilityNames.ProductManagement.ContextUpdate;
+}
+
+public static class WorkBoardCapabilities
+{
+    public const string Read = CapabilityNames.WorkManagement.BoardRead;
+    public const string Create = CapabilityNames.WorkManagement.BoardCreate;
+}
+
+public static class WorkItemCapabilities
+{
+    public const string Read = CapabilityNames.WorkManagement.ItemRead;
+    public const string Create = CapabilityNames.WorkManagement.ItemCreate;
+    public const string Comment = CapabilityNames.WorkManagement.ItemComment;
+    public const string Estimate = CapabilityNames.WorkManagement.ItemEstimate;
+    public const string Move = CapabilityNames.WorkManagement.ItemMove;
+    public const string Complete = CapabilityNames.WorkManagement.ItemComplete;
+    public const string Cancel = CapabilityNames.WorkManagement.ItemCancel;
+    public const string Reopen = CapabilityNames.WorkManagement.ItemReopen;
+    public const string Transfer = CapabilityNames.WorkManagement.ItemTransfer;
+}
+
+public static class WorkSprintCapabilities
+{
+    public const string Read = CapabilityNames.WorkManagement.SprintRead;
+    public const string Create = CapabilityNames.WorkManagement.SprintCreate;
+    public const string Start = CapabilityNames.WorkManagement.SprintStart;
+    public const string Complete = CapabilityNames.WorkManagement.SprintComplete;
+    public const string Cancel = CapabilityNames.WorkManagement.SprintCancel;
+    public const string ManageScope = CapabilityNames.WorkManagement.SprintManageScope;
+    public const string ManageCapacity = CapabilityNames.WorkManagement.SprintManageCapacity;
+    public const string CarryOver = CapabilityNames.WorkManagement.SprintCarryOver;
+    public const string ReadReports = CapabilityNames.WorkManagement.SprintReadReports;
+}
+
+public static class WorkAutomationCapabilities
+{
+    public const string Read = CapabilityNames.WorkManagement.AutomationRead;
+    public const string Manage = CapabilityNames.WorkManagement.AutomationManage;
 }
 
 public static class WebCapabilities

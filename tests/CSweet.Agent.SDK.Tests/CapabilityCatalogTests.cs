@@ -1,5 +1,6 @@
 using System.Reflection;
 using CSweet.Agent.SDK;
+using CSweet.WorkManagement.Contracts;
 
 namespace CSweet.Agent.SDK.Tests;
 
@@ -35,7 +36,8 @@ public sealed class CapabilityCatalogTests
                 "platform",
                 "plugin",
                 "product-management",
-                "web"
+                "web",
+                "work-management"
             ],
             CapabilityCatalog.ByService.Keys.Order(StringComparer.Ordinal));
         Assert.All(
@@ -49,5 +51,13 @@ public sealed class CapabilityCatalogTests
         Assert.Equal("platform.agent-catalog.search.v1", AgentCatalogCapabilities.Search);
         Assert.True(CapabilityCatalog.IsKnown(AgentCatalogCapabilities.Search));
         Assert.Contains(AgentCatalogCapabilities.Search, PlatformCapabilities.All);
+    }
+
+    [Fact]
+    public void WorkManagementCatalog_ExactlyMatchesSharedContract()
+    {
+        Assert.Equal(
+            WorkManagementCapabilityNames.All.Order(StringComparer.Ordinal),
+            CapabilityCatalog.ByService["work-management"].Order(StringComparer.Ordinal));
     }
 }

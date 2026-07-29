@@ -21,7 +21,7 @@ if not defined OUTPUT_ROOT set "OUTPUT_ROOT=artifacts\packages"
 set "OUTPUT_DIRECTORY=%OUTPUT_ROOT%\%PACKAGE_VERSION%"
 for %%I in ("%OUTPUT_DIRECTORY%") do set "OUTPUT_DIRECTORY=%%~fI"
 
-set "VERSION_PROPERTY=-p:Version=%PACKAGE_VERSION%"
+set "VERSION_PROPERTY=-p:CSweetAgentSdkPackageVersion=%PACKAGE_VERSION%"
 
 echo Package version: %PACKAGE_VERSION%
 
