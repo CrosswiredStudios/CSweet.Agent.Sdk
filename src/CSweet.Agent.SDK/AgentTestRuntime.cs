@@ -75,11 +75,16 @@ public sealed class AgentTestRuntime
         ICSweetAgent agent,
         string eventType,
         object data,
+        Guid? eventId = null,
         CancellationToken cancellationToken = default)
     {
+        var stableEventId = eventId ?? Guid.NewGuid();
+        if (stableEventId == Guid.Empty)
+            throw new ArgumentException("Event ID must not be empty.", nameof(eventId));
         await agent.HandleEventAsync(
             new AgentEventEnvelope(
                 Guid.NewGuid(),
+                stableEventId,
                 eventType,
                 JsonSerializer.SerializeToElement(data, JsonOptions),
                 DateTimeOffset.UtcNow,

@@ -1,6 +1,6 @@
 # C-Sweet Agent SDK
 
-`CSweet.Agent.SDK` 1.1.1 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 2.0.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -17,7 +17,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 1.1.1
+  --SdkVersion 2.0.0
 cd ResearchAgent
 dotnet test
 ```
@@ -25,7 +25,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 1.1.1
+dotnet add package CSweet.Agent.SDK --version 2.0.0
 ```
 
 ```csharp
@@ -53,6 +53,7 @@ sealed class MyAgent : CSweetAgentBase
   [generated capability reference](GRANTS.md)
 - Import and release: [Testing and release](docs/testing-and-release.md)
 - Existing protocol-v1 agents: [Migrating to 1.0](docs/migrating-to-1.0.md)
+- Existing SDK 1.x agents: [Migrating to SDK 2.0](docs/migrating-to-2.0.md)
 
 `AgentRuntimeContext.Platform` exposes typed, grant-governed services.
 `GetModelToolsAsync()` returns the current model-visible grant.

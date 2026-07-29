@@ -326,6 +326,10 @@ internal sealed class McpAgentRuntimeClient(
         RequiredString(work, "leaseToken"),
         work.GetProperty("leaseExpiresAt").GetDateTimeOffset(),
         work.GetProperty("deadline").GetDateTimeOffset(),
+        work.TryGetProperty("eventId", out var eventId) &&
+        eventId.ValueKind is not JsonValueKind.Null
+            ? eventId.GetGuid()
+            : null,
         work.TryGetProperty("correlationId", out var correlationId) ? correlationId.GetString() : null);
 
     private static string RequiredString(JsonElement element, string name) =>

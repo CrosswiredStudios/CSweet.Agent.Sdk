@@ -179,6 +179,10 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         await agent.HandleEventAsync(
             new AgentEventEnvelope(
                 lease.WorkId,
+                lease.EventId is { } eventId && eventId != Guid.Empty
+                    ? eventId
+                    : throw new InvalidOperationException(
+                        "The platform omitted the stable event ID for event work."),
                 lease.Name,
                 lease.Payload,
                 DateTimeOffset.UtcNow,

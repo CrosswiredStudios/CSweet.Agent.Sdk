@@ -54,8 +54,20 @@ Events are durable, exact-installation work. Subscribe only to known events whos
 agent understands. Compare `message.EventType` to SDK constants where available, and deserialize
 `message.Data` into a typed record.
 
+`message.WorkId` identifies one durable delivery and may change when the same domain event is
+delivered elsewhere. `message.EventId` is the authoritative, stable identity of the originating
+event and must be used for domain idempotency. The platform supplies both values; agents must
+never derive one from the other.
+
+Agent onboarding uses the SDK-owned `AgentLifecycleEvents.Onboarded` and
+`AgentOnboardedEvent` contracts. After completing the first-message workflow, acknowledge it with
+`context.Platform.Lifecycle.CompleteOnboardingAsync(message, cancellationToken)`. This typed
+operation always uses `message.EventId`; agents must not construct the completion request
+themselves.
+
 Stable SDK event constants currently include:
 
+- `AgentLifecycleEvents.Onboarded`
 - `HiringEvents.EmployeeHired`
 - `ManagementEvents.ReviewDue`
 - `ManagementEvents.StatusReported`

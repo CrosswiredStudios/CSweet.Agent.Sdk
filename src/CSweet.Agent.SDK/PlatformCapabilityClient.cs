@@ -13,12 +13,14 @@ public sealed class PlatformCapabilityClient
     internal PlatformCapabilityClient(IPlatformToolInvoker tools)
     {
         _tools = tools;
+        Lifecycle = new PlatformAgentLifecycleClient(tools);
         Memory = new PlatformMemoryClient(tools);
         Work = new PlatformWorkClient(tools);
     }
 
     internal IPlatformToolInvoker Tools => _tools;
 
+    public PlatformAgentLifecycleClient Lifecycle { get; }
     public PlatformMemoryClient Memory { get; }
     public PlatformWorkClient Work { get; }
 

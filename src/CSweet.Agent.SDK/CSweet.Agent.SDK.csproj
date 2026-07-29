@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <PackageId>CSweet.Agent.SDK</PackageId>
-    <Version>1.1.1</Version>
+    <Version>2.0.0</Version>
     <PackageVersion Condition="'$(CSweetAgentSdkPackageVersion)' != ''">$(CSweetAgentSdkPackageVersion)</PackageVersion>
     <Authors>C-Sweet</Authors>
     <Company>C-Sweet</Company>
@@ -43,6 +43,7 @@
     <None Include="..\..\docs\manifest-reference.md" Pack="true" PackagePath="docs\" />
     <None Include="..\..\docs\capabilities-and-events.md" Pack="true" PackagePath="docs\" />
     <None Include="..\..\docs\testing-and-release.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\docs\migrating-to-2.0.md" Pack="true" PackagePath="docs\" />
     <None Include="..\..\schemas\csweet-plugin.v2.schema.json" Pack="true" PackagePath="schemas\" />
   </ItemGroup>
 </Project>

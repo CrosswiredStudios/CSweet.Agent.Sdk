@@ -24,12 +24,12 @@ public sealed record AgentCapabilityRequest(
 
 public sealed record AgentEventEnvelope(
     Guid WorkId,
+    Guid EventId,
     string EventType,
     JsonElement Data,
     DateTimeOffset OccurredAt,
     string? CorrelationId = null)
 {
-    public string EventId => WorkId.ToString("N");
     public JsonElement Payload => Data;
 }
 
@@ -65,6 +65,7 @@ public sealed record AgentWorkLease(
     string LeaseToken,
     DateTimeOffset LeaseExpiresAt,
     DateTimeOffset Deadline,
+    Guid? EventId,
     string? CorrelationId);
 
 internal sealed record AgentToolDescriptor(
