@@ -54,7 +54,16 @@ public sealed record AgentRuntimeSession(
     string SessionId,
     DateTimeOffset ExpiresAt,
     long GrantRevision,
-    AgentIdentity? Identity);
+    AgentIdentity? Identity,
+    AgentRuntimeConfiguration? Configuration);
+
+/// <summary>
+/// The platform-owned installation configuration captured when a runtime session is established.
+/// The SDK applies this snapshot before activation callbacks or durable work are allowed to run.
+/// </summary>
+public sealed record AgentRuntimeConfiguration(
+    string SchemaVersion,
+    IReadOnlyDictionary<string, JsonElement> Settings);
 
 public sealed record AgentWorkLease(
     Guid WorkId,

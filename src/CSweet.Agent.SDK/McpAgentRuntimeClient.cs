@@ -60,11 +60,16 @@ internal sealed class McpAgentRuntimeClient(
                        identityElement.ValueKind == JsonValueKind.Object
             ? identityElement.Deserialize<AgentIdentity>(JsonOptions)
             : null;
+        var configuration = meta.TryGetProperty("configuration", out var configurationElement) &&
+                            configurationElement.ValueKind == JsonValueKind.Object
+            ? configurationElement.Deserialize<AgentRuntimeConfiguration>(JsonOptions)
+            : null;
         Session = new AgentRuntimeSession(
             sessionId,
             expiresAt,
             meta.GetProperty("grantRevision").GetInt64(),
-            identity);
+            identity,
+            configuration);
         return Session;
     }
 

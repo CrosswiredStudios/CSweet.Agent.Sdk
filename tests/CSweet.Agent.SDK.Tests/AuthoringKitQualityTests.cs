@@ -52,12 +52,14 @@ public sealed partial class AuthoringKitQualityTests
     public void Version_IsSynchronizedAcrossAuthoringSurfaces()
     {
         var root = RepositoryRoot();
-        const string version = "2.0.0";
+        const string version = "2.0.1";
         var files = new[]
         {
             "src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj",
             "README.md",
             "AGENT_AUTHORING.md",
+            "docs/creating-an-agent.md",
+            "scripts/verify-authoring-template.ps1",
             "templates/CSweet.Agent.Template/.template.config/template.json",
             "templates/CSweet.Agent.Template/README.md",
             "templates/CSweet.Agent.Template/src/CSweet.Agent.Template/CSweet.Agent.Template.csproj"
@@ -155,7 +157,7 @@ public sealed partial class AuthoringKitQualityTests
             "src",
             "CSweet.Agent.Template",
             "CSweet.Agent.Template.csproj"));
-        Assert.Contains("<PackageReference Include=\"CSweet.Agent.SDK\" Version=\"2.0.0\"", project);
+        Assert.Contains("<PackageReference Include=\"CSweet.Agent.SDK\" Version=\"2.0.1\"", project);
         Assert.DoesNotContain("<ProjectReference", project);
     }
 
@@ -165,7 +167,7 @@ public sealed partial class AuthoringKitQualityTests
         var root = RepositoryRoot();
         var package = Directory.EnumerateFiles(
                 Path.Combine(root, "artifacts"),
-                "CSweet.Agent.SDK.2.0.0.nupkg",
+                "CSweet.Agent.SDK.2.0.1.nupkg",
                 SearchOption.TopDirectoryOnly)
             .OrderByDescending(File.GetLastWriteTimeUtc)
             .FirstOrDefault();

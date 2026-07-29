@@ -42,6 +42,20 @@ Keep the SDK version synchronized in the project, README, template defaults, sam
 tests. Keep manifest validation synchronized with C-Sweet's protocol-v2 importer. Documentation
 examples must compile or be exercised by tests.
 
+## Package versioning
+
+- Every change to code shipped by `CSweet.Agent.SDK` must increment the package version in
+  `src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj` before the work is considered complete. Local
+  project references can hide a stale package version, so an unchanged version is not acceptable.
+- Use semantic versioning: increment the patch/build number for compatible fixes, the minor number
+  for additive public authoring APIs, and the major number for breaking public authoring APIs,
+  unless the user explicitly requests a different release number.
+- Synchronize the selected version across the README, authoring documentation, template defaults,
+  template verification script, samples, and package/version tests. Update pinned SDK references
+  in any downstream repository changed as part of the same work.
+- Run the required tests and pack the SDK. Confirm that the generated `.nupkg` filename and NuGet
+  metadata contain the new version before handing the work back.
+
 ## Required verification
 
 Run from the repository root:

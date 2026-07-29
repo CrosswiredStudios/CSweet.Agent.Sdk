@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CSweet.Agent.Contracts.Packaging;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -29,9 +30,14 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 var platform = new PlatformCapabilityClient(runtime);
                 platformAccessor.SetCurrent(platform);
                 var connectedContext = CreateContext(platform, session.Identity, UnavailableProgressReporter.Instance);
+                await ApplyInitialConfigurationAsync(
+                    agent,
+                    session,
+                    connectedContext,
+                    stoppingToken);
 
                 logger.LogInformation(
-                    "Agent {AgentId} {Version} established MCP runtime session {SessionId} for installation {InstallationId}.",
+                    "Agent {AgentId} {Version} established configured MCP runtime session {SessionId} for installation {InstallationId}.",
                     agent.AgentId,
                     agent.Version,
                     session.SessionId,
@@ -81,6 +87,33 @@ internal sealed class AgentRuntimeWorker<TAgent>(
             }
 
             await Task.Delay(RetryDelay, stoppingToken);
+        }
+    }
+
+    internal static async Task ApplyInitialConfigurationAsync(
+        ICSweetAgent agent,
+        AgentRuntimeSession session,
+        AgentRuntimeContext context,
+        CancellationToken cancellationToken)
+    {
+        if (session.Configuration is null)
+            return;
+
+        var result = await agent.ExecuteCapabilityAsync(
+            new AgentCapabilityRequest(
+                Guid.NewGuid(),
+                AgentConfigurationCapabilities.Update,
+                JsonSerializer.SerializeToElement(
+                    new UpdateAgentConfigurationRequest(session.Configuration.Settings),
+                    CSweetAgentBase.SerializerOptions),
+                $"runtime-session:{session.SessionId}"),
+            context,
+            cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException(
+                $"The platform installation configuration could not be applied: {result.Error ?? "The agent rejected the configuration."}");
         }
     }
 
