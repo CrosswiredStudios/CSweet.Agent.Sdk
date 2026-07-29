@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/HelloAgent/HelloAgent.csproj" />
+  <Project Path="tests/HelloAgent.Tests/HelloAgent.Tests.csproj" />
+</Solution>

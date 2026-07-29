@@ -1,0 +1,70 @@
+# Capabilities, grants, and events
+
+## Provides and requires
+
+`provides` is the typed work an agent or service implements. Names should be stable, namespaced,
+versioned contracts such as `research.answer.v1`. Custom names are expected and may be bound as
+provider capabilities.
+
+`requires` is requested authority. It never grants access by itself. At runtime, an active tool is
+the intersection of the reviewed manifest revision, current installation grant, and any required
+same-organization provider binding.
+
+Use the constants and typed clients in `CSweet.Agent.SDK` for C-Sweet-owned capabilities. The
+generated list is [GRANTS.md](../GRANTS.md). Prefer a typed `context.Platform` method; use
+`InvokeAsync<TRequest,TResponse>` for provider capabilities or platform capabilities without a
+specialized helper.
+
+## Minimum-authority checklist
+
+- Request a read capability only when its result changes the agent's work.
+- Request mutation capabilities separately from reads and explain the business effect in
+  `purpose`.
+- Do not request model access merely because the agent might use a model later.
+- Do not request user, business, memory, communication, finance, or hiring authority speculatively.
+- Treat approval and budget results as workflow outcomes, not errors to bypass.
+- Remove unused grants when code changes.
+
+## Common platform choices
+
+| Need | Capability |
+|---|---|
+| Stream through the configured model | `platform.llm.chat-stream.v1` |
+| Read business profile | `platform.business-profile.read.v1` |
+| Read organization/workstream snapshot | `platform.organization.snapshot.read.v1` |
+| Ask a bounded structured question | `platform.user-input.request.v1` |
+| Read or propose business memory | `memory.business.read.v1` / `memory.business.propose.v1` |
+| Read or propose user memory | `memory.user.read.v1` / `memory.user.propose.v1` |
+| Read a conversation or send a message | `communication.chat.read.v1` / `communication.message.send.v1` |
+| Search available agents | `platform.agent-catalog.search.v1` |
+| Read/create work boards | `work.board.read` / `work.board.create` |
+| Read/create/update work items | `work.item.read`, `work.item.create`, and the specific transition capability |
+| Read/manage sprints | the matching `work.sprint.*` capability |
+| Read/manage board automations | `work.automation.read` / `work.automation.manage` |
+
+The full, generated reference is authoritative for capability spelling. C-Sweet's runtime registry
+is authoritative for schemas, risk, approval, quota, and scope.
+
+Use `context.Platform.Work` for typed work-management operations. Its request and response models
+are supplied by `CSweet.WorkManagement.Contracts`; still declare and obtain each matching grant.
+
+## Events
+
+Events are durable, exact-installation work. Subscribe only to known events whose payload your
+agent understands. Compare `message.EventType` to SDK constants where available, and deserialize
+`message.Data` into a typed record.
+
+Stable SDK event constants currently include:
+
+- `HiringEvents.EmployeeHired`
+- `ManagementEvents.ReviewDue`
+- `ManagementEvents.StatusReported`
+- `ManagementEvents.ResourceNeedReported`
+- `ManagementEvents.WorkstreamChanged`
+- `ManagementEvents.WorkforcePlanDecided`
+- `ManagementEvents.ResourceChangeRequested`
+- `ManagementEvents.ResourceChangeDecided`
+
+Lifecycle and user-message event names used by a product integration should be documented alongside
+their owning C-Sweet feature. Unknown events must be ignored safely. Never infer generic
+publication authority from a subscription.

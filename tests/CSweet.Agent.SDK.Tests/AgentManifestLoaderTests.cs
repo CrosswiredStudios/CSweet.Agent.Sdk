@@ -18,7 +18,7 @@ public sealed class AgentManifestLoaderTests
               "name": "Example",
               "version": "1.0.0",
               "publisher": { "id": "example", "name": "Example" },
-              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj" },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "Manual" },
               "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" },
               "provides": [],
               "requires": [],
@@ -51,7 +51,7 @@ public sealed class AgentManifestLoaderTests
               "name": "Example Chief",
               "version": "1.0.0",
               "publisher": { "id": "example", "name": "Example" },
-              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj" },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "Manual" },
               "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" },
               "provides": [{ "name": "management.check-in.v1", "description": "Check in.", "inputSchema": { "type": "object" }, "outputSchema": { "type": "object" }, "executionTimeoutSeconds": 30, "idempotency": "work-item" }],
               "requires": [{ "name": "platform.business-profile.read.v1", "scope": "organization" }],
@@ -72,7 +72,7 @@ public sealed class AgentManifestLoaderTests
     }
 
     [Fact]
-    public async Task LoadAsync_RejectsCapabilityMissingFromSdkCatalog()
+    public async Task LoadAsync_AcceptsCustomProviderCapabilities()
     {
         var path = Path.GetTempFileName();
         try
@@ -85,7 +85,7 @@ public sealed class AgentManifestLoaderTests
               "name": "Unknown Grant",
               "version": "1.0.0",
               "publisher": { "id": "example", "name": "Example" },
-              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj" },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "Manual" },
               "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" },
               "provides": [{ "name": "example.unregistered.v1", "description": "Unknown.", "inputSchema": { "type": "object" }, "outputSchema": { "type": "object" }, "executionTimeoutSeconds": 30, "idempotency": "work-item" }],
               "requires": [],
@@ -93,15 +93,160 @@ public sealed class AgentManifestLoaderTests
             }
             """);
 
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-                () => AgentManifestLoader.LoadAsync(path, CancellationToken.None));
+            var manifest = await AgentManifestLoader.LoadAsync(path, CancellationToken.None);
 
-            Assert.Contains("example.unregistered.v1", exception.Message);
-            Assert.Contains("not registered in CSweet.Agent.SDK", exception.Message);
+            Assert.Contains("example.unregistered.v1", manifest.Capabilities);
         }
         finally
         {
             File.Delete(path);
         }
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(901)]
+    public async Task LoadAsync_RejectsOutOfRangeTimeout(int timeout)
+    {
+        var path = await WriteManifestAsync(timeout: timeout);
+        try
+        {
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => AgentManifestLoader.LoadAsync(path, CancellationToken.None));
+            Assert.Contains("between 1 and 900", exception.Message);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task LoadAsync_RejectsDuplicateCapabilities()
+    {
+        var path = await WriteManifestAsync(duplicateProvide: true);
+        try
+        {
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => AgentManifestLoader.LoadAsync(path, CancellationToken.None));
+            Assert.Contains("must not contain duplicate names", exception.Message);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task LoadAsync_RejectsIncorrectDescriptorHash()
+    {
+        var path = await WriteManifestAsync(descriptorHash: "not-the-canonical-hash");
+        try
+        {
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => AgentManifestLoader.LoadAsync(path, CancellationToken.None));
+            Assert.Contains("descriptorHash does not match", exception.Message);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Theory]
+    [InlineData("required")]
+    [InlineData("sometimes")]
+    public async Task LoadAsync_RejectsUnsupportedIdempotency(string idempotency)
+    {
+        var path = await WriteManifestAsync(idempotency: idempotency);
+        try
+        {
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => AgentManifestLoader.LoadAsync(path, CancellationToken.None));
+            Assert.Contains("idempotency is unsupported", exception.Message);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Theory]
+    [InlineData("../Agent.csproj")]
+    [InlineData("/src/Agent.csproj")]
+    [InlineData("src/Agent.txt")]
+    public async Task LoadAsync_RejectsUnsafeProjectPath(string projectPath)
+    {
+        var path = await WriteManifestAsync(projectPath: projectPath);
+        try
+        {
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => AgentManifestLoader.LoadAsync(path, CancellationToken.None));
+            Assert.Contains("runtime.projectPath", exception.Message);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Theory]
+    [InlineData("1.0", "2.x")]
+    [InlineData("2.0", "3.x")]
+    public async Task LoadAsync_RejectsInvalidProtocolRange(string minimum, string maximum)
+    {
+        var path = await WriteManifestAsync(minimum: minimum, maximum: maximum);
+        try
+        {
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => AgentManifestLoader.LoadAsync(path, CancellationToken.None));
+            Assert.Contains("protocol 2.0 through 2.x", exception.Message);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    private static async Task<string> WriteManifestAsync(
+        int timeout = 30,
+        string idempotency = "work-item",
+        string projectPath = "src/Example/Example.csproj",
+        string minimum = "2.0",
+        string maximum = "2.x",
+        bool duplicateProvide = false,
+        string? descriptorHash = null)
+    {
+        var path = Path.GetTempFileName();
+        var capability = $$"""
+          { "name": "example.custom.v1", "description": "Custom.", "inputSchema": { "type": "object" }, "outputSchema": { "type": "object" }, "executionTimeoutSeconds": {{timeout}}, "idempotency": "{{idempotency}}"{{(descriptorHash is null ? string.Empty : ", \"descriptorHash\": \"" + descriptorHash + "\"")}} }
+        """;
+        await File.WriteAllTextAsync(path, $$"""
+        {
+          "manifestVersion": "2.0",
+          "kind": "agent",
+          "id": "com.example.agent",
+          "name": "Example",
+          "version": "1.0.0",
+          "publisher": { "id": "example", "name": "Example" },
+          "runtime": {
+            "type": "dotnet-project",
+            "projectPath": "{{projectPath.Replace("\\", "\\\\")}}",
+            "targetFramework": "net10.0",
+            "defaultActivationMode": "Manual",
+            "supportsMultipleInstallations": true,
+            "maximumConcurrentJobs": 1
+          },
+          "protocol": { "minimumVersion": "{{minimum}}", "maximumVersion": "{{maximum}}" },
+          "provides": [{{capability}}{{(duplicateProvide ? "," + capability : string.Empty)}}],
+          "requires": [{ "name": "provider.custom.read.v1", "scope": "organization", "purpose": "Read bound provider data" }],
+          "events": { "subscribes": [] },
+          "configuration": [],
+          "credentials": [],
+          "webAccess": { "mode": "None", "rules": [] },
+          "ui": []
+        }
+        """);
+        return path;
     }
 }

@@ -38,9 +38,14 @@ public sealed record AgentWorkResult(
     JsonElement? Value = null,
     string? Error = null)
 {
-    public static AgentWorkResult Success<T>(T value) =>
-        new(true, JsonSerializer.SerializeToElement(value));
+    private static readonly JsonSerializerOptions SerializerOptions =
+        new(JsonSerializerDefaults.Web);
 
+    /// <summary>Creates a successful result serialized with the SDK's camel-case JSON contract.</summary>
+    public static AgentWorkResult Success<T>(T value) =>
+        new(true, JsonSerializer.SerializeToElement(value, SerializerOptions));
+
+    /// <summary>Creates a safe expected failure result.</summary>
     public static AgentWorkResult Failure(string error) =>
         new(false, Error: error);
 }

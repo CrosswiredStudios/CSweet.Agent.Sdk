@@ -12,8 +12,10 @@ public sealed class AgentTestRuntime
     private readonly Dictionary<string, TestCapability> _capabilities = new(StringComparer.Ordinal);
     private readonly List<JsonElement> _progress = [];
 
+    /// <summary>Gets progress values reported during callbacks in their original order.</summary>
     public IReadOnlyList<JsonElement> Progress => _progress;
 
+    /// <summary>Registers one fake granted capability for an in-memory agent test.</summary>
     public AgentTestRuntime RegisterCapability<TRequest, TResponse>(
         string capability,
         Func<TRequest, CancellationToken, Task<TResponse>> handler,
@@ -36,6 +38,7 @@ public sealed class AgentTestRuntime
         return this;
     }
 
+    /// <summary>Creates a callback context with optional server-resolved test identities.</summary>
     public AgentRuntimeContext CreateContext(
         string businessId = "test-organization",
         string installationId = "00000000-0000-0000-0000-000000000001",
@@ -52,6 +55,7 @@ public sealed class AgentTestRuntime
             identity);
     }
 
+    /// <summary>Executes one capability callback without network or runtime credentials.</summary>
     public Task<AgentWorkResult> ExecuteCapabilityAsync(
         ICSweetAgent agent,
         string capability,
@@ -66,6 +70,7 @@ public sealed class AgentTestRuntime
             CreateContext(),
             cancellationToken);
 
+    /// <summary>Delivers one event callback without network or runtime credentials.</summary>
     public async Task DeliverEventAsync(
         ICSweetAgent agent,
         string eventType,

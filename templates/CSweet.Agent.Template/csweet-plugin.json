@@ -1,0 +1,56 @@
+{
+  "$schema": "https://raw.githubusercontent.com/CrosswiredStudios/CSweetAgentSdk/main/schemas/csweet-plugin.v2.schema.json",
+  "manifestVersion": "2.0",
+  "kind": "agent",
+  "id": "com.example.agent",
+  "name": "Example Agent",
+  "version": "0.1.0",
+  "publisher": { "id": "com.example", "name": "Example Publisher" },
+  "runtime": {
+    "type": "dotnet-project",
+    "projectPath": "src/CSweet.Agent.Template/CSweet.Agent.Template.csproj",
+    "targetFramework": "net10.0",
+    "defaultActivationMode": "Manual",
+    "supportsMultipleInstallations": true,
+    "maximumConcurrentJobs": 1
+  },
+  "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" },
+  "provides": [
+    {
+      "name": "example.execute.v1",
+      "description": "Processes a bounded request for C-Sweet.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "input": { "type": "string", "minLength": 1 }
+        },
+        "required": ["input"],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" }
+        },
+        "required": ["message"],
+        "additionalProperties": false
+      },
+      "executionTimeoutSeconds": 30,
+      "idempotency": "work-item",
+      "riskClass": "standard"
+    }
+  ],
+  "requires": [],
+  "events": { "subscribes": [] },
+  "configuration": [],
+  "credentials": [],
+  "webAccess": { "mode": "None", "rules": [] },
+  "ui": [],
+  "catalog": {
+    "summary": "Processes a bounded request for C-Sweet.",
+    "category": "General",
+    "roleAliases": [],
+    "keywords": [],
+    "documentationUrl": "README.md"
+  }
+}

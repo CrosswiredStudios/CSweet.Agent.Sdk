@@ -2,6 +2,10 @@ using System.Text.Json;
 
 namespace CSweet.Agent.SDK;
 
+/// <summary>
+/// Recommended base class for agent callbacks, typed payload serialization, and declarative
+/// installation configuration.
+/// </summary>
 public abstract class CSweetAgentBase : ICSweetAgent
 {
     internal static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
@@ -10,12 +14,16 @@ public abstract class CSweetAgentBase : ICSweetAgent
     private AgentConfigurationDefinition? _configuration;
     private Dictionary<string, JsonElement>? _settings;
 
+    /// <summary>Gets the stable package identity declared by the root manifest.</summary>
     public abstract string AgentId { get; }
 
+    /// <summary>Gets the semantic version declared by the root manifest.</summary>
     public abstract string Version { get; }
 
+    /// <summary>Gets the agent-owned configuration schema version.</summary>
     protected virtual string ConfigurationSchemaVersion => "1.0";
 
+    /// <summary>Gets a snapshot of the current installation settings.</summary>
     protected AgentSettings Settings
     {
         get
@@ -28,12 +36,16 @@ public abstract class CSweetAgentBase : ICSweetAgent
         }
     }
 
+    /// <summary>Handles a subscribed durable event. Unknown events should be ignored safely.</summary>
     public virtual Task HandleEventAsync(
         AgentEventEnvelope message,
         AgentRuntimeContext context,
         CancellationToken cancellationToken) =>
         Task.CompletedTask;
 
+    /// <summary>
+    /// Dispatches built-in configuration capabilities before invoking the agent capability hook.
+    /// </summary>
     public async Task<AgentWorkResult> ExecuteCapabilityAsync(
         AgentCapabilityRequest request,
         AgentRuntimeContext context,
@@ -52,6 +64,7 @@ public abstract class CSweetAgentBase : ICSweetAgent
         return await ExecuteCapabilityCoreAsync(request, context, cancellationToken);
     }
 
+    /// <summary>Implements capabilities declared by this package.</summary>
     protected virtual Task<AgentWorkResult> ExecuteCapabilityCoreAsync(
         AgentCapabilityRequest request,
         AgentRuntimeContext context,
@@ -59,17 +72,21 @@ public abstract class CSweetAgentBase : ICSweetAgent
         Task.FromResult(AgentWorkResult.Failure(
             $"Capability '{request.Capability}' is not supported by this agent."));
 
+    /// <summary>Declares installation configuration fields and their defaults.</summary>
     protected virtual AgentConfigurationBuilder Configure(AgentConfigurationBuilder builder) => builder;
 
+    /// <summary>Performs agent-specific validation for a proposed configuration value.</summary>
     protected virtual string? ValidateConfigurationUpdate(
         AgentConfigurationField field,
         JsonElement value,
         AgentSettings currentSettings) =>
         null;
 
+    /// <summary>Deserializes a callback payload with the SDK web JSON contract.</summary>
     protected static T? DeserializePayload<T>(JsonElement payload) =>
         payload.Deserialize<T>(SerializerOptions);
 
+    /// <summary>Serializes a callback value with the SDK web JSON contract.</summary>
     protected static JsonElement SerializePayload<T>(T payload) =>
         JsonSerializer.SerializeToElement(payload, SerializerOptions);
 

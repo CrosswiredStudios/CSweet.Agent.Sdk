@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/CrosswiredStudios/CSweetAgentSdk/main/schemas/csweet-plugin.v2.schema.json",
+  "title": "C-Sweet executable plugin manifest v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifestVersion",
+    "kind",
+    "id",
+    "name",
+    "version",
+    "publisher",
+    "runtime",
+    "protocol",
+    "provides",
+    "requires",
+    "events",
+    "configuration",
+    "credentials",
+    "webAccess",
+    "ui"
+  ],
+  "properties": {
+    "$schema": { "type": "string", "format": "uri-reference" },
+    "manifestVersion": { "const": "2.0" },
+    "kind": { "enum": ["agent", "service"] },
+    "id": { "$ref": "#/$defs/identifier" },
+    "name": { "$ref": "#/$defs/nonEmptyString" },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "publisher": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "name": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "projectPath",
+        "targetFramework",
+        "defaultActivationMode",
+        "supportsMultipleInstallations",
+        "maximumConcurrentJobs"
+      ],
+      "properties": {
+        "type": { "const": "dotnet-project" },
+        "projectPath": {
+          "type": "string",
+          "pattern": "^(?![\\\\/])(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+\\.csproj$"
+        },
+        "targetFramework": {
+          "type": "string",
+          "pattern": "^net\\d+\\.\\d+(?:-[A-Za-z0-9.-]+)?$"
+        },
+        "defaultActivationMode": { "enum": ["Manual", "Periodic", "AlwaysOn"] },
+        "supportsMultipleInstallations": { "type": "boolean" },
+        "maximumConcurrentJobs": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimumVersion", "maximumVersion"],
+      "properties": {
+        "minimumVersion": { "const": "2.0" },
+        "maximumVersion": { "type": "string", "pattern": "^2\\..+$" }
+      }
+    },
+    "provides": { "type": "array", "items": { "$ref": "#/$defs/providedCapability" } },
+    "requires": { "type": "array", "items": { "$ref": "#/$defs/requiredCapability" } },
+    "events": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subscribes"],
+      "properties": {
+        "subscribes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonEmptyString" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "configuration": { "type": "array", "items": { "$ref": "#/$defs/configurationField" } },
+    "credentials": { "type": "array", "items": { "$ref": "#/$defs/credential" } },
+    "webAccess": { "$ref": "#/$defs/webAccess" },
+    "ui": { "type": "array", "items": { "$ref": "#/$defs/uiContribution" } },
+    "catalog": { "$ref": "#/$defs/catalog" }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,198}[A-Za-z0-9])?$"
+    },
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "objectSchema": {
+      "type": "object",
+      "required": ["type"],
+      "properties": { "type": { "const": "object" } }
+    },
+    "providedCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description",
+        "inputSchema",
+        "outputSchema",
+        "executionTimeoutSeconds",
+        "idempotency"
+      ],
+      "properties": {
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "description": { "$ref": "#/$defs/nonEmptyString" },
+        "inputSchema": { "$ref": "#/$defs/objectSchema" },
+        "outputSchema": { "$ref": "#/$defs/objectSchema" },
+        "executionTimeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 900 },
+        "idempotency": { "enum": ["work-item", "caller-key", "none"] },
+        "riskClass": { "type": "string", "default": "standard" },
+        "descriptorHash": { "type": "string", "minLength": 1 }
+      }
+    },
+    "requiredCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "scope", "purpose"],
+      "properties": {
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "scope": { "$ref": "#/$defs/nonEmptyString" },
+        "purpose": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "configurationField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "type", "label", "required", "secret"],
+      "properties": {
+        "key": { "$ref": "#/$defs/nonEmptyString" },
+        "type": { "$ref": "#/$defs/nonEmptyString" },
+        "label": { "$ref": "#/$defs/nonEmptyString" },
+        "required": { "type": "boolean" },
+        "secret": { "type": "boolean" }
+      }
+    },
+    "credential": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "allowedOrigins"],
+      "properties": {
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "type": { "$ref": "#/$defs/nonEmptyString" },
+        "allowedOrigins": {
+          "type": "array",
+          "items": { "type": "string", "format": "uri" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "webAccess": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "rules"],
+      "properties": {
+        "mode": { "enum": ["None", "Allowlist", "AllPublic"] },
+        "rules": { "type": "array", "items": { "$ref": "#/$defs/webRule" } },
+        "purpose": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "mode": { "const": "Allowlist" } } },
+          "then": { "properties": { "rules": { "minItems": 1 } } }
+        },
+        {
+          "if": { "properties": { "mode": { "enum": ["None", "AllPublic"] } } },
+          "then": { "properties": { "rules": { "maxItems": 0 } } }
+        }
+      ]
+    },
+    "webRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scheme", "host", "pathPrefix", "methods", "protocol", "purpose"],
+      "properties": {
+        "scheme": { "enum": ["http", "https", "wss"] },
+        "host": { "$ref": "#/$defs/nonEmptyString" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "pathPrefix": { "type": "string", "pattern": "^/(?!.*\\.\\.).*$" },
+        "methods": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"] }
+        },
+        "protocol": { "enum": ["http", "websocket"] },
+        "purpose": { "$ref": "#/$defs/nonEmptyString" },
+        "credential": { "type": "string" }
+      }
+    },
+    "uiContribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id", "title"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/nonEmptyString" },
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "title": { "$ref": "#/$defs/nonEmptyString" },
+        "capability": { "type": "string" }
+      }
+    },
+    "catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "summary": { "type": "string" },
+        "category": { "type": "string" },
+        "roleAliases": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "keywords": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "documentationUrl": { "type": "string" }
+      }
+    }
+  }
+}

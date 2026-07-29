@@ -5,8 +5,10 @@ using Microsoft.Extensions.Options;
 
 namespace CSweet.Agent.SDK;
 
+/// <summary>Hosting registrations for the SDK-managed C-Sweet agent runtime.</summary>
 public static class DependencyInjection
 {
+    /// <summary>Registers one agent implementation and its private hosted runtime worker.</summary>
     public static IHostApplicationBuilder AddCSweetAgent<TAgent>(
         this IHostApplicationBuilder builder)
         where TAgent : class, ICSweetAgent

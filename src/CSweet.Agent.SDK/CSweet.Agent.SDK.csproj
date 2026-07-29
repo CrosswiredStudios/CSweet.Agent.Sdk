@@ -19,6 +19,8 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CSweet.WorkManagement.Contracts"
@@ -36,5 +38,11 @@
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\GRANTS.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\AGENT_AUTHORING.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\docs\creating-an-agent.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\docs\manifest-reference.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\docs\capabilities-and-events.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\docs\testing-and-release.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\schemas\csweet-plugin.v2.schema.json" Pack="true" PackagePath="schemas\" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,28 @@
 # C-Sweet Agent SDK
 
-`CSweet.Agent.SDK` 1.1 is the transport-neutral .NET authoring API for C-Sweet agents and service plugins. Implement callbacks and use typed platform clients; the SDK privately manages the outbound runtime, authentication, live grants, durable work, retries, progress, and shutdown.
+`CSweet.Agent.SDK` 1.1.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
+authentication, live grants, durable work, retries, progress, and shutdown.
+
+## Create an agent
+
+Install the template directly from a checkout of this repository:
+
+```powershell
+dotnet new install ./templates/CSweet.Agent.Template
+dotnet new csweet-agent --name ResearchAgent `
+  --AgentId com.example.research-agent `
+  --DisplayName "Research Agent" `
+  --PublisherId com.example `
+  --PublisherName "Example" `
+  --AgentVersion 0.1.0 `
+  --PrimaryCapability research.answer.v1 `
+  --SdkVersion 1.1.0
+cd ResearchAgent
+dotnet test
+```
+
+To author without the template, add the package directly:
 
 ```powershell
 dotnet add package CSweet.Agent.SDK --version 1.1.0
@@ -17,47 +39,31 @@ await builder.Build().RunAsync();
 sealed class MyAgent : CSweetAgentBase
 {
     public override string AgentId => "com.example.my-agent";
-    public override string Version => "1.0.0";
+    public override string Version => "0.1.0";
 }
 ```
 
-Start with [Creating an agent](docs/creating-an-agent.md). Existing agents should follow [Migrating to 1.0](docs/migrating-to-1.0.md). Runtime implementation rules are in [Runtime maintainers](docs/runtime-maintainers.md), and the generated grant reference is [GRANTS.md](GRANTS.md).
+## Start here
 
-`AgentRuntimeContext.Platform` exposes typed, grant-governed services. `GetModelToolsAsync()` returns the current model-visible grant. `CreateChatClient()` provides platform-governed model streaming. `AgentTestRuntime` runs agent callbacks and fake capabilities entirely in memory.
+- Humans: [Creating an agent](docs/creating-an-agent.md)
+- Codex and other coding agents: [Agent authoring contract](AGENT_AUTHORING.md)
+- Manifest fields: [Manifest reference](docs/manifest-reference.md) and
+  [JSON Schema](schemas/csweet-plugin.v2.schema.json)
+- Grants and events: [Capabilities and events](docs/capabilities-and-events.md) and
+  [generated capability reference](GRANTS.md)
+- Import and release: [Testing and release](docs/testing-and-release.md)
+- Existing protocol-v1 agents: [Migrating to 1.0](docs/migrating-to-1.0.md)
 
-Agents can use `context.Platform.Work` to discover their granted boards and manage canonical work
-items without constructing MCP payloads:
+`AgentRuntimeContext.Platform` exposes typed, grant-governed services.
+`GetModelToolsAsync()` returns the current model-visible grant.
+`CreateChatClient()` provides platform-governed model streaming.
+`AgentTestRuntime` runs callbacks and fake capabilities entirely in memory.
 
-```csharp
-using CSweet.WorkManagement.Contracts;
+An agent never receives provider credentials, database access, a caller-selected target
+installation, raw runtime tokens, transport clients, or queue/lease details. Manifests request
+authority; installation grants and live provider bindings remain authoritative.
 
-var boards = await context.Platform.Work.ListBoardsAsync(cancellationToken: cancellationToken);
-var board = boards.First();
-var task = await context.Platform.Work.CreateTaskAsync(
-    board.Id,
-    "Reconcile invoices",
-    idempotencyKey: $"invoice-task:{invoiceBatchId}",
-    priority: WorkPriorities.High,
-    cancellationToken: cancellationToken);
-
-// Preserve the revision returned by the platform for optimistic concurrency.
-task = await context.Platform.Work.CompleteAsync(
-    new TransitionWorkItemRequest(
-        board.Id, task.Id, task.Revision, $"complete:{task.Id}"),
-    cancellationToken);
-```
-
-The SDK depends on the separately packaged
-[`CSweet.WorkManagement.Contracts`](https://github.com/CrosswiredStudios/CSweet.WorkManagement.Contracts)
-assembly. That
-dependency contains only the canonical `work.*` capability names and transport DTOs, so agents and
-the C-Sweet broker compile against the same wire contract without either side depending on the
-other's runtime or domain model.
-
-The package manifest must request every capability used by the agent, and the installation must
-also receive the corresponding scoped board grant. See [GRANTS.md](GRANTS.md).
-
-An agent never receives provider credentials, database access, a caller-selected target installation, raw runtime tokens, transport clients, or queue/lease details. Manifests request authority; the active installation grant and live provider bindings remain authoritative.
+## SDK development
 
 ```powershell
 dotnet test CSweetAgentSdk.slnx
@@ -65,4 +71,5 @@ dotnet run --project samples/HelloAgent -- --self-test
 dotnet pack src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj -c Release
 ```
 
-Report security issues privately to the maintainers.
+Runtime implementation rules are in [Runtime maintainers](docs/runtime-maintainers.md). Report
+security issues privately to the maintainers as described in [SECURITY.md](SECURITY.md).

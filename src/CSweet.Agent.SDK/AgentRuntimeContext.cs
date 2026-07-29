@@ -1,5 +1,8 @@
 namespace CSweet.Agent.SDK;
 
+/// <summary>
+/// Server-bound identity, typed platform access, progress, and model helpers for one callback.
+/// </summary>
 public sealed class AgentRuntimeContext
 {
     private readonly IAgentProgressReporter _progress;
@@ -22,9 +25,13 @@ public sealed class AgentRuntimeContext
         Identity = identity;
     }
 
+    /// <summary>Gets the server-resolved organization identity.</summary>
     public string BusinessId { get; }
+    /// <summary>Gets the server-resolved installation identity.</summary>
     public string InstallationId { get; }
+    /// <summary>Gets the current runtime instance identity.</summary>
     public string RuntimeInstanceId { get; }
+    /// <summary>Gets the current activation tick identity.</summary>
     public string TickId { get; }
 
     /// <summary>
@@ -33,17 +40,21 @@ public sealed class AgentRuntimeContext
     /// </summary>
     public AgentIdentity? Identity { get; init; }
 
+    /// <summary>Gets typed, live-grant-governed access to C-Sweet platform services.</summary>
     public PlatformCapabilityClient Platform { get; }
 
+    /// <summary>Appends bounded progress to the current durable work attempt.</summary>
     public Task ReportProgressAsync(
         object? value,
         CancellationToken cancellationToken = default) =>
         _progress.ReportAsync(value, cancellationToken);
 
+    /// <summary>Returns only tools that are currently granted and model-visible.</summary>
     public Task<IReadOnlyList<Microsoft.Extensions.AI.AITool>> GetModelToolsAsync(
         CancellationToken cancellationToken = default) =>
         Platform.GetModelToolsAsync(cancellationToken);
 
+    /// <summary>Creates a platform-governed model client without exposing provider credentials.</summary>
     public Microsoft.Extensions.AI.IChatClient CreateChatClient(AgentLlmSelection selection) =>
         new PlatformChatClient(Platform, selection);
 }

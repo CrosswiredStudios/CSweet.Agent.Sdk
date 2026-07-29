@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "C-Sweet",
+  "classifications": ["C-Sweet", "Agent", "AI"],
+  "identity": "CSweet.Agent.Template",
+  "name": "C-Sweet standalone agent",
+  "shortName": "csweet-agent",
+  "sourceName": "CSweet.Agent.Template",
+  "preferNameDirectory": true,
+  "symbols": {
+    "AgentId": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "com.example.agent",
+      "description": "Stable reverse-DNS package identity.",
+      "replaces": "com.example.agent"
+    },
+    "DisplayName": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "Example Agent",
+      "description": "Human-readable agent name.",
+      "replaces": "Example Agent"
+    },
+    "AgentPurpose": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "Processes a bounded request for C-Sweet.",
+      "description": "One-sentence business purpose.",
+      "replaces": "Processes a bounded request for C-Sweet."
+    },
+    "PublisherId": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "com.example",
+      "description": "Stable publisher identity.",
+      "replaces": "com.example"
+    },
+    "PublisherName": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "Example Publisher",
+      "description": "Publisher display name.",
+      "replaces": "Example Publisher"
+    },
+    "AgentVersion": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "0.1.0",
+      "description": "Initial semantic version.",
+      "replaces": "0.1.0"
+    },
+    "PrimaryCapability": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "example.execute.v1",
+      "description": "Primary namespaced capability provided by the agent.",
+      "replaces": "example.execute.v1"
+    },
+    "SdkVersion": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "1.1.0",
+      "description": "Pinned CSweet.Agent.SDK NuGet version.",
+      "replaces": "1.1.0"
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [".template.config/**", "**/bin/**", "**/obj/**"]
+        }
+      ]
+    }
+  ]
+}
