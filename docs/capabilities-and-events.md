@@ -38,7 +38,8 @@ specialized helper.
 | Read a conversation or send a message | `communication.chat.read.v1` / `communication.message.send.v1` |
 | Search available agents | `platform.agent-catalog.search.v1` |
 | Read/create work boards | `work.board.read` / `work.board.create` |
-| Read/create/update work items | `work.item.read`, `work.item.create`, and the specific transition capability |
+| Read/create/update work items | `work.item.read`, `work.item.create`, `work.item.start`, and the specific transition capability |
+| Prepare, inspect, publish, or clean an assigned repository workspace | the matching `git.workspace.*.v1` capability |
 | Read/manage sprints | the matching `work.sprint.*` capability |
 | Read/manage board automations | `work.automation.read` / `work.automation.manage` |
 
@@ -76,6 +77,7 @@ Stable SDK event constants currently include:
 - `ManagementEvents.WorkforcePlanDecided`
 - `ManagementEvents.ResourceChangeRequested`
 - `ManagementEvents.ResourceChangeDecided`
+- `WorkItemEvents.Assigned`
 
 Lifecycle and user-message event names used by a product integration should be documented alongside
 their owning C-Sweet feature. Unknown events must be ignored safely. Never infer generic

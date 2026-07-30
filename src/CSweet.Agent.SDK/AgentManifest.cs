@@ -73,6 +73,10 @@ public sealed class AgentRuntimeManifest
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     public bool SupportsMultipleInstallations { get; init; }
     public int MaximumConcurrentJobs { get; init; } = 1;
+    /// <summary>Platform-approved container image/profile requested by this package.</summary>
+    public string? EnvironmentProfile { get; init; }
+    /// <summary>Requested workspace access. Supported values are None, ReadOnly, and ReadWrite.</summary>
+    public string WorkspaceAccess { get; init; } = "None";
 }
 
 /// <summary>Supported private runtime protocol range.</summary>

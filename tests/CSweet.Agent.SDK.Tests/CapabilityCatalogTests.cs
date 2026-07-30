@@ -31,6 +31,7 @@ public sealed class CapabilityCatalogTests
                 "agent-catalog",
                 "assistant",
                 "communication",
+                "git-workspace",
                 "management",
                 "memory",
                 "platform",

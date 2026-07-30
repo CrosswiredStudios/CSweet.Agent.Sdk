@@ -107,6 +107,7 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `WorkBoardCapabilities.Read` — `work.board.read`
 - `WorkBoardCapabilities.Create` — `work.board.create`
 - `WorkItemCapabilities.Read` — `work.item.read`
+- `WorkItemCapabilities.Start` — `work.item.start`
 - `WorkItemCapabilities.Create` — `work.item.create`
 - `WorkItemCapabilities.Comment` — `work.item.comment`
 - `WorkItemCapabilities.Estimate` — `work.item.estimate`
@@ -126,6 +127,17 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `WorkSprintCapabilities.ReadReports` — `work.sprint.report.read`
 - `WorkAutomationCapabilities.Read` — `work.automation.read`
 - `WorkAutomationCapabilities.Manage` — `work.automation.manage`
+
+## Git workspace
+
+Git workspace operations are scoped to an assigned work item and an installation-granted
+repository connection. The platform resolves authentication in the runtime and never returns
+credential material through these contracts.
+
+- `GitWorkspaceCapabilities.Prepare` — `git.workspace.prepare.v1`
+- `GitWorkspaceCapabilities.Inspect` — `git.workspace.inspect.v1`
+- `GitWorkspaceCapabilities.Publish` — `git.workspace.publish.v1`
+- `GitWorkspaceCapabilities.Cleanup` — `git.workspace.cleanup.v1`
 
 ## Web proxy
 

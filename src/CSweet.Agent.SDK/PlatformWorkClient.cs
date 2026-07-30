@@ -22,6 +22,11 @@ public sealed class PlatformWorkClient
         InvokeAsync<WorkBoardReference, WorkBoardDetail>(
             WorkItemCapabilities.Read, new(boardId), cancellationToken);
 
+    public Task<WorkItem> ReadItemAsync(
+        WorkItemReference request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<WorkItemReference, WorkItem>(
+            WorkItemCapabilities.Read, request, cancellationToken);
+
     public Task<WorkBoardSummary> CreateBoardAsync(
         CreateWorkBoardRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<CreateWorkBoardRequest, WorkBoardSummary>(
@@ -64,6 +69,11 @@ public sealed class PlatformWorkClient
         TransitionWorkItemRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<TransitionWorkItemRequest, WorkItem>(
             WorkItemCapabilities.Complete, request, cancellationToken);
+
+    public Task<WorkItem> StartAsync(
+        TransitionWorkItemRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<TransitionWorkItemRequest, WorkItem>(
+            WorkItemCapabilities.Start, request, cancellationToken);
 
     public Task<WorkItem> CancelAsync(
         TransitionWorkItemRequest request, CancellationToken cancellationToken = default) =>

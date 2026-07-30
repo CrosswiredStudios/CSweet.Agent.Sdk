@@ -96,6 +96,7 @@ public static class CapabilityNames
         public const string BoardRead = WorkManagementCapabilityNames.BoardRead;
         public const string BoardCreate = WorkManagementCapabilityNames.BoardCreate;
         public const string ItemRead = WorkManagementCapabilityNames.ItemRead;
+        public const string ItemStart = WorkManagementCapabilityNames.ItemStart;
         public const string ItemCreate = WorkManagementCapabilityNames.ItemCreate;
         public const string ItemComment = WorkManagementCapabilityNames.ItemComment;
         public const string ItemEstimate = WorkManagementCapabilityNames.ItemEstimate;
@@ -128,6 +129,14 @@ public static class CapabilityNames
     public static class Plugin
     {
         public const string State = "plugin.state.v1";
+    }
+
+    public static class GitWorkspace
+    {
+        public const string Prepare = "git.workspace.prepare.v1";
+        public const string Inspect = "git.workspace.inspect.v1";
+        public const string Publish = "git.workspace.publish.v1";
+        public const string Cleanup = "git.workspace.cleanup.v1";
     }
 }
 
@@ -202,6 +211,7 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.BoardRead,
                 CapabilityNames.WorkManagement.BoardCreate,
                 CapabilityNames.WorkManagement.ItemRead,
+                CapabilityNames.WorkManagement.ItemStart,
                 CapabilityNames.WorkManagement.ItemCreate,
                 CapabilityNames.WorkManagement.ItemComment,
                 CapabilityNames.WorkManagement.ItemEstimate,
@@ -221,6 +231,11 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.SprintReadReports,
                 CapabilityNames.WorkManagement.AutomationRead,
                 CapabilityNames.WorkManagement.AutomationManage),
+            ["git-workspace"] = Set(
+                CapabilityNames.GitWorkspace.Prepare,
+                CapabilityNames.GitWorkspace.Inspect,
+                CapabilityNames.GitWorkspace.Publish,
+                CapabilityNames.GitWorkspace.Cleanup),
             ["web"] = Set(
                 CapabilityNames.Web.Fetch,
                 CapabilityNames.Web.Request,
@@ -298,6 +313,7 @@ public static class WorkBoardCapabilities
 public static class WorkItemCapabilities
 {
     public const string Read = CapabilityNames.WorkManagement.ItemRead;
+    public const string Start = CapabilityNames.WorkManagement.ItemStart;
     public const string Create = CapabilityNames.WorkManagement.ItemCreate;
     public const string Comment = CapabilityNames.WorkManagement.ItemComment;
     public const string Estimate = CapabilityNames.WorkManagement.ItemEstimate;
@@ -306,6 +322,15 @@ public static class WorkItemCapabilities
     public const string Cancel = CapabilityNames.WorkManagement.ItemCancel;
     public const string Reopen = CapabilityNames.WorkManagement.ItemReopen;
     public const string Transfer = CapabilityNames.WorkManagement.ItemTransfer;
+}
+
+/// <summary>Ticket-scoped Git workspace operations executed inside the agent runtime.</summary>
+public static class GitWorkspaceCapabilities
+{
+    public const string Prepare = CapabilityNames.GitWorkspace.Prepare;
+    public const string Inspect = CapabilityNames.GitWorkspace.Inspect;
+    public const string Publish = CapabilityNames.GitWorkspace.Publish;
+    public const string Cleanup = CapabilityNames.GitWorkspace.Cleanup;
 }
 
 public static class WorkSprintCapabilities

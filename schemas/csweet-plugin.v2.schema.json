@@ -63,7 +63,12 @@
         },
         "defaultActivationMode": { "enum": ["Manual", "Periodic", "AlwaysOn"] },
         "supportsMultipleInstallations": { "type": "boolean" },
-        "maximumConcurrentJobs": { "type": "integer", "minimum": 1 }
+        "maximumConcurrentJobs": { "type": "integer", "minimum": 1 },
+        "environmentProfile": {
+          "type": ["string", "null"],
+          "pattern": "^[a-z0-9][a-z0-9.-]{0,127}$"
+        },
+        "workspaceAccess": { "enum": ["None", "ReadOnly", "ReadWrite"] }
       }
     },
     "protocol": {
