@@ -298,6 +298,7 @@ public sealed record UpsertHiringRecommendationRequest(
     public string? RoleKey { get; init; }
     public int Headcount { get; init; } = 1;
     public Guid? SourceResourceChangeRequestId { get; init; }
+    public Guid? TeamId { get; init; }
 }
 
 public sealed record HiringCandidateResponse(
@@ -317,6 +318,7 @@ public sealed record HiringRecommendationResponse(
     public string? RoleKey { get; init; }
     public int Headcount { get; init; } = 1;
     public Guid? SourceResourceChangeRequestId { get; init; }
+    public Guid? TeamId { get; init; }
 }
 
 public sealed record HiringBacklogResponse(IReadOnlyList<HiringRecommendationResponse> Recommendations);
@@ -342,7 +344,10 @@ public sealed record ResourceChangeRole(
     IReadOnlyList<string> RequiredCapabilities,
     bool HumanRequired,
     Guid? ReportsToOrganizationUserId,
-    string? ReportsToRoleKey);
+    string? ReportsToRoleKey)
+{
+    public Guid? TeamId { get; init; }
+}
 
 public sealed record ResourceChangeProposalRequest(
     Guid ConversationId,
@@ -354,7 +359,12 @@ public sealed record ResourceChangeProposalRequest(
     IReadOnlyList<string> Assumptions,
     IReadOnlyList<string> Constraints,
     Guid? SupersedesRequestId,
-    string IdempotencyKey);
+    string IdempotencyKey)
+{
+    public string? TeamKey { get; init; }
+    public string? TeamName { get; init; }
+    public string? TeamDescription { get; init; }
+}
 
 public sealed record ResourceChangeRoleDelta(
     string ChangeKind,
@@ -381,7 +391,13 @@ public sealed record ResourceChangeRequestResponse(
     string DeliveryStatus,
     string? DecisionComment,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? DecidedAt);
+    DateTimeOffset? DecidedAt)
+{
+    public Guid? TeamId { get; init; }
+    public string? TeamKey { get; init; }
+    public string? TeamName { get; init; }
+    public string? TeamDescription { get; init; }
+}
 
 public sealed record ResourceChangeReadRequest(
     Guid? RequestId = null,

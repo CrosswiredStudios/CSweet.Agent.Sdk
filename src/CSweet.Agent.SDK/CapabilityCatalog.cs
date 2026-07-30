@@ -48,6 +48,7 @@ public static class CapabilityNames
         public const string ResourceChangeDecide = "platform.management.resource-change.decide.v1";
         public const string HiringWorkflowStage = "platform.hiring-workflow.stage.v1";
         public const string UserActionSuggest = "platform.user-action.suggest.v1";
+        public const string TeamRosterRead = "platform.team-roster.read.v1";
     }
 
     public static class AgentCatalog
@@ -182,7 +183,8 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.ResourceChangeRead,
                 CapabilityNames.Platform.ResourceChangeDecide,
                 CapabilityNames.Platform.UserActionSuggest,
-                CapabilityNames.Platform.HiringWorkflowStage),
+                CapabilityNames.Platform.HiringWorkflowStage,
+                CapabilityNames.Platform.TeamRosterRead),
             ["memory"] = Set(
                 CapabilityNames.Memory.BusinessRead,
                 CapabilityNames.Memory.BusinessPropose,

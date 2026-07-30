@@ -95,6 +95,14 @@ public sealed class PlatformCapabilityClient
     public Task<HiringWorkflowResponse> StageHiringWorkflowAsync(StageHiringWorkflowRequest request, CancellationToken token = default) =>
         InvokeAsync<StageHiringWorkflowRequest, HiringWorkflowResponse>(PlatformCapabilities.HiringWorkflowStage, request, token);
 
+    public Task<TeamRosterResponse> ReadTeamRosterAsync(
+        TeamRosterRequest? request = null,
+        CancellationToken token = default) =>
+        InvokeAsync<TeamRosterRequest, TeamRosterResponse>(
+            PlatformCapabilities.TeamRosterRead,
+            request ?? new TeamRosterRequest(),
+            token);
+
     public async Task<TResponse> InvokeAsync<TRequest, TResponse>(
         string capability,
         TRequest payload,

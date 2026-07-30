@@ -14,4 +14,33 @@ public sealed record AgentIdentity(
     string? AuthorityLevel,
     string? ManagerEmployeeId,
     string? ManagerDisplayName)
-;
+{
+    public AgentTeamContext? TeamContext { get; init; }
+}
+
+public sealed record AgentTeamContext(
+    string TeamId,
+    string TeamKey,
+    string Name,
+    long Revision,
+    string LeadEmployeeId,
+    string LeadDisplayName,
+    IReadOnlyList<AgentTeammate> Members,
+    IReadOnlyList<TeamRoleCoverage> RoleCoverage,
+    int TotalMemberCount,
+    bool HasMore);
+
+public sealed record AgentTeammate(
+    string EmployeeId,
+    string DisplayName,
+    string EmployeeType,
+    string? CompanyRole,
+    string? TeamRole,
+    string RelationshipToCaller,
+    string Presence);
+
+public sealed record TeamRoleCoverage(string Role, int Count);
+
+public sealed record TeamRosterRequest(int Page = 1, int PageSize = 50);
+
+public sealed record TeamRosterResponse(AgentTeamContext? Team);

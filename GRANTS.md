@@ -69,6 +69,14 @@ installation, grant changes, hiring, assignment, or spending.
 - `PlatformCapabilities.HiringWorkflowStage` — `platform.hiring-workflow.stage.v1`
 - `PlatformCapabilities.UserActionSuggest` — `platform.user-action.suggest.v1`
 
+- `PlatformCapabilities.TeamRosterRead` — `platform.team-roster.read.v1`
+
+`TeamRosterRead` is resolved from the authenticated installation to its active agent employee and
+sole eligible team. It exposes bounded employee IDs, display names, human/agent type, company and
+team roles, relationship, presence, and complete role-coverage counts. It never exposes email,
+application-user IDs, installation or package identity, permissions, credentials, costs, prompts,
+memory, or unrelated employees. Team membership does not grant any other authority.
+
 ## Memory
 
 - `MemoryCapabilities.BusinessRead` — `memory.business.read.v1`

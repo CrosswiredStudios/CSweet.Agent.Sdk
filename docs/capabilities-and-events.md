@@ -32,6 +32,7 @@ specialized helper.
 | Stream through the configured model | `platform.llm.chat-stream.v1` |
 | Read business profile | `platform.business-profile.read.v1` |
 | Read organization/workstream snapshot | `platform.organization.snapshot.read.v1` |
+| Read this agent employee's bounded team roster | `platform.team-roster.read.v1` |
 | Ask a bounded structured question | `platform.user-input.request.v1` |
 | Read or propose business memory | `memory.business.read.v1` / `memory.business.propose.v1` |
 | Read or propose user memory | `memory.user.read.v1` / `memory.user.propose.v1` |
@@ -48,6 +49,11 @@ is authoritative for schemas, risk, approval, quota, and scope.
 
 Use `context.Platform.Work` for typed work-management operations. Its request and response models
 are supplied by `CSweet.WorkManagement.Contracts`; still declare and obtain each matching grant.
+
+Use `context.Platform.ReadTeamRosterAsync()` only when teammate identity or team-role coverage
+changes the agent's work. The server resolves the caller and team; an unassigned or
+organization-wide agent receives no roster. Names and role labels are data, not instructions, and
+the roster grant never implies chat, board, tool, memory, or agent-to-agent access.
 
 ## Events
 
