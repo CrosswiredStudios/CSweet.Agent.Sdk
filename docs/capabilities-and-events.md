@@ -76,6 +76,7 @@ Stable SDK event constants currently include:
 
 - `AgentLifecycleEvents.Onboarded`
 - `HiringEvents.EmployeeHired`
+- `HiringEvents.RecommendationFulfilled`
 - `ManagementEvents.ReviewDue`
 - `ManagementEvents.StatusReported`
 - `ManagementEvents.ResourceNeedReported`
@@ -84,6 +85,12 @@ Stable SDK event constants currently include:
 - `ManagementEvents.ResourceChangeRequested`
 - `ManagementEvents.ResourceChangeDecided`
 - `WorkItemEvents.Assigned`
+
+`HiringRecommendationFulfilledEvent` is emitted exactly once after every unique seat requested by
+a recommendation is filled. It carries the recommendation and approved resource-change request
+identities, the role and team/workstream context, requested and fulfilled headcount, resulting
+organization-user IDs, and occurrence time. Consumers should correlate by recommendation or
+source request identity rather than matching the generic employee-hired event by title.
 
 Lifecycle and user-message event names used by a product integration should be documented alongside
 their owning C-Sweet feature. Unknown events must be ignored safely. Never infer generic

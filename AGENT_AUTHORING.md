@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 2.4.0
+     --SdkVersion 2.5.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed

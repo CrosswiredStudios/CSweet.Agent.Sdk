@@ -45,6 +45,7 @@ public static class PlatformCapabilities
 public static class HiringEvents
 {
     public const string EmployeeHired = "com.csweet.employee.hired.v1";
+    public const string RecommendationFulfilled = "com.csweet.hiring-recommendation.fulfilled.v1";
 }
 
 public static class UserActionWorkflows
