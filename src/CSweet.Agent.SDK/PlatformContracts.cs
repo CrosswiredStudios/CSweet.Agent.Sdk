@@ -464,11 +464,50 @@ public sealed record StageHiringWorkflowRequest(
     string RoleTitle,
     Guid? ReportsToOrganizationUserId,
     IReadOnlyList<string>? RequiredGrants,
-    string IdempotencyKey);
+    string IdempotencyKey)
+{
+    public Guid? ConversationId { get; init; }
+    public Guid? ChatTurnId { get; init; }
+}
 
 public sealed record HiringWorkflowResponse(
     Guid Id, Guid RecommendationId, string CandidateReference, string RoleTitle,
     string Status, string Message, DateTimeOffset CreatedAt, Guid? ResultOrganizationUserId = null);
+
+public static class HiringWorkflowDecisionKinds
+{
+    public const string Approve = "Approve";
+    public const string Reject = "Reject";
+}
+
+public sealed record DecideHiringWorkflowRequest(
+    string Decision,
+    string? Comment,
+    string IdempotencyKey)
+{
+    public IReadOnlyDictionary<string, JsonElement> ConfigurationSettings { get; init; } =
+        new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+}
+
+public sealed record HiringWorkflowApprovalResponse(
+    Guid Id,
+    string RoleTitle,
+    string CandidateReference,
+    string CandidateName,
+    string CandidateSource,
+    string EmployeeDisplayName,
+    Guid? ReportsToOrganizationUserId,
+    string? ReportsToDisplayName,
+    string Status,
+    string InstallationConsequence,
+    IReadOnlyList<string> RequestedCapabilities,
+    IReadOnlyList<string> Subscriptions,
+    IReadOnlyList<string> NetworkAccess,
+    IReadOnlyList<AgentConfigurationField> ConfigurationFields,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? SubmittedAt,
+    DateTimeOffset? DecidedAt,
+    string? DecisionComment);
 
 public sealed record ProposedStaffingAssignment(
     string PositionKey,
