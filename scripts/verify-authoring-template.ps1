@@ -3,6 +3,8 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $sdkRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$contractsRoot = [System.IO.Path]::GetFullPath(
+    (Join-Path $sdkRoot '../CSweet.WorkManagement.Contracts'))
 $tempBase = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
 $tempRoot = Join-Path $tempBase ("csweet-agent-template-" + [Guid]::NewGuid().ToString('N'))
 $feed = Join-Path $tempRoot 'feed'
@@ -12,11 +14,20 @@ $previousCliHome = $env:DOTNET_CLI_HOME
 try {
     New-Item -ItemType Directory -Force $feed | Out-Null
 
+    & dotnet pack (Join-Path $contractsRoot `
+            'src/CSweet.WorkManagement.Contracts/CSweet.WorkManagement.Contracts.csproj') `
+        --configuration Release `
+        --output $feed `
+        -p:PackageVersion=1.3.0
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Work Management Contracts package creation failed.'
+    }
+
     & dotnet pack (Join-Path $sdkRoot 'src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj') `
         --configuration Release `
         --output $feed `
         -p:UseLocalCSweetWorkManagementContracts=false `
-        -p:CSweetAgentSdkPackageVersion=2.2.0
+        -p:CSweetAgentSdkPackageVersion=2.3.0
     if ($LASTEXITCODE -ne 0) { throw 'SDK package creation failed.' }
 
     $env:DOTNET_CLI_HOME = Join-Path $tempRoot 'dotnet-home'
@@ -33,7 +44,7 @@ try {
         --PublisherName 'Example Publisher' `
         --AgentVersion 0.1.0 `
         --PrimaryCapability example.verify.v1 `
-        --SdkVersion 2.2.0
+        --SdkVersion 2.3.0
     if ($LASTEXITCODE -ne 0) { throw 'Template generation failed.' }
 
     $escapedFeed = [System.Security.SecurityElement]::Escape($feed)
@@ -51,7 +62,7 @@ try {
     $generatedProject = Get-Content `
         -LiteralPath (Join-Path $generated 'src/VerifiedAgent/VerifiedAgent.csproj') `
         -Raw
-    if ($generatedProject -notmatch 'PackageReference Include="CSweet.Agent.SDK" Version="2.2.0"') {
+    if ($generatedProject -notmatch 'PackageReference Include="CSweet.Agent.SDK" Version="2.3.0"') {
         throw 'Generated agent does not use the pinned SDK package.'
     }
     if ($generatedProject -match 'ProjectReference') {

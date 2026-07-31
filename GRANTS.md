@@ -124,6 +124,7 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `WorkItemCapabilities.Cancel` — `work.item.cancel`
 - `WorkItemCapabilities.Reopen` — `work.item.reopen`
 - `WorkItemCapabilities.Transfer` — `work.item.transfer`
+- `WorkItemCapabilities.QualitySubmit` — `work.item.quality.submit`
 - `WorkSprintCapabilities.Read` — `work.sprint.read`
 - `WorkSprintCapabilities.Create` — `work.sprint.create`
 - `WorkSprintCapabilities.Start` — `work.sprint.start`

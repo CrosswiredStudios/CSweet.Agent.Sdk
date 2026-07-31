@@ -71,7 +71,11 @@ public sealed record PrepareGitWorkspaceRequest(
     Guid RepositoryConnectionId,
     string? BaseBranch,
     string BranchName,
-    string IdempotencyKey);
+    string IdempotencyKey)
+{
+    public string? ExpectedCommitSha { get; init; }
+    public bool ResumePublishedBranch { get; init; }
+}
 
 public sealed record GitWorkspaceResult(
     Guid WorkspaceId,
@@ -81,7 +85,10 @@ public sealed record GitWorkspaceResult(
     string BaseBranch,
     string BranchName,
     string Status,
-    bool Resumed);
+    bool Resumed)
+{
+    public string? CheckoutCommitSha { get; init; }
+}
 
 public sealed record InspectGitWorkspaceRequest(Guid WorkspaceId);
 
@@ -91,7 +98,11 @@ public sealed record GitWorkspaceInspection(
     bool HasChanges,
     IReadOnlyList<string> ChangedFiles,
     IReadOnlyList<string> Commits,
-    IReadOnlyList<GitValidationResult> Validations);
+    IReadOnlyList<GitValidationResult> Validations)
+{
+    public bool HasTrackedChanges { get; init; }
+    public IReadOnlyList<string> TrackedChangedFiles { get; init; } = [];
+}
 
 public sealed record GitValidationResult(
     string Command,
@@ -113,7 +124,13 @@ public sealed record GitWorkspacePublication(
     string CommitSha,
     bool Pushed,
     Uri? PullRequestUrl,
-    string Status);
+    string Status)
+{
+    public string MergeStatus { get; init; } =
+        CSweet.WorkManagement.Contracts.DeliveryMergeStatuses.None;
+    public string? MergeCommitSha { get; init; }
+    public DateTimeOffset? MergedAt { get; init; }
+}
 
 public sealed record CleanupGitWorkspaceRequest(
     Guid WorkspaceId,

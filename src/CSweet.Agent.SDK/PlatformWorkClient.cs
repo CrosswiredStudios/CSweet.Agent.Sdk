@@ -90,6 +90,11 @@ public sealed class PlatformWorkClient
         InvokeAsync<TransferWorkItemRequest, WorkItemTransfer>(
             WorkItemCapabilities.Transfer, request, cancellationToken);
 
+    public Task<QualityRunResult> SubmitQualityAsync(
+        SubmitQualityResultRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<SubmitQualityResultRequest, QualityRunResult>(
+            WorkItemCapabilities.QualitySubmit, request, cancellationToken);
+
     public Task<IReadOnlyList<WorkSprint>> ListSprintsAsync(
         Guid boardId, CancellationToken cancellationToken = default) =>
         InvokeAsync<WorkBoardReference, IReadOnlyList<WorkSprint>>(

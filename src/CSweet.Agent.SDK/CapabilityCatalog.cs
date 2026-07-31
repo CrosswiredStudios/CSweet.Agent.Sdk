@@ -106,6 +106,7 @@ public static class CapabilityNames
         public const string ItemCancel = WorkManagementCapabilityNames.ItemCancel;
         public const string ItemReopen = WorkManagementCapabilityNames.ItemReopen;
         public const string ItemTransfer = WorkManagementCapabilityNames.ItemTransfer;
+        public const string ItemQualitySubmit = WorkManagementCapabilityNames.ItemQualitySubmit;
         public const string SprintRead = WorkManagementCapabilityNames.SprintRead;
         public const string SprintCreate = WorkManagementCapabilityNames.SprintCreate;
         public const string SprintStart = WorkManagementCapabilityNames.SprintStart;
@@ -222,6 +223,7 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.ItemCancel,
                 CapabilityNames.WorkManagement.ItemReopen,
                 CapabilityNames.WorkManagement.ItemTransfer,
+                CapabilityNames.WorkManagement.ItemQualitySubmit,
                 CapabilityNames.WorkManagement.SprintRead,
                 CapabilityNames.WorkManagement.SprintCreate,
                 CapabilityNames.WorkManagement.SprintStart,
@@ -324,6 +326,7 @@ public static class WorkItemCapabilities
     public const string Cancel = CapabilityNames.WorkManagement.ItemCancel;
     public const string Reopen = CapabilityNames.WorkManagement.ItemReopen;
     public const string Transfer = CapabilityNames.WorkManagement.ItemTransfer;
+    public const string QualitySubmit = CapabilityNames.WorkManagement.ItemQualitySubmit;
 }
 
 /// <summary>Ticket-scoped Git workspace operations executed inside the agent runtime.</summary>

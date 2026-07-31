@@ -34,6 +34,9 @@ public sealed class PlatformGitWorkspaceClientTests
                 [new GitValidationResult("dotnet test", true, 0)]));
 
         Assert.True(result.Pushed);
+        Assert.Equal(
+            CSweet.WorkManagement.Contracts.DeliveryMergeStatuses.None,
+            result.MergeStatus);
         var validation = Assert.Single(captured!.Validations!);
         Assert.Equal("dotnet test", validation.Command);
         Assert.True(validation.Succeeded);
