@@ -9,23 +9,50 @@ $tempBase = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
 $tempRoot = Join-Path $tempBase ("csweet-agent-template-" + [Guid]::NewGuid().ToString('N'))
 $feed = Join-Path $tempRoot 'feed'
 $generated = Join-Path $tempRoot 'VerifiedAgent'
+$nugetConfig = Join-Path $tempRoot 'NuGet.config'
 $previousCliHome = $env:DOTNET_CLI_HOME
 
 try {
     New-Item -ItemType Directory -Force $feed | Out-Null
 
-    & dotnet pack (Join-Path $contractsRoot `
-            'src/CSweet.WorkManagement.Contracts/CSweet.WorkManagement.Contracts.csproj') `
+    $escapedFeed = [System.Security.SecurityElement]::Escape($feed)
+    @"
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="authoring-test" value="$escapedFeed" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </packageSources>
+</configuration>
+"@ | Set-Content -LiteralPath $nugetConfig -Encoding utf8
+
+    $contractsProject = Join-Path $contractsRoot `
+        'src/CSweet.WorkManagement.Contracts/CSweet.WorkManagement.Contracts.csproj'
+    & dotnet restore $contractsProject --configfile $nugetConfig
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Work Management Contracts restore failed.'
+    }
+
+    & dotnet pack $contractsProject `
         --configuration Release `
         --output $feed `
-        -p:PackageVersion=1.3.0
+        --no-restore `
+        -p:PackageVersion=2.0.0
     if ($LASTEXITCODE -ne 0) {
         throw 'Work Management Contracts package creation failed.'
     }
 
-    & dotnet pack (Join-Path $sdkRoot 'src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj') `
+    $sdkProject = Join-Path $sdkRoot 'src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj'
+    & dotnet restore $sdkProject `
+        --configfile $nugetConfig `
+        -p:UseLocalCSweetWorkManagementContracts=false
+    if ($LASTEXITCODE -ne 0) { throw 'SDK package restore failed.' }
+
+    & dotnet pack $sdkProject `
         --configuration Release `
         --output $feed `
+        --no-restore `
         -p:UseLocalCSweetWorkManagementContracts=false `
         -p:CSweetAgentSdkPackageVersion=2.5.1
     if ($LASTEXITCODE -ne 0) { throw 'SDK package creation failed.' }
@@ -47,17 +74,7 @@ try {
         --SdkVersion 2.5.1
     if ($LASTEXITCODE -ne 0) { throw 'Template generation failed.' }
 
-    $escapedFeed = [System.Security.SecurityElement]::Escape($feed)
-    @"
-<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-  <packageSources>
-    <clear />
-    <add key="authoring-test" value="$escapedFeed" />
-    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-  </packageSources>
-</configuration>
-"@ | Set-Content -LiteralPath (Join-Path $generated 'NuGet.config') -Encoding utf8
+    Copy-Item -LiteralPath $nugetConfig -Destination (Join-Path $generated 'NuGet.config')
 
     $generatedProject = Get-Content `
         -LiteralPath (Join-Path $generated 'src/VerifiedAgent/VerifiedAgent.csproj') `
