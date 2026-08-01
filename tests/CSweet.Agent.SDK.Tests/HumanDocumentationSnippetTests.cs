@@ -56,10 +56,9 @@ public sealed class HumanDocumentationSnippetTests
         var context = runtime.CreateContext();
 
         var profile = await context.Platform.ReadBusinessProfileAsync();
-        var task = await context.Platform.Work.CreateTaskAsync(
-            boardId,
-            "Review the launch brief",
-            "launch-review:example");
+        var task = await context.Platform.Work.CreateItemAsync(new CreateWorkItemRequest(
+            boardId, "Review the launch brief", null, WorkItemKinds.Epic,
+            WorkPriorities.Medium, null, null, null, "launch-review:example"));
 
         Assert.Equal("Example", profile.Name);
         Assert.Equal(itemId, task.Id);

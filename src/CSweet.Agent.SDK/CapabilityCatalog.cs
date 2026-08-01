@@ -118,6 +118,14 @@ public static class CapabilityNames
         public const string SprintReadReports = WorkManagementCapabilityNames.SprintReadReports;
         public const string AutomationRead = WorkManagementCapabilityNames.AutomationRead;
         public const string AutomationManage = WorkManagementCapabilityNames.AutomationManage;
+        public const string ExecutionRunV1 = WorkManagementCapabilityNames.ExecutionRunV1;
+        public const string OrchestrationRead = WorkManagementCapabilityNames.OrchestrationRead;
+        public const string OrchestrationPreflight = WorkManagementCapabilityNames.OrchestrationPreflight;
+        public const string OrchestrationStart = WorkManagementCapabilityNames.OrchestrationStart;
+        public const string OrchestrationPause = WorkManagementCapabilityNames.OrchestrationPause;
+        public const string OrchestrationResume = WorkManagementCapabilityNames.OrchestrationResume;
+        public const string OrchestrationCancel = WorkManagementCapabilityNames.OrchestrationCancel;
+        public const string OrchestrationRetry = WorkManagementCapabilityNames.OrchestrationRetry;
     }
 
     public static class Web
@@ -214,27 +222,24 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.BoardRead,
                 CapabilityNames.WorkManagement.BoardCreate,
                 CapabilityNames.WorkManagement.ItemRead,
-                CapabilityNames.WorkManagement.ItemStart,
                 CapabilityNames.WorkManagement.ItemCreate,
                 CapabilityNames.WorkManagement.ItemComment,
                 CapabilityNames.WorkManagement.ItemEstimate,
-                CapabilityNames.WorkManagement.ItemMove,
-                CapabilityNames.WorkManagement.ItemComplete,
-                CapabilityNames.WorkManagement.ItemCancel,
-                CapabilityNames.WorkManagement.ItemReopen,
                 CapabilityNames.WorkManagement.ItemTransfer,
-                CapabilityNames.WorkManagement.ItemQualitySubmit,
                 CapabilityNames.WorkManagement.SprintRead,
                 CapabilityNames.WorkManagement.SprintCreate,
-                CapabilityNames.WorkManagement.SprintStart,
-                CapabilityNames.WorkManagement.SprintComplete,
-                CapabilityNames.WorkManagement.SprintCancel,
                 CapabilityNames.WorkManagement.SprintManageScope,
                 CapabilityNames.WorkManagement.SprintManageCapacity,
                 CapabilityNames.WorkManagement.SprintCarryOver,
                 CapabilityNames.WorkManagement.SprintReadReports,
-                CapabilityNames.WorkManagement.AutomationRead,
-                CapabilityNames.WorkManagement.AutomationManage),
+                CapabilityNames.WorkManagement.OrchestrationRead,
+                CapabilityNames.WorkManagement.OrchestrationPreflight,
+                CapabilityNames.WorkManagement.OrchestrationStart,
+                CapabilityNames.WorkManagement.OrchestrationPause,
+                CapabilityNames.WorkManagement.OrchestrationResume,
+                CapabilityNames.WorkManagement.OrchestrationCancel,
+                CapabilityNames.WorkManagement.OrchestrationRetry,
+                CapabilityNames.WorkManagement.ExecutionRunV1),
             ["git-workspace"] = Set(
                 CapabilityNames.GitWorkspace.Prepare,
                 CapabilityNames.GitWorkspace.Inspect,
@@ -355,6 +360,18 @@ public static class WorkAutomationCapabilities
 {
     public const string Read = CapabilityNames.WorkManagement.AutomationRead;
     public const string Manage = CapabilityNames.WorkManagement.AutomationManage;
+}
+
+public static class WorkOrchestrationCapabilities
+{
+    public const string Read = CapabilityNames.WorkManagement.OrchestrationRead;
+    public const string Preflight = CapabilityNames.WorkManagement.OrchestrationPreflight;
+    public const string Start = CapabilityNames.WorkManagement.OrchestrationStart;
+    public const string Pause = CapabilityNames.WorkManagement.OrchestrationPause;
+    public const string Resume = CapabilityNames.WorkManagement.OrchestrationResume;
+    public const string Cancel = CapabilityNames.WorkManagement.OrchestrationCancel;
+    public const string Retry = CapabilityNames.WorkManagement.OrchestrationRetry;
+    public const string Execute = CapabilityNames.WorkManagement.ExecutionRunV1;
 }
 
 public static class WebCapabilities

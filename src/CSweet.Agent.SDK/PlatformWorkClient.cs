@@ -37,19 +37,6 @@ public sealed class PlatformWorkClient
         InvokeAsync<CreateWorkItemRequest, WorkItem>(
             WorkItemCapabilities.Create, request, cancellationToken);
 
-    public Task<WorkItem> CreateTaskAsync(
-        Guid boardId,
-        string title,
-        string idempotencyKey,
-        string? description = null,
-        string priority = WorkPriorities.Medium,
-        CancellationToken cancellationToken = default) =>
-        CreateItemAsync(
-            new CreateWorkItemRequest(
-                boardId, title, description, WorkItemKinds.Task, priority,
-                null, null, null, idempotencyKey),
-            cancellationToken);
-
     public Task<WorkItemComment> CommentAsync(
         CommentOnWorkItemRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<CommentOnWorkItemRequest, WorkItemComment>(
@@ -60,40 +47,10 @@ public sealed class PlatformWorkClient
         InvokeAsync<EstimateWorkItemRequest, WorkItem>(
             WorkItemCapabilities.Estimate, request, cancellationToken);
 
-    public Task<WorkItem> MoveAsync(
-        MoveWorkItemRequest request, CancellationToken cancellationToken = default) =>
-        InvokeAsync<MoveWorkItemRequest, WorkItem>(
-            WorkItemCapabilities.Move, request, cancellationToken);
-
-    public Task<WorkItem> CompleteAsync(
-        TransitionWorkItemRequest request, CancellationToken cancellationToken = default) =>
-        InvokeAsync<TransitionWorkItemRequest, WorkItem>(
-            WorkItemCapabilities.Complete, request, cancellationToken);
-
-    public Task<WorkItem> StartAsync(
-        TransitionWorkItemRequest request, CancellationToken cancellationToken = default) =>
-        InvokeAsync<TransitionWorkItemRequest, WorkItem>(
-            WorkItemCapabilities.Start, request, cancellationToken);
-
-    public Task<WorkItem> CancelAsync(
-        TransitionWorkItemRequest request, CancellationToken cancellationToken = default) =>
-        InvokeAsync<TransitionWorkItemRequest, WorkItem>(
-            WorkItemCapabilities.Cancel, request, cancellationToken);
-
-    public Task<WorkItem> ReopenAsync(
-        TransitionWorkItemRequest request, CancellationToken cancellationToken = default) =>
-        InvokeAsync<TransitionWorkItemRequest, WorkItem>(
-            WorkItemCapabilities.Reopen, request, cancellationToken);
-
     public Task<WorkItemTransfer> TransferAsync(
         TransferWorkItemRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<TransferWorkItemRequest, WorkItemTransfer>(
             WorkItemCapabilities.Transfer, request, cancellationToken);
-
-    public Task<QualityRunResult> SubmitQualityAsync(
-        SubmitQualityResultRequest request, CancellationToken cancellationToken = default) =>
-        InvokeAsync<SubmitQualityResultRequest, QualityRunResult>(
-            WorkItemCapabilities.QualitySubmit, request, cancellationToken);
 
     public Task<IReadOnlyList<WorkSprint>> ListSprintsAsync(
         Guid boardId, CancellationToken cancellationToken = default) =>
@@ -104,21 +61,6 @@ public sealed class PlatformWorkClient
         CreateWorkSprintRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<CreateWorkSprintRequest, WorkSprint>(
             WorkSprintCapabilities.Create, request, cancellationToken);
-
-    public Task<WorkSprint> StartSprintAsync(
-        ChangeWorkSprintStateRequest request, CancellationToken cancellationToken = default) =>
-        InvokeAsync<ChangeWorkSprintStateRequest, WorkSprint>(
-            WorkSprintCapabilities.Start, request, cancellationToken);
-
-    public Task<WorkSprint> CompleteSprintAsync(
-        ChangeWorkSprintStateRequest request, CancellationToken cancellationToken = default) =>
-        InvokeAsync<ChangeWorkSprintStateRequest, WorkSprint>(
-            WorkSprintCapabilities.Complete, request, cancellationToken);
-
-    public Task<WorkSprint> CancelSprintAsync(
-        ChangeWorkSprintStateRequest request, CancellationToken cancellationToken = default) =>
-        InvokeAsync<ChangeWorkSprintStateRequest, WorkSprint>(
-            WorkSprintCapabilities.Cancel, request, cancellationToken);
 
     public Task<WorkItem> SetItemSprintAsync(
         SetWorkItemSprintRequest request, CancellationToken cancellationToken = default) =>
@@ -139,16 +81,6 @@ public sealed class PlatformWorkClient
         Guid boardId, CancellationToken cancellationToken = default) =>
         InvokeAsync<WorkBoardReference, WorkSprintReport>(
             WorkSprintCapabilities.ReadReports, new(boardId), cancellationToken);
-
-    public Task<WorkAutomationDirectory> ReadAutomationsAsync(
-        Guid boardId, CancellationToken cancellationToken = default) =>
-        InvokeAsync<WorkBoardReference, WorkAutomationDirectory>(
-            WorkAutomationCapabilities.Read, new(boardId), cancellationToken);
-
-    public Task<WorkAutomationRule> ManageAutomationAsync(
-        ManageWorkAutomationRequest request, CancellationToken cancellationToken = default) =>
-        InvokeAsync<ManageWorkAutomationRequest, WorkAutomationRule>(
-            WorkAutomationCapabilities.Manage, request, cancellationToken);
 
     private async Task<TResponse> InvokeAsync<TRequest, TResponse>(
         string capability, TRequest request, CancellationToken cancellationToken)

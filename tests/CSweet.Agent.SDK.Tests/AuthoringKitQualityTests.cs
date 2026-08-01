@@ -98,7 +98,7 @@ public sealed partial class AuthoringKitQualityTests
         var providedProperties = schema.RootElement.GetProperty("$defs")
             .GetProperty("providedCapability")
             .GetProperty("properties");
-        Assert.Equal(900, providedProperties.GetProperty("executionTimeoutSeconds").GetProperty("maximum").GetInt32());
+        Assert.Equal(86400, providedProperties.GetProperty("executionTimeoutSeconds").GetProperty("maximum").GetInt32());
         Assert.Contains("\"work-item\"", text, StringComparison.Ordinal);
         Assert.Contains("\"caller-key\"", text, StringComparison.Ordinal);
         foreach (var section in new[] { "configuration", "credentials", "webAccess", "ui", "catalog" })

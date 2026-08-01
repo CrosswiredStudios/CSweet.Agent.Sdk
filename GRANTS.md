@@ -137,6 +137,17 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `WorkAutomationCapabilities.Read` — `work.automation.read`
 - `WorkAutomationCapabilities.Manage` — `work.automation.manage`
 
+### Board orchestration
+
+- `WorkOrchestrationCapabilities.Read` — `work.orchestration.read`
+- `WorkOrchestrationCapabilities.Preflight` — `work.orchestration.preflight`
+- `WorkOrchestrationCapabilities.Start` — `work.orchestration.start`
+- `WorkOrchestrationCapabilities.Pause` — `work.orchestration.pause`
+- `WorkOrchestrationCapabilities.Resume` — `work.orchestration.resume`
+- `WorkOrchestrationCapabilities.Cancel` — `work.orchestration.cancel`
+- `WorkOrchestrationCapabilities.Retry` — `work.orchestration.retry`
+- `WorkOrchestrationCapabilities.Execute` — `work.execution.run.v1`
+
 ## Git workspace
 
 Git workspace operations are scoped to an assigned work item and an installation-granted

@@ -90,7 +90,7 @@ machine-readable definition is [`schemas/csweet-plugin.v2.schema.json`](../schem
 ## Capability descriptors
 
 Each `provides` entry requires a namespaced name, description, object input/output schemas, timeout
-from 1–900 seconds, and one idempotency mode:
+from 1–86400 seconds, and one idempotency mode:
 
 - `work-item`: repeating the same durable work item is the same logical operation.
 - `caller-key`: the input schema carries a stable caller-provided domain key.

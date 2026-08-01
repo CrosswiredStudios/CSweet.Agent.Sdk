@@ -17,9 +17,9 @@ public sealed class CapabilityCatalogTests
             .ToArray();
 
         Assert.Equal(constants.Length, constants.Distinct(StringComparer.Ordinal).Count());
-        Assert.Equal(
-            constants.Order(StringComparer.Ordinal),
-            CapabilityCatalog.All.Order(StringComparer.Ordinal));
+        Assert.All(CapabilityCatalog.All, capability => Assert.Contains(capability, constants));
+        Assert.DoesNotContain(WorkManagementCapabilityNames.ItemMove, CapabilityCatalog.All);
+        Assert.DoesNotContain(WorkManagementCapabilityNames.AutomationManage, CapabilityCatalog.All);
     }
 
     [Fact]

@@ -105,7 +105,7 @@ public sealed class AgentManifestLoaderTests
 
     [Theory]
     [InlineData(0)]
-    [InlineData(901)]
+    [InlineData(86401)]
     public async Task LoadAsync_RejectsOutOfRangeTimeout(int timeout)
     {
         var path = await WriteManifestAsync(timeout: timeout);
@@ -113,7 +113,7 @@ public sealed class AgentManifestLoaderTests
         {
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(
                 () => AgentManifestLoader.LoadAsync(path, CancellationToken.None));
-            Assert.Contains("between 1 and 900", exception.Message);
+            Assert.Contains("between 1 and 86400", exception.Message);
         }
         finally
         {

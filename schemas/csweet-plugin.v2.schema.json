@@ -129,7 +129,7 @@
         "description": { "$ref": "#/$defs/nonEmptyString" },
         "inputSchema": { "$ref": "#/$defs/objectSchema" },
         "outputSchema": { "$ref": "#/$defs/objectSchema" },
-        "executionTimeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 900 },
+        "executionTimeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 86400 },
         "idempotency": { "enum": ["work-item", "caller-key", "none"] },
         "riskClass": { "type": "string", "default": "standard" },
         "descriptorHash": { "type": "string", "minLength": 1 }
