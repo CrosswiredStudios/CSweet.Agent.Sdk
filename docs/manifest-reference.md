@@ -53,7 +53,10 @@ machine-readable definition is [`schemas/csweet-plugin.v2.schema.json`](../schem
   "catalog": {
     "summary": "Answers bounded research questions.",
     "category": "Research",
-    "roleAliases": ["researcher"],
+    "role": { "key": "researcher", "name": "Researcher" },
+    "license": { "spdxId": "MIT" },
+    "iconUrls": ["https://example.com/researcher.png"],
+    "roleAliases": ["Research Analyst"],
     "keywords": ["research"],
     "documentationUrl": "README.md"
   }
@@ -85,7 +88,12 @@ machine-readable definition is [`schemas/csweet-plugin.v2.schema.json`](../schem
 | `credentials` | Named brokered credential bindings, never secret values |
 | `webAccess` | `None`, `Allowlist`, or `AllPublic` brokered network policy |
 | `ui` | Optional forms or views backed by capabilities in `provides` |
-| `catalog` | Optional discovery summary, category, aliases, keywords, and documentation |
+| `catalog` | Required for agents; declares canonical role, SPDX license, optional HTTPS icon URLs, discovery summary, category, aliases, keywords, and documentation |
+
+Agent `catalog.role.key` values are stable lowercase kebab-case identifiers used for exact hiring
+matches. `catalog.role.name` is the generic job title and is independent from the branded top-level
+`name`. `catalog.license.spdxId` accepts an SPDX identifier or expression. Up to four
+`catalog.iconUrls` entries may be supplied, and each must be an absolute HTTPS URL.
 
 ## Capability descriptors
 

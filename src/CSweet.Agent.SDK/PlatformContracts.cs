@@ -240,7 +240,12 @@ public sealed record AvailableAgent(
     string? DocumentationUrl,
     string? RepositoryUrl,
     decimal Score,
-    string Trust);
+    string Trust,
+    string? RoleKey = null,
+    string? RoleName = null,
+    string? LicenseSpdxId = null,
+    string? LicenseUrl = null,
+    IReadOnlyList<string>? IconUrls = null);
 
 /// <summary>Health information for one catalog source. A failed source does not fail the aggregate search.</summary>
 public sealed record AgentCatalogSourceHealth(

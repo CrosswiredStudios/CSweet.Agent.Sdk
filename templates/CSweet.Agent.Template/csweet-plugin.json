@@ -49,6 +49,9 @@
   "catalog": {
     "summary": "Processes a bounded request for C-Sweet.",
     "category": "General",
+    "role": { "key": "example-agent", "name": "Example Agent" },
+    "license": { "spdxId": "MIT" },
+    "iconUrls": [],
     "roleAliases": [],
     "keywords": [],
     "documentationUrl": "README.md"

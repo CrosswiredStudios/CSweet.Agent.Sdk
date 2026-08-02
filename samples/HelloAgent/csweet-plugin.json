@@ -45,6 +45,9 @@
   "catalog": {
     "summary": "Returns a friendly greeting.",
     "category": "Sample",
+    "role": { "key": "greeter", "name": "Greeter" },
+    "license": { "spdxId": "MIT" },
+    "iconUrls": [],
     "roleAliases": [],
     "keywords": ["sample", "hello"],
     "documentationUrl": "README.md"
