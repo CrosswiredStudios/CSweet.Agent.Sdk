@@ -96,6 +96,7 @@ public static class CapabilityNames
     {
         public const string BoardRead = WorkManagementCapabilityNames.BoardRead;
         public const string BoardCreate = WorkManagementCapabilityNames.BoardCreate;
+        public const string BoardConfigureColumns = WorkManagementCapabilityNames.BoardConfigureColumns;
         public const string ItemRead = WorkManagementCapabilityNames.ItemRead;
         public const string ItemStart = WorkManagementCapabilityNames.ItemStart;
         public const string ItemCreate = WorkManagementCapabilityNames.ItemCreate;
@@ -126,6 +127,8 @@ public static class CapabilityNames
         public const string OrchestrationResume = WorkManagementCapabilityNames.OrchestrationResume;
         public const string OrchestrationCancel = WorkManagementCapabilityNames.OrchestrationCancel;
         public const string OrchestrationRetry = WorkManagementCapabilityNames.OrchestrationRetry;
+        public const string OrchestrationConfigureSoftwareTemplate =
+            WorkManagementCapabilityNames.OrchestrationConfigureSoftwareTemplate;
     }
 
     public static class Web
@@ -147,6 +150,11 @@ public static class CapabilityNames
         public const string Inspect = "git.workspace.inspect.v1";
         public const string Publish = "git.workspace.publish.v1";
         public const string Cleanup = "git.workspace.cleanup.v1";
+    }
+
+    public static class GitRepository
+    {
+        public const string TeamOptions = "git.repository.team-options.v1";
     }
 }
 
@@ -221,10 +229,12 @@ public static class CapabilityCatalog
             ["work-management"] = Set(
                 CapabilityNames.WorkManagement.BoardRead,
                 CapabilityNames.WorkManagement.BoardCreate,
+                CapabilityNames.WorkManagement.BoardConfigureColumns,
                 CapabilityNames.WorkManagement.ItemRead,
                 CapabilityNames.WorkManagement.ItemCreate,
                 CapabilityNames.WorkManagement.ItemComment,
                 CapabilityNames.WorkManagement.ItemEstimate,
+                CapabilityNames.WorkManagement.ItemMove,
                 CapabilityNames.WorkManagement.ItemTransfer,
                 CapabilityNames.WorkManagement.SprintRead,
                 CapabilityNames.WorkManagement.SprintCreate,
@@ -239,7 +249,10 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.OrchestrationResume,
                 CapabilityNames.WorkManagement.OrchestrationCancel,
                 CapabilityNames.WorkManagement.OrchestrationRetry,
+                CapabilityNames.WorkManagement.OrchestrationConfigureSoftwareTemplate,
                 CapabilityNames.WorkManagement.ExecutionRunV1),
+            ["git-repository"] = Set(
+                CapabilityNames.GitRepository.TeamOptions),
             ["git-workspace"] = Set(
                 CapabilityNames.GitWorkspace.Prepare,
                 CapabilityNames.GitWorkspace.Inspect,
@@ -317,6 +330,7 @@ public static class WorkBoardCapabilities
 {
     public const string Read = CapabilityNames.WorkManagement.BoardRead;
     public const string Create = CapabilityNames.WorkManagement.BoardCreate;
+    public const string ConfigureColumns = CapabilityNames.WorkManagement.BoardConfigureColumns;
 }
 
 public static class WorkItemCapabilities
@@ -371,7 +385,14 @@ public static class WorkOrchestrationCapabilities
     public const string Resume = CapabilityNames.WorkManagement.OrchestrationResume;
     public const string Cancel = CapabilityNames.WorkManagement.OrchestrationCancel;
     public const string Retry = CapabilityNames.WorkManagement.OrchestrationRetry;
+    public const string ConfigureSoftwareTemplate =
+        CapabilityNames.WorkManagement.OrchestrationConfigureSoftwareTemplate;
     public const string Execute = CapabilityNames.WorkManagement.ExecutionRunV1;
+}
+
+public static class GitRepositoryCapabilities
+{
+    public const string TeamOptions = CapabilityNames.GitRepository.TeamOptions;
 }
 
 public static class WebCapabilities

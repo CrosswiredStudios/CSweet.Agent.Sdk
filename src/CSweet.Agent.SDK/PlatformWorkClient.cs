@@ -32,6 +32,11 @@ public sealed class PlatformWorkClient
         InvokeAsync<CreateWorkBoardRequest, WorkBoardSummary>(
             WorkBoardCapabilities.Create, request, cancellationToken);
 
+    public Task<WorkBoardDetail> ConfigureBoardColumnsAsync(
+        ConfigureWorkBoardColumnsRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<ConfigureWorkBoardColumnsRequest, WorkBoardDetail>(
+            WorkBoardCapabilities.ConfigureColumns, request, cancellationToken);
+
     public Task<WorkItem> CreateItemAsync(
         CreateWorkItemRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<CreateWorkItemRequest, WorkItem>(
@@ -46,6 +51,22 @@ public sealed class PlatformWorkClient
         EstimateWorkItemRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<EstimateWorkItemRequest, WorkItem>(
             WorkItemCapabilities.Estimate, request, cancellationToken);
+
+    public Task<WorkItem> MoveItemAsync(
+        MoveWorkItemRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<MoveWorkItemRequest, WorkItem>(
+            WorkItemCapabilities.Move, request, cancellationToken);
+
+    public Task<WorkOrchestrationPolicyRevision> ConfigureSoftwareTemplateAsync(
+        ConfigureSoftwareOrchestrationTemplateRequest request,
+        CancellationToken cancellationToken = default) =>
+        InvokeAsync<ConfigureSoftwareOrchestrationTemplateRequest, WorkOrchestrationPolicyRevision>(
+            WorkOrchestrationCapabilities.ConfigureSoftwareTemplate, request, cancellationToken);
+
+    public Task<IReadOnlyList<TeamRepositoryOption>> ListTeamRepositoryOptionsAsync(
+        TeamRepositoryOptionsRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<TeamRepositoryOptionsRequest, IReadOnlyList<TeamRepositoryOption>>(
+            GitRepositoryCapabilities.TeamOptions, request, cancellationToken);
 
     public Task<WorkItemTransfer> TransferAsync(
         TransferWorkItemRequest request, CancellationToken cancellationToken = default) =>

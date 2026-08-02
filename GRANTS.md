@@ -108,6 +108,11 @@ memory, or unrelated employees. Team membership does not grant any other authori
 
 ## Work management
 
+New governed software-board mutations:
+
+- `WorkBoardCapabilities.ConfigureColumns` — `work.board.columns.configure`
+- `WorkOrchestrationCapabilities.ConfigureSoftwareTemplate` — `work.orchestration.software-template.configure`
+
 Work-management capabilities require both an approved package capability and a live scoped grant
 on the organization or board. SDK calls never bypass the board grant model. Mutation requests
 include an idempotency key and, where applicable, the last observed resource revision.
@@ -149,6 +154,8 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `WorkOrchestrationCapabilities.Execute` — `work.execution.run.v1`
 
 ## Git workspace
+
+- `GitRepositoryCapabilities.TeamOptions` — `git.repository.team-options.v1`
 
 Git workspace operations are scoped to an assigned work item and an installation-granted
 repository connection. The platform resolves authentication in the runtime and never returns

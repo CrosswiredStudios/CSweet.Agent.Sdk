@@ -79,17 +79,51 @@ public sealed class PlatformWorkClientTests
         {
             WorkBoardCapabilities.Read,
             WorkBoardCapabilities.Create,
+            WorkBoardCapabilities.ConfigureColumns,
             WorkItemCapabilities.Read,
             WorkItemCapabilities.Create,
             WorkItemCapabilities.Comment,
+            WorkItemCapabilities.Move,
             WorkSprintCapabilities.Read,
             WorkSprintCapabilities.ReadReports,
             WorkOrchestrationCapabilities.Start,
+            WorkOrchestrationCapabilities.ConfigureSoftwareTemplate,
+            GitRepositoryCapabilities.TeamOptions,
             WorkOrchestrationCapabilities.Execute
         };
 
         Assert.All(capabilities, capability =>
             Assert.True(CapabilityCatalog.IsKnown(capability)));
         Assert.False(CapabilityCatalog.IsKnown(WorkItemCapabilities.Complete));
+    }
+
+    [Fact]
+    public async Task BoardMutationMethods_UseTypedGrantGovernedCapabilities()
+    {
+        var boardId = Guid.NewGuid();
+        var columnId = Guid.NewGuid();
+        var itemId = Guid.NewGuid();
+        var runtime = new AgentTestRuntime()
+            .RegisterCapability<ConfigureWorkBoardColumnsRequest, WorkBoardDetail>(
+                WorkBoardCapabilities.ConfigureColumns,
+                (request, _) => Task.FromResult(new WorkBoardDetail(
+                    new WorkBoardSummary(boardId, "Software", "", false, false, 2, []),
+                    [new WorkBoardColumn(columnId, request.Columns[0].Name, "ToDo", 0, "Disabled", null)],
+                    [])))
+            .RegisterCapability<MoveWorkItemRequest, WorkItem>(
+                WorkItemCapabilities.Move,
+                (request, _) => Task.FromResult(new WorkItem(
+                    request.ItemId, request.TargetColumnId, null, null, WorkItemKinds.Task,
+                    "Ticket", "", WorkStatuses.Ready, WorkPriorities.Medium,
+                    null, 1024, request.ExpectedRevision + 1, null)));
+        var work = runtime.CreateContext().Platform.Work;
+
+        var board = await work.ConfigureBoardColumnsAsync(new ConfigureWorkBoardColumnsRequest(
+            boardId, 1, [new(null, "Backlog", "ToDo", "Disabled")], "columns-v1"));
+        var item = await work.MoveItemAsync(new MoveWorkItemRequest(
+            boardId, itemId, columnId, 1, "ready-v1"));
+
+        Assert.Equal("Backlog", Assert.Single(board.Columns).Name);
+        Assert.Equal(columnId, item.ColumnId);
     }
 }

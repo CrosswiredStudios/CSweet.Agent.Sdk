@@ -18,7 +18,7 @@ public sealed class CapabilityCatalogTests
 
         Assert.Equal(constants.Length, constants.Distinct(StringComparer.Ordinal).Count());
         Assert.All(CapabilityCatalog.All, capability => Assert.Contains(capability, constants));
-        Assert.DoesNotContain(WorkManagementCapabilityNames.ItemMove, CapabilityCatalog.All);
+        Assert.Contains(WorkManagementCapabilityNames.ItemMove, CapabilityCatalog.All);
         Assert.DoesNotContain(WorkManagementCapabilityNames.AutomationManage, CapabilityCatalog.All);
     }
 
@@ -31,6 +31,7 @@ public sealed class CapabilityCatalogTests
                 "agent-catalog",
                 "assistant",
                 "communication",
+                "git-repository",
                 "git-workspace",
                 "management",
                 "memory",
