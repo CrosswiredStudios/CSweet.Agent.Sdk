@@ -150,15 +150,23 @@ public static class CapabilityNames
 
     public static class GitWorkspace
     {
-        public const string Prepare = "git.workspace.prepare.v1";
-        public const string Inspect = "git.workspace.inspect.v1";
-        public const string Publish = "git.workspace.publish.v1";
-        public const string Cleanup = "git.workspace.cleanup.v1";
+        public const string Prepare = "git.workspace.prepare.v2";
+        public const string Refresh = "git.workspace.refresh.v2";
+        public const string Inspect = "git.workspace.inspect.v2";
+        public const string Publish = "git.workspace.publish.v2";
+        public const string Cleanup = "git.workspace.cleanup.v2";
     }
 
-    public static class GitRepository
+    public static class GitMerge
     {
-        public const string TeamOptions = "git.repository.team-options.v1";
+        public const string Review = "git.merge.review.v2";
+        public const string Authorize = "git.merge.authorize.v2";
+    }
+
+    public static class SourceControl
+    {
+        public const string TeamRepositoryOptions = "source-control.repository.team-options.v2";
+        public const string ProvisionRepository = "source-control.repository.provision.v2";
     }
 }
 
@@ -259,13 +267,18 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.OrchestrationRetry,
                 CapabilityNames.WorkManagement.OrchestrationConfigureSoftwareTemplate,
                 CapabilityNames.WorkManagement.ExecutionRunV1),
-            ["git-repository"] = Set(
-                CapabilityNames.GitRepository.TeamOptions),
+            ["source-control"] = Set(
+                CapabilityNames.SourceControl.TeamRepositoryOptions,
+                CapabilityNames.SourceControl.ProvisionRepository),
             ["git-workspace"] = Set(
                 CapabilityNames.GitWorkspace.Prepare,
+                CapabilityNames.GitWorkspace.Refresh,
                 CapabilityNames.GitWorkspace.Inspect,
                 CapabilityNames.GitWorkspace.Publish,
                 CapabilityNames.GitWorkspace.Cleanup),
+            ["git-merge"] = Set(
+                CapabilityNames.GitMerge.Review,
+                CapabilityNames.GitMerge.Authorize),
             ["web"] = Set(
                 CapabilityNames.Web.Fetch,
                 CapabilityNames.Web.Request,
@@ -360,10 +373,11 @@ public static class WorkItemCapabilities
     public const string QualitySubmit = CapabilityNames.WorkManagement.ItemQualitySubmit;
 }
 
-/// <summary>Ticket-scoped Git workspace operations executed inside the agent runtime.</summary>
+/// <summary>Ticket-scoped, credential-free workspace operations brokered by C-Sweet.</summary>
 public static class GitWorkspaceCapabilities
 {
     public const string Prepare = CapabilityNames.GitWorkspace.Prepare;
+    public const string Refresh = CapabilityNames.GitWorkspace.Refresh;
     public const string Inspect = CapabilityNames.GitWorkspace.Inspect;
     public const string Publish = CapabilityNames.GitWorkspace.Publish;
     public const string Cleanup = CapabilityNames.GitWorkspace.Cleanup;
@@ -402,9 +416,16 @@ public static class WorkOrchestrationCapabilities
     public const string Execute = CapabilityNames.WorkManagement.ExecutionRunV1;
 }
 
-public static class GitRepositoryCapabilities
+public static class GitMergeCapabilities
 {
-    public const string TeamOptions = CapabilityNames.GitRepository.TeamOptions;
+    public const string Review = CapabilityNames.GitMerge.Review;
+    public const string Authorize = CapabilityNames.GitMerge.Authorize;
+}
+
+public static class SourceControlCapabilities
+{
+    public const string TeamRepositoryOptions = CapabilityNames.SourceControl.TeamRepositoryOptions;
+    public const string ProvisionRepository = CapabilityNames.SourceControl.ProvisionRepository;
 }
 
 public static class WebCapabilities

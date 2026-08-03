@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace CSweet.Agent.SDK;
 
 /// <summary>
-/// Typed, grant-governed Git workspace operations. Credentials are resolved by the
-/// platform and are never returned to an agent.
+/// Typed operations over an assignment-scoped, credential-free source snapshot. Core derives the
+/// repository, base commit, branch, and provider policy; callers cannot supply any of them.
 /// </summary>
 public sealed class PlatformGitWorkspaceClient
 {
@@ -18,6 +18,12 @@ public sealed class PlatformGitWorkspaceClient
         CancellationToken cancellationToken = default) =>
         InvokeAsync<PrepareGitWorkspaceRequest, GitWorkspaceResult>(
             GitWorkspaceCapabilities.Prepare, request, cancellationToken);
+
+    public Task<GitWorkspaceRefreshResult> RefreshAsync(
+        RefreshGitWorkspaceRequest request,
+        CancellationToken cancellationToken = default) =>
+        InvokeAsync<RefreshGitWorkspaceRequest, GitWorkspaceRefreshResult>(
+            GitWorkspaceCapabilities.Refresh, request, cancellationToken);
 
     public Task<GitWorkspaceInspection> InspectAsync(
         InspectGitWorkspaceRequest request,
@@ -68,40 +74,49 @@ public sealed class PlatformGitWorkspaceClient
 public sealed record PrepareGitWorkspaceRequest(
     Guid WorkItemId,
     long AssignmentRevision,
-    Guid RepositoryConnectionId,
-    string? BaseBranch,
-    string BranchName,
-    string IdempotencyKey)
-{
-    public string? ExpectedCommitSha { get; init; }
-    public bool ResumePublishedBranch { get; init; }
-}
+    string IdempotencyKey);
 
 public sealed record GitWorkspaceResult(
     Guid WorkspaceId,
     Guid WorkItemId,
     string Path,
-    Guid RepositoryConnectionId,
-    string BaseBranch,
-    string BranchName,
+    Guid RepositoryId,
+    string Provider,
+    string DeliveryKind,
+    string BaseCommitSha,
     string Status,
-    bool Resumed)
-{
-    public string? CheckoutCommitSha { get; init; }
-}
+    bool Resumed);
 
-public sealed record InspectGitWorkspaceRequest(Guid WorkspaceId);
+public sealed record RefreshGitWorkspaceRequest(
+    Guid WorkspaceId,
+    long AssignmentRevision,
+    string IdempotencyKey);
+
+public sealed record GitWorkspaceConflict(
+    string Path,
+    string Kind,
+    string Message);
+
+public sealed record GitWorkspaceRefreshResult(
+    Guid WorkspaceId,
+    string Status,
+    string BaseCommitSha,
+    IReadOnlyList<GitWorkspaceConflict> Conflicts);
+
+public sealed record InspectGitWorkspaceRequest(
+    Guid WorkspaceId,
+    long AssignmentRevision);
 
 public sealed record GitWorkspaceInspection(
     Guid WorkspaceId,
     string Status,
     bool HasChanges,
     IReadOnlyList<string> ChangedFiles,
-    IReadOnlyList<string> Commits,
     IReadOnlyList<GitValidationResult> Validations)
 {
     public bool HasTrackedChanges { get; init; }
     public IReadOnlyList<string> TrackedChangedFiles { get; init; } = [];
+    public string? DiffSummary { get; init; }
 }
 
 public sealed record GitValidationResult(
@@ -112,28 +127,33 @@ public sealed record GitValidationResult(
 
 public sealed record PublishGitWorkspaceRequest(
     Guid WorkspaceId,
+    long AssignmentRevision,
     string CommitMessage,
-    string PullRequestTitle,
-    string PullRequestBody,
+    string ProposedChangeTitle,
+    string ProposedChangeBody,
     string IdempotencyKey,
     IReadOnlyList<GitValidationResult>? Validations = null);
 
+public static class GitDeliveryKinds
+{
+    public const string PullRequest = "PullRequest";
+    public const string BranchOnly = "BranchOnly";
+}
+
 public sealed record GitWorkspacePublication(
+    Guid PublicationId,
     Guid WorkspaceId,
+    Guid RepositoryId,
+    string Provider,
+    string DeliveryKind,
     string BranchName,
     string CommitSha,
-    bool Pushed,
     Uri? PullRequestUrl,
-    string Status)
-{
-    public string MergeStatus { get; init; } =
-        CSweet.WorkManagement.Contracts.DeliveryMergeStatuses.None;
-    public string? MergeCommitSha { get; init; }
-    public DateTimeOffset? MergedAt { get; init; }
-}
+    string Status);
 
 public sealed record CleanupGitWorkspaceRequest(
     Guid WorkspaceId,
+    long AssignmentRevision,
     bool RetainOnFailure = true);
 
 public sealed record GitWorkspaceCleanupResult(

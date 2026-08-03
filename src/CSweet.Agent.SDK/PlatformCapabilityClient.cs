@@ -17,6 +17,7 @@ public sealed class PlatformCapabilityClient
         Memory = new PlatformMemoryClient(tools);
         Work = new PlatformWorkClient(tools);
         Git = new PlatformGitWorkspaceClient(tools);
+        SourceControl = new PlatformSourceControlClient(tools);
         Communication = new PlatformCommunicationClient(this);
     }
 
@@ -26,6 +27,7 @@ public sealed class PlatformCapabilityClient
     public PlatformMemoryClient Memory { get; }
     public PlatformWorkClient Work { get; }
     public PlatformGitWorkspaceClient Git { get; }
+    public PlatformSourceControlClient SourceControl { get; }
     public PlatformCommunicationClient Communication { get; }
 
     public Task<BusinessProfileResponse> ReadBusinessProfileAsync(CancellationToken token = default) =>

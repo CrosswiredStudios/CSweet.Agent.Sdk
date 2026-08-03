@@ -157,18 +157,23 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `WorkOrchestrationCapabilities.Retry` — `work.orchestration.retry`
 - `WorkOrchestrationCapabilities.Execute` — `work.execution.run.v1`
 
-## Git workspace
+## Source control and Git workspace
 
-- `GitRepositoryCapabilities.TeamOptions` — `git.repository.team-options.v1`
+- `SourceControlCapabilities.TeamRepositoryOptions` — `source-control.repository.team-options.v2`
+- `SourceControlCapabilities.ProvisionRepository` — `source-control.repository.provision.v2`
 
-Git workspace operations are scoped to an assigned work item and an installation-granted
-repository connection. The platform resolves authentication in the runtime and never returns
-credential material through these contracts.
+Git workspace operations are scoped to an assigned work item and its authoritative assignment
+revision. Core derives the repository, base commit, and deterministic ticket branch. Agent
+containers receive a credential-free tree without `.git`; provider credentials and installation
+identifiers never appear in these contracts.
 
-- `GitWorkspaceCapabilities.Prepare` — `git.workspace.prepare.v1`
-- `GitWorkspaceCapabilities.Inspect` — `git.workspace.inspect.v1`
-- `GitWorkspaceCapabilities.Publish` — `git.workspace.publish.v1`
-- `GitWorkspaceCapabilities.Cleanup` — `git.workspace.cleanup.v1`
+- `GitWorkspaceCapabilities.Prepare` — `git.workspace.prepare.v2`
+- `GitWorkspaceCapabilities.Refresh` — `git.workspace.refresh.v2`
+- `GitWorkspaceCapabilities.Inspect` — `git.workspace.inspect.v2`
+- `GitWorkspaceCapabilities.Publish` — `git.workspace.publish.v2`
+- `GitWorkspaceCapabilities.Cleanup` — `git.workspace.cleanup.v2`
+- `GitMergeCapabilities.Review` — `git.merge.review.v2`
+- `GitMergeCapabilities.Authorize` — `git.merge.authorize.v2`
 
 ## Web proxy
 

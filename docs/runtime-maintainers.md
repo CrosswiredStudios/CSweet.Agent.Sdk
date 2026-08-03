@@ -8,6 +8,16 @@ The worker long-polls `csweet/work/claim` for at most 25 seconds, runs bounded c
 
 `tools/list` is the only descriptor source. The SDK caches descriptors only by grant revision. Typed calls still resolve a live descriptor and the gateway reauthorizes every call. `modelVisible` controls conversion to `AITool`; transport and lifecycle tools are never exposed to models.
 
+Git workspace v2 typed clients intentionally omit repository and ref selection. Do not add clone
+URLs, connection IDs, provider installation IDs, credentials, branches, base refs, or arbitrary
+commit SHAs to prepare requests. The authoritative assignment revision is required on every
+workspace operation. `PlatformSourceControlClient` exposes only bounded repository intent and
+exact-SHA decisions; it is not a general GitHub administration client.
+
+Source-control provider authentication belongs to separately deployed trusted services. SDK code
+must never inspect `.git`, inject credentials, invoke authenticated Git, mint provider tokens, or
+offer a local fallback. A provider outage is reported as a bounded platform capability failure.
+
 Runtime methods:
 
 - `csweet/session/renew`

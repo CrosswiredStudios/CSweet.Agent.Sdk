@@ -66,7 +66,7 @@ public sealed class PlatformWorkClient
     public Task<IReadOnlyList<TeamRepositoryOption>> ListTeamRepositoryOptionsAsync(
         TeamRepositoryOptionsRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<TeamRepositoryOptionsRequest, IReadOnlyList<TeamRepositoryOption>>(
-            GitRepositoryCapabilities.TeamOptions, request, cancellationToken);
+            SourceControlCapabilities.TeamRepositoryOptions, request, cancellationToken);
 
     public Task<WorkItemTransfer> TransferAsync(
         TransferWorkItemRequest request, CancellationToken cancellationToken = default) =>

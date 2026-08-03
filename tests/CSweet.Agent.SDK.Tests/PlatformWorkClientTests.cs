@@ -88,7 +88,7 @@ public sealed class PlatformWorkClientTests
             WorkSprintCapabilities.ReadReports,
             WorkOrchestrationCapabilities.Start,
             WorkOrchestrationCapabilities.ConfigureSoftwareTemplate,
-            GitRepositoryCapabilities.TeamOptions,
+            SourceControlCapabilities.TeamRepositoryOptions,
             WorkOrchestrationCapabilities.Execute
         };
 

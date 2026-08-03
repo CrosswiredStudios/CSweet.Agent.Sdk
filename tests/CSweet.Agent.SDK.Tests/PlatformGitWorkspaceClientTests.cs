@@ -9,6 +9,8 @@ public sealed class PlatformGitWorkspaceClientTests
     {
         PublishGitWorkspaceRequest? captured = null;
         var workspaceId = Guid.NewGuid();
+        var publicationId = Guid.NewGuid();
+        var repositoryId = Guid.NewGuid();
         var runtime = new AgentTestRuntime()
             .RegisterCapability<PublishGitWorkspaceRequest, GitWorkspacePublication>(
                 GitWorkspaceCapabilities.Publish,
@@ -16,10 +18,13 @@ public sealed class PlatformGitWorkspaceClientTests
                 {
                     captured = request;
                     return Task.FromResult(new GitWorkspacePublication(
+                        publicationId,
                         request.WorkspaceId,
+                        repositoryId,
+                        "GitHub",
+                        GitDeliveryKinds.PullRequest,
                         "csweet/ticket",
                         "0123456789abcdef",
-                        true,
                         new Uri("https://github.com/example/repository/pull/1"),
                         "Published"));
                 });
@@ -27,16 +32,14 @@ public sealed class PlatformGitWorkspaceClientTests
         var result = await runtime.CreateContext().Platform.Git.PublishAsync(
             new PublishGitWorkspaceRequest(
                 workspaceId,
+                7,
                 "Implement ticket",
                 "Ticket",
                 "Evidence",
                 "event:publish",
                 [new GitValidationResult("dotnet test", true, 0)]));
 
-        Assert.True(result.Pushed);
-        Assert.Equal(
-            CSweet.WorkManagement.Contracts.DeliveryMergeStatuses.None,
-            result.MergeStatus);
+        Assert.Equal(GitDeliveryKinds.PullRequest, result.DeliveryKind);
         var validation = Assert.Single(captured!.Validations!);
         Assert.Equal("dotnet test", validation.Command);
         Assert.True(validation.Succeeded);
@@ -49,6 +52,7 @@ public sealed class PlatformGitWorkspaceClientTests
         var capabilities = new[]
         {
             GitWorkspaceCapabilities.Prepare,
+            GitWorkspaceCapabilities.Refresh,
             GitWorkspaceCapabilities.Inspect,
             GitWorkspaceCapabilities.Publish,
             GitWorkspaceCapabilities.Cleanup
@@ -57,6 +61,6 @@ public sealed class PlatformGitWorkspaceClientTests
         Assert.All(capabilities, capability =>
             Assert.True(CapabilityCatalog.IsKnown(capability)));
         Assert.All(capabilities, capability =>
-            Assert.EndsWith(".v1", capability, StringComparison.Ordinal));
+            Assert.EndsWith(".v2", capability, StringComparison.Ordinal));
     }
 }
