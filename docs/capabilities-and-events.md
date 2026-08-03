@@ -37,6 +37,7 @@ specialized helper.
 | Read or propose business memory | `memory.business.read.v1` / `memory.business.propose.v1` |
 | Read or propose user memory | `memory.user.read.v1` / `memory.user.propose.v1` |
 | Read a conversation or send a message | `communication.chat.read.v1` / `communication.message.send.v1` |
+| Coordinate two eligible agents durably | `communication.coordination.start.v1` / `communication.coordination.respond.v1` / `communication.coordination.read.v1` / `communication.coordination.cancel.v1` |
 | Search available agents | `platform.agent-catalog.search.v1` |
 | Read/create work boards | `work.board.read` / `work.board.create` |
 | Read/create/update work items | `work.item.read`, `work.item.create`, `work.item.start`, and the specific transition capability |

@@ -168,7 +168,7 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         deadline.CancelAfter(remaining);
         var progress = new LeaseProgressReporter(runtime, lease);
         var context = CreateContext(platform, identity, progress);
-        var renewal = RenewLeaseAsync(lease, deadline.Token);
+        var renewal = RenewLeaseAsync(lease, deadline);
         try
         {
             AgentWorkResult result = lease.Kind switch
@@ -189,7 +189,15 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         }
         catch (OperationCanceledException) when (deadline.IsCancellationRequested && !runtimeCancellation.IsCancellationRequested)
         {
-            await runtime.FailAsync(lease, "The agent work deadline elapsed.", runtimeCancellation);
+            try
+            {
+                await runtime.FailAsync(lease, "The agent work deadline elapsed or was cancelled by the platform.", runtimeCancellation);
+            }
+            catch (Exception exception)
+            {
+                logger.LogInformation(exception,
+                    "Work {WorkId} was already terminal when cancellation was acknowledged.", lease.WorkId);
+            }
         }
         catch (Exception exception)
         {
@@ -209,8 +217,7 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         AgentRuntimeContext context,
         CancellationToken cancellationToken)
     {
-        await agent.HandleEventAsync(
-            new AgentEventEnvelope(
+        var envelope = new AgentEventEnvelope(
                 lease.WorkId,
                 lease.EventId is { } eventId && eventId != Guid.Empty
                     ? eventId
@@ -219,19 +226,78 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 lease.Name,
                 lease.Payload,
                 DateTimeOffset.UtcNow,
-                lease.CorrelationId),
-            context,
-            cancellationToken);
+                lease.CorrelationId);
+        if (string.Equals(envelope.EventType, AgentCoordinationEvents.TurnRequested, StringComparison.Ordinal) &&
+            agent is CSweetAgentBase baseAgent)
+        {
+            var request = envelope.Data.Deserialize<AgentCoordinationTurnRequest>(
+                CSweetAgentBase.SerializerOptions)
+                ?? throw new InvalidOperationException("The coordination turn payload is empty.");
+            var result = await baseAgent.HandleCoordinationTurnAsync(request, context, cancellationToken);
+            ValidateCoordinationResult(request, result);
+            await context.Platform.Communication.RespondToCoordinationAsync(
+                new RespondToAgentCoordinationRequest(
+                    request.SessionId,
+                    request.ExpectedRevision,
+                    request.TurnOrdinal,
+                    result.Disposition,
+                    result.Content,
+                    $"coordination-turn:{request.SessionId:N}:{request.TurnOrdinal}"),
+                cancellationToken);
+        }
+        else
+        {
+            await agent.HandleEventAsync(envelope, context, cancellationToken);
+        }
         return AgentWorkResult.Success(new { acknowledged = true });
     }
 
-    private async Task RenewLeaseAsync(AgentWorkLease lease, CancellationToken cancellationToken)
+    private static void ValidateCoordinationResult(
+        AgentCoordinationTurnRequest request,
+        AgentCoordinationTurnResult result)
+    {
+        if (string.IsNullOrWhiteSpace(result.Content))
+            throw new InvalidOperationException("A coordination turn must return substantive content.");
+        if (result.Disposition == AgentCoordinationDispositions.Continue &&
+            IsAcknowledgementOnly(result.Content))
+            throw new InvalidOperationException(
+                "A Continue coordination turn must include substantive progress and a concrete question or next request.");
+        if (result.Disposition is not (AgentCoordinationDispositions.Continue or
+            AgentCoordinationDispositions.Completed or AgentCoordinationDispositions.Blocked))
+            throw new InvalidOperationException("A coordination turn must Continue, Complete, or Block.");
+        if (request.IsFinalization && result.Disposition == AgentCoordinationDispositions.Continue)
+            throw new InvalidOperationException("A finalization turn cannot continue the collaboration.");
+    }
+
+    private static bool IsAcknowledgementOnly(string content)
+    {
+        var normalized = content.Trim().TrimEnd('.', '!', '?').ToLowerInvariant();
+        return normalized is "ok" or "okay" or "ack" or "acknowledged" or "understood" or
+            "thanks" or "thank you" or "sounds good" or "will do";
+    }
+
+    private async Task RenewLeaseAsync(AgentWorkLease lease, CancellationTokenSource workCancellation)
     {
         var interval = TimeSpan.FromSeconds(Math.Clamp(_options.LeaseRenewalSeconds, 5, 30));
-        while (!cancellationToken.IsCancellationRequested)
+        while (!workCancellation.IsCancellationRequested)
         {
-            await Task.Delay(interval, cancellationToken);
-            await runtime.RenewWorkAsync(lease, cancellationToken);
+            await Task.Delay(interval, workCancellation.Token);
+            try
+            {
+                await runtime.RenewWorkAsync(lease, workCancellation.Token);
+            }
+            catch (OperationCanceledException) when (workCancellation.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception,
+                    "Lease renewal stopped work {WorkId}; the platform may have cancelled or revoked it.",
+                    lease.WorkId);
+                await workCancellation.CancelAsync();
+                return;
+            }
         }
     }
 

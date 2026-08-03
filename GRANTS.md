@@ -91,6 +91,10 @@ memory, or unrelated employees. Team membership does not grant any other authori
 - `CommunicationCapabilities.ChatModify` — `communication.chat.modify.v1`
 - `CommunicationCapabilities.ChatDelete` — `communication.chat.delete.v1`
 - `CommunicationCapabilities.MessageSend` — `communication.message.send.v1`
+- `CommunicationCapabilities.CoordinationStart` — `communication.coordination.start.v1`
+- `CommunicationCapabilities.CoordinationRespond` — `communication.coordination.respond.v1`
+- `CommunicationCapabilities.CoordinationRead` — `communication.coordination.read.v1`
+- `CommunicationCapabilities.CoordinationCancel` — `communication.coordination.cancel.v1`
 - `CommunicationCapabilities.MessageIngest` — `communication.message.ingest.v1`
 - `CommunicationCapabilities.Send` — `communication.send.v1`
 - `CommunicationCapabilities.WorkspaceApply` — `communication.workspace.apply.v1`

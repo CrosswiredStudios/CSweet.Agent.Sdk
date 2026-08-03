@@ -76,6 +76,10 @@ public static class CapabilityNames
         public const string WorkspaceApply = "communication.workspace.apply.v1";
         public const string IdentityAssign = "communication.identity.assign.v1";
         public const string LinkCodeRegister = "communication.link-code.register.v1";
+        public const string CoordinationStart = "communication.coordination.start.v1";
+        public const string CoordinationRespond = "communication.coordination.respond.v1";
+        public const string CoordinationRead = "communication.coordination.read.v1";
+        public const string CoordinationCancel = "communication.coordination.cancel.v1";
     }
 
     public static class Management
@@ -217,7 +221,11 @@ public static class CapabilityCatalog
                 CapabilityNames.Communication.Send,
                 CapabilityNames.Communication.WorkspaceApply,
                 CapabilityNames.Communication.IdentityAssign,
-                CapabilityNames.Communication.LinkCodeRegister),
+                CapabilityNames.Communication.LinkCodeRegister,
+                CapabilityNames.Communication.CoordinationStart,
+                CapabilityNames.Communication.CoordinationRespond,
+                CapabilityNames.Communication.CoordinationRead,
+                CapabilityNames.Communication.CoordinationCancel),
             ["management"] = Set(
                 CapabilityNames.Management.CheckIn,
                 CapabilityNames.Management.ProductRoleBrief,
@@ -307,6 +315,10 @@ public static class CommunicationCapabilities
     public const string WorkspaceApply = CapabilityNames.Communication.WorkspaceApply;
     public const string IdentityAssign = CapabilityNames.Communication.IdentityAssign;
     public const string LinkCodeRegister = CapabilityNames.Communication.LinkCodeRegister;
+    public const string CoordinationStart = CapabilityNames.Communication.CoordinationStart;
+    public const string CoordinationRespond = CapabilityNames.Communication.CoordinationRespond;
+    public const string CoordinationRead = CapabilityNames.Communication.CoordinationRead;
+    public const string CoordinationCancel = CapabilityNames.Communication.CoordinationCancel;
 }
 
 public static class MemoryCapabilities

@@ -17,6 +17,7 @@ public sealed class PlatformCapabilityClient
         Memory = new PlatformMemoryClient(tools);
         Work = new PlatformWorkClient(tools);
         Git = new PlatformGitWorkspaceClient(tools);
+        Communication = new PlatformCommunicationClient(this);
     }
 
     internal IPlatformToolInvoker Tools => _tools;
@@ -25,6 +26,7 @@ public sealed class PlatformCapabilityClient
     public PlatformMemoryClient Memory { get; }
     public PlatformWorkClient Work { get; }
     public PlatformGitWorkspaceClient Git { get; }
+    public PlatformCommunicationClient Communication { get; }
 
     public Task<BusinessProfileResponse> ReadBusinessProfileAsync(CancellationToken token = default) =>
         InvokeAsync<object, BusinessProfileResponse>(PlatformCapabilities.BusinessProfileRead, new { }, token);

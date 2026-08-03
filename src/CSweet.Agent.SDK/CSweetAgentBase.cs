@@ -44,6 +44,17 @@ public abstract class CSweetAgentBase : ICSweetAgent
         Task.CompletedTask;
 
     /// <summary>
+    /// Handles one durable turn in a platform-governed agent collaboration. Implementations must
+    /// explicitly continue, complete, or block; the SDK submits the returned disposition.
+    /// </summary>
+    public virtual Task<AgentCoordinationTurnResult> HandleCoordinationTurnAsync(
+        AgentCoordinationTurnRequest request,
+        AgentRuntimeContext context,
+        CancellationToken cancellationToken) =>
+        Task.FromResult(AgentCoordinationTurnResult.Blocked(
+            $"Agent '{AgentId}' does not implement collaborative coordination turns."));
+
+    /// <summary>
     /// Dispatches built-in configuration capabilities before invoking the agent capability hook.
     /// </summary>
     public async Task<AgentWorkResult> ExecuteCapabilityAsync(
