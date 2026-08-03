@@ -90,6 +90,8 @@ public sealed record AgentManifestConfigurationField
     public string Label { get; init; } = string.Empty;
     public bool Required { get; init; }
     public bool Secret { get; init; }
+    /// <summary>Optional scalar value used to initialize a new installation.</summary>
+    public JsonElement? DefaultValue { get; init; }
 }
 
 /// <summary>A named credential binding; credential values are never included in a manifest.</summary>

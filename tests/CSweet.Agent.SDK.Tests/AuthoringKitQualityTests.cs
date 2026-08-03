@@ -99,6 +99,10 @@ public sealed partial class AuthoringKitQualityTests
             .GetProperty("providedCapability")
             .GetProperty("properties");
         Assert.Equal(86400, providedProperties.GetProperty("executionTimeoutSeconds").GetProperty("maximum").GetInt32());
+        Assert.True(schema.RootElement.GetProperty("$defs")
+            .GetProperty("configurationField")
+            .GetProperty("properties")
+            .TryGetProperty("defaultValue", out _));
         Assert.Contains("\"work-item\"", text, StringComparison.Ordinal);
         Assert.Contains("\"caller-key\"", text, StringComparison.Ordinal);
         foreach (var section in new[] { "configuration", "credentials", "webAccess", "ui", "catalog" })

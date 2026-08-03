@@ -154,7 +154,8 @@
         "type": { "$ref": "#/$defs/nonEmptyString" },
         "label": { "$ref": "#/$defs/nonEmptyString" },
         "required": { "type": "boolean" },
-        "secret": { "type": "boolean" }
+        "secret": { "type": "boolean" },
+        "defaultValue": { "type": ["string", "number", "boolean", "null"] }
       }
     },
     "credential": {

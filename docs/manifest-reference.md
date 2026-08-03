@@ -95,6 +95,11 @@ matches. `catalog.role.name` is the generic job title and is independent from th
 `name`. `catalog.license.spdxId` accepts an SPDX identifier or expression. Up to four
 `catalog.iconUrls` entries may be supplied, and each must be an absolute HTTPS URL.
 
+Configuration fields may declare a scalar `defaultValue`. C-Sweet uses it to pre-populate new
+installation and hiring forms. Required fields should declare a usable default whenever the value
+is package-defined; provider and model fields remain organization-specific, and secret fields must
+not embed credentials in the manifest.
+
 ## Capability descriptors
 
 Each `provides` entry requires a namespaced name, description, object input/output schemas, timeout
