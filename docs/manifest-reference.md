@@ -86,6 +86,8 @@ machine-readable definition is [`schemas/csweet-plugin.v2.schema.json`](../schem
 | `events.subscribes` | Durable event names consumed by the package |
 | `configuration` | Installation fields; configurable agents must provide describe/update |
 | `credentials` | Named brokered credential bindings, never secret values |
+| `connections` | OAuth provider declarations with approved HTTPS origins and named progressive scope sets |
+| `setup` | Optional required, resumable setup flow made only from platform-owned safe step kinds |
 | `webAccess` | `None`, `Allowlist`, or `AllPublic` brokered network policy |
 | `ui` | Optional forms or views backed by capabilities in `provides` |
 | `catalog` | Required for agents; declares canonical role, SPDX license, optional HTTPS icon URLs, discovery summary, category, aliases, keywords, and documentation |
@@ -125,3 +127,21 @@ DNS host, path prefix, methods, purpose, and optional credential binding. The cr
 
 Generic `events.publishes` is invalid in protocol v2. Use work progress or an explicit platform
 capability for business effects.
+
+## Connections and safe setup
+
+`connections` declares public OAuth metadata only: a stable connection ID, an administrator- or
+publisher-registered `providerProfile`, exact HTTPS origins, and named permission sets. Client
+IDs, client secrets, access tokens, refresh tokens, authorization endpoints, and redirect URIs do
+not belong in plugin manifests or configuration. A setup step may request only a scope set named
+by its connection declaration.
+
+`setup` is a resumable graph whose `entryFlow` references one declared flow. Steps are rendered by
+C-Sweet and are limited to `permission-summary`, `oauth-connect`, `form`, `account-selector`,
+`health-check`, `confirmation`, `permission-request`, and `disconnect`. Capability callbacks and
+configuration keys must be declared in the same manifest. HTML, JavaScript, Razor, iframes,
+remote UI, redirects, and executable expressions are not manifest features and fail validation.
+
+Progressive permission sets should separate required read-only access from optional mutations.
+Enabling an optional feature must be initiated by the user and creates a fresh platform-owned
+authorization flow; plugins cannot silently add scopes.

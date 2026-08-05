@@ -28,6 +28,7 @@ public static class PlatformCapabilities
     public const string HiringWorkflowStage = CapabilityNames.Platform.HiringWorkflowStage;
     public const string UserActionSuggest = CapabilityNames.Platform.UserActionSuggest;
     public const string TeamRosterRead = CapabilityNames.Platform.TeamRosterRead;
+    public const string ManagedActionDecide = CapabilityNames.Platform.ManagedActionDecide;
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -38,7 +39,7 @@ public static class PlatformCapabilities
         UserInputRequest, HiringRecommendationList, HiringRecommendationUpsert,
         HiringRecommendationResolve, HiringRecommendationWithdraw, ResourceChangePropose,
         ResourceChangeRead, ResourceChangeDecide, HiringWorkflowStage, UserActionSuggest,
-        TeamRosterRead
+        TeamRosterRead, ManagedActionDecide
     };
 }
 

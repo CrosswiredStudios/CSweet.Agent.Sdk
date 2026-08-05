@@ -186,6 +186,19 @@ identifiers never appear in these contracts.
 
 - `PluginCapabilities.State` — `plugin.state.v1`
 
+## Secure plugin operations
+
+These provider-neutral broker capabilities keep credentials, provider upload sessions, and
+operational storage outside plugin processes. Installations receive only the individual grants
+declared and approved in their manifest.
+
+- `CapabilityNames.ManagedActionExecute` — `platform.managed-action.execute.v1`
+- `PlatformCapabilities.ManagedActionDecide` — `platform.managed-action.decide.v1` (restricted to the exact assigned agent-approver installation after a durable `com.csweet.managed-action.approval-requested.v1` event)
+- `CapabilityNames.EngagementInboxUpsert` — `platform.engagement-inbox.upsert.v1`
+- `CapabilityNames.MetricSnapshotWrite` — `platform.metric-snapshot.write.v1`
+- `CapabilityNames.SynchronizationCheckpoint` — `platform.synchronization-checkpoint.v1`
+- `CapabilityNames.MediaTransfer` — `platform.media.transfer.v1`
+
 ## Contribution rule
 
 Every new platform capability must be added to the runtime registry and `CapabilityNames`, exposed

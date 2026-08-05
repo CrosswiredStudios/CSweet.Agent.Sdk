@@ -23,6 +23,7 @@
   ],
   "properties": {
     "$schema": { "type": "string", "format": "uri-reference" },
+    "$defs": { "type": "object", "additionalProperties": { "type": "object" } },
     "manifestVersion": { "const": "2.0" },
     "kind": { "enum": ["agent", "service"] },
     "id": { "$ref": "#/$defs/identifier" },
@@ -96,6 +97,8 @@
     },
     "configuration": { "type": "array", "items": { "$ref": "#/$defs/configurationField" } },
     "credentials": { "type": "array", "items": { "$ref": "#/$defs/credential" } },
+    "connections": { "type": "array", "items": { "$ref": "#/$defs/connection" } },
+    "setup": { "$ref": "#/$defs/setup" },
     "webAccess": { "$ref": "#/$defs/webAccess" },
     "ui": { "type": "array", "items": { "$ref": "#/$defs/uiContribution" } },
     "catalog": { "$ref": "#/$defs/catalog" }
@@ -110,8 +113,8 @@
     "nonEmptyString": { "type": "string", "minLength": 1 },
     "objectSchema": {
       "type": "object",
-      "required": ["type"],
-      "properties": { "type": { "const": "object" } }
+      "properties": { "type": { "const": "object" }, "$ref": { "type": "string" } },
+      "anyOf": [{ "required": ["type"] }, { "required": ["$ref"] }]
     },
     "providedCapability": {
       "type": "object",
@@ -172,6 +175,80 @@
         }
       }
     },
+    "connection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "providerProfile", "allowedOrigins", "scopeSets"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "type": { "const": "oauth2" },
+        "providerProfile": { "$ref": "#/$defs/identifier" },
+        "allowedOrigins": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^https://[^/?#]+/?$" }
+        },
+        "scopeSets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/scopeSet" }
+        },
+        "secretResponseFields": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^/(?!.*\\.\\.).+$" } }
+      }
+    },
+    "scopeSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "purpose", "required", "scopes"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "label": { "$ref": "#/$defs/nonEmptyString" },
+        "purpose": { "$ref": "#/$defs/nonEmptyString" },
+        "required": { "type": "boolean" },
+        "scopes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        }
+      }
+    },
+    "setup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "entryFlow", "flows"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "entryFlow": { "$ref": "#/$defs/identifier" },
+        "flows": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/setupFlow" } }
+      }
+    },
+    "setupFlow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "steps"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "title": { "$ref": "#/$defs/nonEmptyString" },
+        "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/setupStep" } }
+      }
+    },
+    "setupStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "title"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "kind": { "enum": ["permission-summary", "oauth-connect", "form", "account-selector", "health-check", "confirmation", "permission-request", "disconnect"] },
+        "title": { "$ref": "#/$defs/nonEmptyString" },
+        "description": { "type": "string", "maxLength": 4000 },
+        "connection": { "$ref": "#/$defs/identifier" },
+        "scopeSet": { "$ref": "#/$defs/identifier" },
+        "capability": { "$ref": "#/$defs/nonEmptyString" },
+        "configurationKeys": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/nonEmptyString" } }
+      }
+    },
     "webAccess": {
       "type": "object",
       "additionalProperties": false,
@@ -209,7 +286,9 @@
         },
         "protocol": { "enum": ["http", "websocket"] },
         "purpose": { "$ref": "#/$defs/nonEmptyString" },
-        "credential": { "type": "string" }
+        "credential": { "type": "string" },
+        "connection": { "type": "string" },
+        "bootstrap": { "type": "boolean", "default": false }
       }
     },
     "uiContribution": {
@@ -220,7 +299,8 @@
         "kind": { "$ref": "#/$defs/nonEmptyString" },
         "id": { "$ref": "#/$defs/nonEmptyString" },
         "title": { "$ref": "#/$defs/nonEmptyString" },
-        "capability": { "type": "string" }
+        "capability": { "type": "string" },
+        "flow": { "$ref": "#/$defs/identifier" }
       }
     },
     "catalog": {

@@ -49,6 +49,12 @@ public static class CapabilityNames
         public const string HiringWorkflowStage = "platform.hiring-workflow.stage.v1";
         public const string UserActionSuggest = "platform.user-action.suggest.v1";
         public const string TeamRosterRead = "platform.team-roster.read.v1";
+        public const string ManagedActionExecute = "platform.managed-action.execute.v1";
+        public const string ManagedActionDecide = "platform.managed-action.decide.v1";
+        public const string EngagementInboxUpsert = "platform.engagement-inbox.upsert.v1";
+        public const string MetricSnapshotWrite = "platform.metric-snapshot.write.v1";
+        public const string SynchronizationCheckpoint = "platform.synchronization-checkpoint.v1";
+        public const string MediaTransfer = "platform.media.transfer.v1";
     }
 
     public static class AgentCatalog
@@ -213,7 +219,13 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.ResourceChangeDecide,
                 CapabilityNames.Platform.UserActionSuggest,
                 CapabilityNames.Platform.HiringWorkflowStage,
-                CapabilityNames.Platform.TeamRosterRead),
+                CapabilityNames.Platform.TeamRosterRead,
+                CapabilityNames.Platform.ManagedActionExecute,
+                CapabilityNames.Platform.ManagedActionDecide,
+                CapabilityNames.Platform.EngagementInboxUpsert,
+                CapabilityNames.Platform.MetricSnapshotWrite,
+                CapabilityNames.Platform.SynchronizationCheckpoint,
+                CapabilityNames.Platform.MediaTransfer),
             ["memory"] = Set(
                 CapabilityNames.Memory.BusinessRead,
                 CapabilityNames.Memory.BusinessPropose,

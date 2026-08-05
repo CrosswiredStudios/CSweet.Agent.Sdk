@@ -31,3 +31,10 @@ Runtime methods:
 Never expose session/workload/lease tokens, the endpoint, `HttpClient`, JSON-RPC, or MCP objects through public authoring APIs. Transport interfaces remain internal. Tests use `AgentTestRuntime`, which deliberately models callbacks and capability grants rather than wire details.
 
 Protocol extensions must be additive within 2.x, server-advertised, size-bounded, authenticated, non-model-visible, and covered by replay/restart/cancellation tests. A change to identity, authorization, lease, completion, or credential semantics requires a new protocol minimum and coordinated security review.
+
+Manifest `connections` and `setup` are additive authoring contracts, not authority. The importing
+platform must repeat validation, resolve provider profiles from its trusted registry, render only
+known native components, and restrict setup callbacks to a bootstrap grant containing exactly the
+declared setup capabilities. The normal agent runtime, model access, memory, chat, organization
+data, filesystem, and ordinary network grants remain unavailable until platform activation gates
+transition the installation to ready.

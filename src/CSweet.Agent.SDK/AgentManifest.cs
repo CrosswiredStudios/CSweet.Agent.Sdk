@@ -31,6 +31,8 @@ public sealed class AgentManifest
     public AgentEventManifest Events { get; init; } = new([]);
     public IReadOnlyList<AgentManifestConfigurationField> Configuration { get; init; } = [];
     public IReadOnlyList<AgentCredentialBinding> Credentials { get; init; } = [];
+    public IReadOnlyList<AgentConnectionDeclaration> Connections { get; init; } = [];
+    public AgentSetupManifest? Setup { get; init; }
     public AgentWebAccessManifest WebAccess { get; init; } = new();
     public IReadOnlyList<AgentUiContribution> Ui { get; init; } = [];
     public AgentCatalogMetadata Catalog { get; init; } = new();
@@ -102,6 +104,56 @@ public sealed record AgentCredentialBinding
     public IReadOnlyList<string> AllowedOrigins { get; init; } = [];
 }
 
+/// <summary>A platform-brokered provider connection. Secrets and tokens never enter plugin runtime.</summary>
+public sealed record AgentConnectionDeclaration
+{
+    public string Id { get; init; } = string.Empty;
+    public string Type { get; init; } = "oauth2";
+    public string ProviderProfile { get; init; } = string.Empty;
+    public IReadOnlyList<string> AllowedOrigins { get; init; } = [];
+    public IReadOnlyList<AgentConnectionScopeSet> ScopeSets { get; init; } = [];
+    public IReadOnlyList<string> SecretResponseFields { get; init; } = [];
+}
+
+/// <summary>A named, user-consented permission set for progressive authorization.</summary>
+public sealed record AgentConnectionScopeSet
+{
+    public string Id { get; init; } = string.Empty;
+    public string Label { get; init; } = string.Empty;
+    public string Purpose { get; init; } = string.Empty;
+    public bool Required { get; init; }
+    public IReadOnlyList<string> Scopes { get; init; } = [];
+}
+
+/// <summary>A declarative, resumable setup graph rendered entirely by C-Sweet.</summary>
+public sealed record AgentSetupManifest
+{
+    public bool Required { get; init; } = true;
+    public string EntryFlow { get; init; } = string.Empty;
+    public IReadOnlyList<AgentSetupFlow> Flows { get; init; } = [];
+}
+
+/// <summary>A sequence of safe, platform-rendered setup steps.</summary>
+public sealed record AgentSetupFlow
+{
+    public string Id { get; init; } = string.Empty;
+    public string Title { get; init; } = string.Empty;
+    public IReadOnlyList<AgentSetupStep> Steps { get; init; } = [];
+}
+
+/// <summary>One declarative setup step. No executable markup or expressions are accepted.</summary>
+public sealed record AgentSetupStep
+{
+    public string Id { get; init; } = string.Empty;
+    public string Kind { get; init; } = string.Empty;
+    public string Title { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public string? Connection { get; init; }
+    public string? ScopeSet { get; init; }
+    public string? Capability { get; init; }
+    public IReadOnlyList<string> ConfigurationKeys { get; init; } = [];
+}
+
 /// <summary>Brokered outbound network policy requested by the package.</summary>
 public sealed record AgentWebAccessManifest
 {
@@ -121,6 +173,8 @@ public sealed record AgentWebAccessRule
     public string Protocol { get; init; } = "http";
     public string Purpose { get; init; } = string.Empty;
     public string? Credential { get; init; }
+    public string? Connection { get; init; }
+    public bool Bootstrap { get; init; }
 }
 
 /// <summary>A UI contribution backed by a capability declared in the same manifest.</summary>
@@ -130,6 +184,7 @@ public sealed record AgentUiContribution
     public string Id { get; init; } = string.Empty;
     public string Title { get; init; } = string.Empty;
     public string? Capability { get; init; }
+    public string? Flow { get; init; }
 }
 
 /// <summary>Optional discovery metadata for catalogs and marketplaces.</summary>

@@ -103,6 +103,77 @@ public sealed class AgentManifestLoaderTests
         }
     }
 
+    [Fact]
+    public async Task LoadAsync_AcceptsDeclarativeProgressiveOAuthSetup()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllTextAsync(path, """
+            {
+              "manifestVersion": "2.0", "kind": "agent", "id": "com.example.connected", "name": "Connected",
+              "version": "1.0.0", "publisher": { "id": "example", "name": "Example" },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "Manual", "supportsMultipleInstallations": true, "maximumConcurrentJobs": 1 },
+              "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" },
+              "provides": [{ "name": "example.setup.validate.v1", "description": "Validate setup.", "inputSchema": { "type": "object" }, "outputSchema": { "type": "object" }, "executionTimeoutSeconds": 30, "idempotency": "caller-key" }],
+              "requires": [], "events": { "subscribes": [] }, "configuration": [], "credentials": [],
+              "connections": [{
+                "id": "provider", "type": "oauth2", "providerProfile": "com.example.provider",
+                "allowedOrigins": ["https://api.example.com"],
+                "scopeSets": [{ "id": "base", "label": "Read account", "purpose": "Discover the account.", "required": true, "scopes": ["account.read"] }]
+              }],
+              "setup": { "required": true, "entryFlow": "onboarding", "flows": [{ "id": "onboarding", "title": "Connect", "steps": [
+                { "id": "permissions", "kind": "permission-summary", "title": "Review access" },
+                { "id": "connect", "kind": "oauth-connect", "title": "Connect", "connection": "provider", "scopeSet": "base" },
+                { "id": "validate", "kind": "health-check", "title": "Validate", "capability": "example.setup.validate.v1" }
+              ] }] },
+              "webAccess": { "mode": "None", "rules": [] },
+              "ui": [{ "kind": "personal-settings", "id": "settings", "title": "Connection", "flow": "onboarding" }]
+            }
+            """);
+
+            var manifest = await AgentManifestLoader.LoadAsync(path, CancellationToken.None);
+
+            Assert.Equal("com.example.provider", Assert.Single(manifest.Connections).ProviderProfile);
+            Assert.Equal("onboarding", manifest.Setup?.EntryFlow);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Theory]
+    [InlineData("html")]
+    [InlineData("javascript")]
+    [InlineData("iframe")]
+    [InlineData("razor")]
+    public async Task LoadAsync_RejectsExecutableSetupUi(string kind)
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllTextAsync(path, $$"""
+            {
+              "manifestVersion": "2.0", "kind": "agent", "id": "com.example.unsafe", "name": "Unsafe", "version": "1.0.0",
+              "publisher": { "id": "example", "name": "Example" },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "Manual", "supportsMultipleInstallations": true, "maximumConcurrentJobs": 1 },
+              "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" }, "provides": [], "requires": [], "events": { "subscribes": [] },
+              "configuration": [], "credentials": [], "connections": [],
+              "setup": { "required": true, "entryFlow": "onboarding", "flows": [{ "id": "onboarding", "title": "Setup", "steps": [{ "id": "unsafe", "kind": "{{kind}}", "title": "Unsafe" }] }] },
+              "webAccess": { "mode": "None", "rules": [] }, "ui": []
+            }
+            """);
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => AgentManifestLoader.LoadAsync(path, CancellationToken.None));
+            Assert.Contains("unsafe or unsupported", exception.Message);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(86401)]

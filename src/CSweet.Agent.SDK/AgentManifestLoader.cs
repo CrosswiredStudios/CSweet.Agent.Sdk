@@ -23,6 +23,12 @@ public static class AgentManifestLoader
     private static readonly Regex TargetFrameworkPattern =
         new("^net\\d+\\.\\d+(?:-[A-Za-z0-9.-]+)?$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
+    private static readonly HashSet<string> SafeSetupKinds = new(StringComparer.Ordinal)
+    {
+        "permission-summary", "oauth-connect", "form", "account-selector", "health-check",
+        "confirmation", "permission-request", "disconnect"
+    };
+
     /// <summary>Loads a manifest relative to the application base directory unless the path is absolute.</summary>
     public static async Task<AgentManifest> LoadAsync(
         string manifestPath,
@@ -113,6 +119,7 @@ public static class AgentManifestLoader
         }
 
         ValidateConfiguration(manifest, errors);
+        ValidateConnectionsAndSetup(manifest, errors);
         ValidateWebAccess(manifest, errors);
 
         if (errors.Count > 0)
@@ -134,6 +141,8 @@ public static class AgentManifestLoader
         Events = manifest.Events ?? new AgentEventManifest([]),
         Configuration = manifest.Configuration ?? [],
         Credentials = manifest.Credentials ?? [],
+        Connections = manifest.Connections ?? [],
+        Setup = manifest.Setup,
         WebAccess = manifest.WebAccess ?? new AgentWebAccessManifest(),
         Ui = manifest.Ui ?? [],
         Catalog = manifest.Catalog ?? new AgentCatalogMetadata(),
@@ -186,6 +195,90 @@ public static class AgentManifestLoader
         foreach (var contribution in (manifest.Ui ?? []).Where(x => !string.IsNullOrWhiteSpace(x.Capability)))
             if (!provided.Contains(contribution.Capability!))
                 errors.Add($"UI contribution '{contribution.Id}' references capability '{contribution.Capability}' that is not declared in provides.");
+    }
+
+    private static void ValidateConnectionsAndSetup(AgentManifest manifest, ICollection<string> errors)
+    {
+        var connections = manifest.Connections ?? [];
+        var connectionIds = connections.Select(x => x.Id).ToArray();
+        ValidateNames(connectionIds, "connections.id", errors);
+
+        foreach (var connection in connections)
+        {
+            if (connection.Type != "oauth2")
+                errors.Add($"Connection '{connection.Id}' type must be 'oauth2'.");
+            RequiredIdentifier(connection.ProviderProfile, $"connections.{connection.Id}.providerProfile", errors);
+            if (connection.AllowedOrigins.Count == 0)
+                errors.Add($"Connection '{connection.Id}' must declare at least one allowed origin.");
+            foreach (var origin in connection.AllowedOrigins)
+            {
+                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps ||
+                    uri.AbsolutePath != "/" || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment))
+                    errors.Add($"Connection '{connection.Id}' allowed origin '{origin}' must be an HTTPS origin without path, query, or fragment.");
+            }
+            if (connection.SecretResponseFields.Any(x => string.IsNullOrWhiteSpace(x) || !x.StartsWith('/') || x.Contains("..", StringComparison.Ordinal)) ||
+                connection.SecretResponseFields.Distinct(StringComparer.Ordinal).Count() != connection.SecretResponseFields.Count)
+                errors.Add($"Connection '{connection.Id}' secretResponseFields must be unique JSON pointers.");
+
+            var scopeSetIds = connection.ScopeSets.Select(x => x.Id).ToArray();
+            ValidateNames(scopeSetIds, $"connections.{connection.Id}.scopeSets.id", errors);
+            foreach (var scopeSet in connection.ScopeSets)
+            {
+                Required(scopeSet.Label, $"connections.{connection.Id}.scopeSets.{scopeSet.Id}.label", errors);
+                Required(scopeSet.Purpose, $"connections.{connection.Id}.scopeSets.{scopeSet.Id}.purpose", errors);
+                if (scopeSet.Scopes.Count == 0 || scopeSet.Scopes.Any(string.IsNullOrWhiteSpace) ||
+                    scopeSet.Scopes.Distinct(StringComparer.Ordinal).Count() != scopeSet.Scopes.Count)
+                    errors.Add($"Connection '{connection.Id}' scope set '{scopeSet.Id}' must contain unique, non-empty scopes.");
+            }
+        }
+
+        if (manifest.Setup is null)
+            return;
+
+        var setup = manifest.Setup;
+        var flows = setup.Flows ?? [];
+        var flowIds = flows.Select(x => x.Id).ToArray();
+        ValidateNames(flowIds, "setup.flows.id", errors);
+        if (setup.Required && flows.Count == 0)
+            errors.Add("Required setup must declare at least one flow.");
+        if (!flowIds.Contains(setup.EntryFlow, StringComparer.Ordinal))
+            errors.Add("setup.entryFlow must reference a declared setup flow.");
+
+        var provided = (manifest.Provides ?? []).Select(x => x.Name).ToHashSet(StringComparer.Ordinal);
+        var configuration = (manifest.Configuration ?? []).Select(x => x.Key).ToHashSet(StringComparer.Ordinal);
+        foreach (var flow in flows)
+        {
+            Required(flow.Title, $"setup.flows.{flow.Id}.title", errors);
+            var stepIds = flow.Steps.Select(x => x.Id).ToArray();
+            ValidateNames(stepIds, $"setup.flows.{flow.Id}.steps.id", errors);
+            if (flow.Steps.Count == 0)
+                errors.Add($"Setup flow '{flow.Id}' must declare at least one step.");
+
+            foreach (var step in flow.Steps)
+            {
+                if (!SafeSetupKinds.Contains(step.Kind))
+                    errors.Add($"Setup step '{step.Id}' uses unsafe or unsupported kind '{step.Kind}'.");
+                Required(step.Title, $"setup.flows.{flow.Id}.steps.{step.Id}.title", errors);
+                if (step.Kind is "oauth-connect" or "permission-request")
+                {
+                    var connection = connections.FirstOrDefault(x => x.Id == step.Connection);
+                    if (connection is null)
+                        errors.Add($"Setup step '{step.Id}' references undeclared connection '{step.Connection}'.");
+                    else if (string.IsNullOrWhiteSpace(step.ScopeSet) ||
+                             !connection.ScopeSets.Any(x => x.Id == step.ScopeSet))
+                        errors.Add($"Setup step '{step.Id}' references undeclared scope set '{step.ScopeSet}'.");
+                }
+                if (!string.IsNullOrWhiteSpace(step.Capability) && !provided.Contains(step.Capability))
+                    errors.Add($"Setup step '{step.Id}' references capability '{step.Capability}' that is not declared in provides.");
+                foreach (var key in step.ConfigurationKeys)
+                    if (!configuration.Contains(key))
+                        errors.Add($"Setup step '{step.Id}' references undeclared configuration key '{key}'.");
+            }
+        }
+
+        foreach (var contribution in manifest.Ui ?? [])
+            if (!string.IsNullOrWhiteSpace(contribution.Flow) && !flowIds.Contains(contribution.Flow, StringComparer.Ordinal))
+                errors.Add($"UI contribution '{contribution.Id}' references undeclared setup flow '{contribution.Flow}'.");
     }
 
     private static string DescriptorHash(AgentProvidedCapability capability)
@@ -255,6 +348,21 @@ public static class AgentManifestLoader
                         errors.Add($"Credential '{rule.Credential}' is not bound to webAccess origin '{origin}'.");
                 }
             }
+            if (rule.Connection is not null)
+            {
+                var connection = (manifest.Connections ?? []).SingleOrDefault(x => x.Id == rule.Connection);
+                if (connection is null)
+                    errors.Add($"webAccess rule references unknown connection '{rule.Connection}'.");
+                else
+                {
+                    var port = rule.Port is null ? string.Empty : $":{rule.Port}";
+                    var origin = $"{rule.Scheme}://{rule.Host}{port}";
+                    if (!connection.AllowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase))
+                        errors.Add($"Connection '{rule.Connection}' is not bound to webAccess origin '{origin}'.");
+                }
+            }
+            if (rule.Credential is not null && rule.Connection is not null)
+                errors.Add("A webAccess rule cannot use both credential and connection bindings.");
         }
     }
 

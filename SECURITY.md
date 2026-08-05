@@ -27,3 +27,16 @@ unavailable.
 Merge review and authorization bind the team lead's decision to the exact publication and commit
 SHA. A changed SHA, assignment revision, policy revision, team lead, or expired grant must fail
 closed and require a new review.
+
+## Provider connection and setup boundary
+
+Protocol-v2 connection declarations contain only public provider profile names, approved HTTPS
+origins, and named permission sets. OAuth clients, secrets, tokens, redirect endpoints, state,
+PKCE verifiers, and refresh behavior are platform concerns and must never be implemented by or
+disclosed to agent code.
+
+Plugin setup is declarative. The SDK accepts only the platform-owned step kinds documented in the
+manifest reference and validates all connection, permission-set, configuration, capability, and
+flow references. It intentionally has no extension point for HTML, JavaScript, Razor, iframes,
+remote UI, arbitrary redirects, or executable expressions. Runtime hosts must independently
+enforce bootstrap capability isolation and treat every manifest value as untrusted input.
