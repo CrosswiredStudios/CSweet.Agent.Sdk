@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -30,6 +31,10 @@ public static class DependencyInjection
                             endpoint.Scheme == Uri.UriSchemeHttps),
                 "CSweet:Agent:McpEndpoint must be an absolute HTTP(S) URI.")
             .Validate(
+                options => string.IsNullOrWhiteSpace(options.McpUnixSocketPath) ||
+                           Path.IsPathFullyQualified(options.McpUnixSocketPath),
+                "CSweet:Agent:McpUnixSocketPath must be an absolute path when configured.")
+            .Validate(
                 options => !string.IsNullOrWhiteSpace(options.WorkloadTokenFile),
                 "CSweet:Agent:WorkloadTokenFile is required.")
             .Validate(
@@ -43,6 +48,29 @@ public static class DependencyInjection
         builder.Services.AddHttpClient("CSweet.Agent.Runtime", client =>
         {
             client.Timeout = Timeout.InfiniteTimeSpan;
+        }).ConfigurePrimaryHttpMessageHandler(services =>
+        {
+            var options = services.GetRequiredService<IOptions<AgentRuntimeOptions>>().Value;
+            var handler = new SocketsHttpHandler();
+            if (!string.IsNullOrWhiteSpace(options.McpUnixSocketPath))
+            {
+                var socketPath = Path.GetFullPath(options.McpUnixSocketPath);
+                handler.ConnectCallback = async (_, cancellationToken) =>
+                {
+                    var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+                    try
+                    {
+                        await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), cancellationToken);
+                        return new NetworkStream(socket, ownsSocket: true);
+                    }
+                    catch
+                    {
+                        socket.Dispose();
+                        throw;
+                    }
+                };
+            }
+            return handler;
         });
         builder.Services.AddSingleton<McpAgentRuntimeClient>(services =>
             new McpAgentRuntimeClient(

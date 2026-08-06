@@ -6,6 +6,12 @@ public sealed class AgentRuntimeOptions
 
     public string McpEndpoint { get; set; } = "http://agenthost:8081/mcp";
 
+    /// <summary>
+    /// Optional guest-local Unix-domain socket used by hardware-isolated runtimes.
+    /// When set, HTTP semantics are carried over this socket without a network device.
+    /// </summary>
+    public string? McpUnixSocketPath { get; set; }
+
     public string InstallationId { get; set; } = string.Empty;
 
     public string BusinessId { get; set; } = string.Empty;
