@@ -32,20 +32,30 @@ internal sealed record PlatformChatRequest(
     string? Model,
     IReadOnlyList<PlatformChatMessage> Messages,
     string? Instructions = null,
-    IReadOnlyList<PlatformChatTool>? Tools = null);
+    IReadOnlyList<PlatformChatTool>? Tools = null,
+    PlatformChatTelemetry? Telemetry = null);
+
+internal sealed record PlatformChatTelemetry(
+    Guid? ConversationId,
+    Guid? ChatTurnId,
+    string InvocationKind,
+    int InvocationSequence,
+    int MemoryCharacterCount);
 
 internal sealed record PlatformChatChunk(
     string? Text,
     long? InputTokenCount = null,
     long? OutputTokenCount = null,
     string? Role = null,
-    IReadOnlyList<PlatformChatContent>? Contents = null);
+    IReadOnlyList<PlatformChatContent>? Contents = null,
+    IReadOnlyDictionary<string, long>? AdditionalUsageCounts = null);
 
 public sealed class PlatformChatClient : IChatClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly IPlatformToolInvoker _tools;
     private readonly AgentLlmSelection _selection;
+    private int _invocationSequence;
 
     public PlatformChatClient(PlatformCapabilityClient platform, AgentLlmSelection selection)
     {
@@ -72,10 +82,18 @@ public sealed class PlatformChatClient : IChatClient
         ChatOptions? options = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        var messageList = messages.ToList();
+        var invocationSequence = Interlocked.Increment(ref _invocationSequence);
+        var configuredKind = string.IsNullOrWhiteSpace(_selection.Invocation?.InvocationKind)
+            ? "agent-inference"
+            : _selection.Invocation.InvocationKind.Trim();
+        var invocationKind = configuredKind == "primary" && HasFunctionResult(messageList)
+            ? "tool-followup"
+            : configuredKind;
         var payload = new PlatformChatRequest(
             _selection.ProviderProfileId,
             _selection.Model,
-            messages.Select(ToBrokerMessage).ToList(),
+            messageList.Select(ToBrokerMessage).ToList(),
             options?.Instructions,
             options?.Tools?
                 .OfType<AIFunctionDeclaration>()
@@ -83,7 +101,13 @@ public sealed class PlatformChatClient : IChatClient
                     tool.Name,
                     tool.Description,
                     tool.JsonSchema.Clone()))
-                .ToList());
+                .ToList(),
+            new PlatformChatTelemetry(
+                _selection.Invocation?.ConversationId,
+                _selection.Invocation?.ChatTurnId,
+                invocationKind,
+                invocationSequence,
+                CountMemoryCharacters(messageList)));
         await foreach (var result in _tools.InvokeStreamingAsync(
             PlatformChatCapabilities.ChatStream,
             JsonSerializer.SerializeToElement(payload, JsonOptions),
@@ -113,11 +137,40 @@ public sealed class PlatformChatClient : IChatClient
                     new UsageContent(new UsageDetails
                     {
                         InputTokenCount = chunk.InputTokenCount,
-                        OutputTokenCount = chunk.OutputTokenCount
+                        OutputTokenCount = chunk.OutputTokenCount,
+                        AdditionalCounts = chunk.AdditionalUsageCounts?.ToDictionary(
+                            item => item.Key,
+                            item => item.Value,
+                            StringComparer.Ordinal)
                     })
                 ]);
             }
         }
+    }
+
+    private static bool HasFunctionResult(IEnumerable<ChatMessage> messages) =>
+        messages.SelectMany(message => message.Contents).Any(content => content is FunctionResultContent);
+
+    private static int CountMemoryCharacters(IEnumerable<ChatMessage> messages)
+    {
+        const string startTag = "<memory_context>";
+        const string endTag = "</memory_context>";
+        var total = 0;
+        foreach (var text in messages.Select(message => message.Text).Where(text => !string.IsNullOrEmpty(text)))
+        {
+            var offset = 0;
+            while (offset < text!.Length)
+            {
+                var start = text.IndexOf(startTag, offset, StringComparison.OrdinalIgnoreCase);
+                if (start < 0) break;
+                start += startTag.Length;
+                var end = text.IndexOf(endTag, start, StringComparison.OrdinalIgnoreCase);
+                if (end < 0) break;
+                total = checked(total + end - start);
+                offset = end + endTag.Length;
+            }
+        }
+        return total;
     }
 
     public object? GetService(Type serviceType, object? serviceKey = null) =>
