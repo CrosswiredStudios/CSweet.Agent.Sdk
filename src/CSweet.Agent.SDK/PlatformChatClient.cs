@@ -138,10 +138,9 @@ public sealed class PlatformChatClient : IChatClient
                     {
                         InputTokenCount = chunk.InputTokenCount,
                         OutputTokenCount = chunk.OutputTokenCount,
-                        AdditionalCounts = chunk.AdditionalUsageCounts?.ToDictionary(
-                            item => item.Key,
-                            item => item.Value,
-                            StringComparer.Ordinal)
+                        AdditionalCounts = chunk.AdditionalUsageCounts is null
+                            ? null
+                            : new AdditionalPropertiesDictionary<long>(chunk.AdditionalUsageCounts)
                     })
                 ]);
             }
