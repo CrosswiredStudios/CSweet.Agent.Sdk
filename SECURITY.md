@@ -40,3 +40,11 @@ manifest reference and validates all connection, permission-set, configuration, 
 flow references. It intentionally has no extension point for HTML, JavaScript, Razor, iframes,
 remote UI, arbitrary redirects, or executable expressions. Runtime hosts must independently
 enforce bootstrap capability isolation and treat every manifest value as untrusted input.
+
+## Configuration ownership boundary
+
+The signed manifest is the authoritative settings schema. Defaults and employee overrides belong
+to the trusted control plane; opening or saving settings must not invoke agent code or create a
+runtime. Runtime snapshots and durable refresh messages are authenticated platform data. The SDK
+accepts only monotonic revisions, swaps settings atomically, and exposes a read-only authoring
+snapshot. Agents have no API for writing control-plane configuration.

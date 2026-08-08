@@ -17,7 +17,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.2.0
+  --SdkVersion 3.3.0
 cd ResearchAgent
 dotnet test
 ```
@@ -149,8 +149,9 @@ protected override AgentConfigurationBuilder Configure(AgentConfigurationBuilder
 ```
 
 Read values through `Settings`, and override `ValidateConfigurationUpdate` for cross-field or
-domain validation. If the manifest has `configuration` entries, it must also provide
-`agent.configuration.describe.v1` and `agent.configuration.update.v1`.
+domain validation. The signed manifest is the configuration schema; editing settings never starts
+the agent and does not require describe/update capabilities. Override
+`OnConfigurationChangedAsync` to apply live resources or return `RestartRequired`.
 
 Secret fields are opaque installation settings; never log or return them. Prefer brokered
 credential bindings for external services.

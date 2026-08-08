@@ -84,7 +84,7 @@ machine-readable definition is [`schemas/csweet-plugin.v2.schema.json`](../schem
 | `provides` | Capability descriptors implemented by this package |
 | `requires` | Minimum platform/provider authority requested from the installer |
 | `events.subscribes` | Durable event names consumed by the package |
-| `configuration` | Installation fields; configurable agents must provide describe/update |
+| `configuration` | Control-plane validated settings schema; no running agent is required |
 | `credentials` | Named brokered credential bindings, never secret values |
 | `connections` | OAuth provider declarations with approved HTTPS origins and named progressive scope sets |
 | `setup` | Optional required, resumable setup flow made only from platform-owned safe step kinds |

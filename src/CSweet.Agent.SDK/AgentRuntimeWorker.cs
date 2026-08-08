@@ -16,6 +16,7 @@ internal sealed class AgentRuntimeWorker<TAgent>(
 {
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(5);
     private readonly AgentRuntimeOptions _options = options.Value;
+    private volatile bool _configurationRestartRequested;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -72,6 +73,8 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 catch (OperationCanceledException) when (connected.IsCancellationRequested) { }
                 if (completed.IsFaulted)
                     await completed;
+                if (_configurationRestartRequested)
+                    return;
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -98,22 +101,16 @@ internal sealed class AgentRuntimeWorker<TAgent>(
     {
         if (session.Configuration is null)
             return;
-
-        var result = await agent.ExecuteCapabilityAsync(
-            new AgentCapabilityRequest(
-                Guid.NewGuid(),
-                AgentConfigurationCapabilities.Update,
-                JsonSerializer.SerializeToElement(
-                    new UpdateAgentConfigurationRequest(session.Configuration.Settings),
-                    CSweetAgentBase.SerializerOptions),
-                $"runtime-session:{session.SessionId}"),
-            context,
-            cancellationToken);
-
-        if (!result.Succeeded)
+        if (agent is not CSweetAgentBase configurable)
+            throw new InvalidOperationException("Platform configuration requires CSweetAgentBase.");
+        try
+        {
+            await configurable.ApplyPlatformConfigurationAsync(session.Configuration, null, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
             throw new InvalidOperationException(
-                $"The platform installation configuration could not be applied: {result.Error ?? "The agent rejected the configuration."}");
+                $"The platform installation configuration could not be applied: {exception.Message}", exception);
         }
     }
 
@@ -137,6 +134,15 @@ internal sealed class AgentRuntimeWorker<TAgent>(
             var lease = await runtime.ClaimAsync(maximumConcurrency - running.Count, cancellationToken);
             if (lease is null)
                 continue;
+            if (lease.Kind == AgentWorkKind.ConfigurationUpdate)
+            {
+                if (running.Count > 0) await Task.WhenAll(running);
+                running.Clear();
+                await ProcessLeaseAsync(lease, platform, identity, cancellationToken);
+                if (_configurationRestartRequested)
+                    return;
+                continue;
+            }
             var task = ProcessLeaseAsync(lease, platform, identity, cancellationToken);
             running.Add(task);
             _ = task.ContinueWith(
@@ -182,6 +188,7 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                     context,
                     deadline.Token),
                 AgentWorkKind.Event => await HandleEventAsync(lease, context, deadline.Token),
+                AgentWorkKind.ConfigurationUpdate => await ApplyConfigurationUpdateAsync(lease, deadline.Token),
                 AgentWorkKind.Shutdown => AgentWorkResult.Success(new { acknowledged = true }),
                 _ => AgentWorkResult.Failure($"Unsupported work kind '{lease.Kind}'.")
             };
@@ -201,6 +208,8 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         }
         catch (Exception exception)
         {
+            if (lease.Kind == AgentWorkKind.ConfigurationUpdate)
+                _configurationRestartRequested = true;
             logger.LogError(exception, "Agent {AgentId} failed work {WorkId} ({WorkName}).", agent.AgentId, lease.WorkId, lease.Name);
             await runtime.FailAsync(lease, "The agent failed while processing the work item.", runtimeCancellation);
         }
@@ -210,6 +219,29 @@ internal sealed class AgentRuntimeWorker<TAgent>(
             try { await renewal; }
             catch (OperationCanceledException) when (deadline.IsCancellationRequested) { }
         }
+    }
+
+    private async Task<AgentWorkResult> ApplyConfigurationUpdateAsync(
+        AgentWorkLease lease,
+        CancellationToken cancellationToken)
+    {
+        if (agent is not CSweetAgentBase configurable)
+            return AgentWorkResult.Failure("Configuration refresh requires CSweetAgentBase.");
+        var update = lease.Payload.Deserialize<AgentConfigurationUpdate>(CSweetAgentBase.SerializerOptions)
+            ?? throw new InvalidOperationException("The configuration refresh payload is empty.");
+        var result = await configurable.ApplyPlatformConfigurationAsync(
+            new AgentRuntimeConfiguration(update.SchemaVersion, update.EffectiveSettings, update.InstallationId,
+                update.DesiredRevision, update.EffectiveDigest),
+            update.ChangedKeys,
+            cancellationToken);
+        if (result == ConfigurationApplyResult.RestartRequired)
+            _configurationRestartRequested = true;
+        return AgentWorkResult.Success(new
+        {
+            appliedRevision = update.DesiredRevision,
+            effectiveDigest = update.EffectiveDigest,
+            result = result.ToString()
+        });
     }
 
     private async Task<AgentWorkResult> HandleEventAsync(

@@ -8,6 +8,7 @@ public enum AgentWorkKind
 {
     Capability,
     Event,
+    ConfigurationUpdate,
     Shutdown
 }
 
@@ -63,7 +64,34 @@ public sealed record AgentRuntimeSession(
 /// </summary>
 public sealed record AgentRuntimeConfiguration(
     string SchemaVersion,
-    IReadOnlyDictionary<string, JsonElement> Settings);
+    IReadOnlyDictionary<string, JsonElement> Settings,
+    Guid InstallationId = default,
+    long DesiredRevision = 0,
+    string EffectiveDigest = "");
+
+/// <summary>A durable platform-owned effective-configuration refresh.</summary>
+public sealed record AgentConfigurationUpdate(
+    Guid InstallationId,
+    string SchemaVersion,
+    IReadOnlyDictionary<string, JsonElement> EffectiveSettings,
+    IReadOnlyList<string> ChangedKeys,
+    long DesiredRevision,
+    string EffectiveDigest);
+
+/// <summary>The action requested after an agent observes a new settings snapshot.</summary>
+public enum ConfigurationApplyResult
+{
+    Applied,
+    RestartRequired
+}
+
+/// <summary>Strongly typed context passed to the configuration-change callback.</summary>
+public sealed record AgentConfigurationChangedContext(
+    AgentSettings Previous,
+    AgentSettings Current,
+    IReadOnlyList<string> ChangedKeys,
+    long DesiredRevision,
+    string EffectiveDigest);
 
 public sealed record AgentWorkLease(
     Guid WorkId,

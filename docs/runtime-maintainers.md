@@ -6,6 +6,11 @@ The SDK uses private Streamable HTTP `/mcp`. `initialize` reads a one-use worklo
 
 The worker long-polls `csweet/work/claim` for at most 25 seconds, runs bounded concurrent callbacks, renews each 60-second lease every 20 seconds, reports bounded progress, and completes/fails using the attempt and lease token. Event leases carry both the delivery `workId` and the originating domain `eventId`; the worker rejects event work without the latter. It reconnects with bounded jitter and never invents work from notifications.
 
+`ConfigurationUpdate` is reserved control work. The worker drains ordinary callbacks before
+applying it, ignores stale revisions, atomically swaps the settings snapshot, invokes the typed
+`OnConfigurationChangedAsync` hook, and acknowledges the applied revision and digest. Settings
+are platform-owned: agents can read snapshots but cannot persist defaults or employee overrides.
+
 `tools/list` is the only descriptor source. The SDK caches descriptors only by grant revision. Typed calls still resolve a live descriptor and the gateway reauthorizes every call. `modelVisible` controls conversion to `AITool`; transport and lifecycle tools are never exposed to models.
 
 Git workspace v2 typed clients intentionally omit repository and ref selection. Do not add clone

@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 3.2.0
+     --SdkVersion 3.3.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed
@@ -65,8 +65,9 @@ configuration, no credentials, and `webAccess.mode` `None`.
 4. Add only required `requires` entries and event subscriptions. Every declared capability,
    event, configuration field, credential, and web rule must be used by code and covered by a
    test.
-5. Add configuration through `CSweetAgentBase.Configure`; configurable agents must provide the
-   describe/update capabilities in their manifest.
+5. Add configuration through `CSweetAgentBase.Configure`. The signed manifest is the schema, so
+   settings do not require runtime describe/update capabilities. Override
+   `OnConfigurationChangedAsync` only when live changes need agent-specific resource handling.
 6. Use typed `context.Platform` methods for C-Sweet operations. Use
    `context.CreateChatClient(...)` and `context.GetModelToolsAsync()` for platform-governed model
    access. Never create a provider client with a credential.

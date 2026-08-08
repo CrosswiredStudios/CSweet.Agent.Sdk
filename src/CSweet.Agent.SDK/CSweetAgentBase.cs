@@ -13,6 +13,7 @@ public abstract class CSweetAgentBase : ICSweetAgent
     private readonly object _settingsLock = new();
     private AgentConfigurationDefinition? _configuration;
     private Dictionary<string, JsonElement>? _settings;
+    private long _configurationRevision;
 
     /// <summary>Gets the stable package identity declared by the root manifest.</summary>
     public abstract string AgentId { get; }
@@ -92,6 +93,43 @@ public abstract class CSweetAgentBase : ICSweetAgent
         JsonElement value,
         AgentSettings currentSettings) =>
         null;
+
+    /// <summary>
+    /// Observes an atomically installed control-plane configuration snapshot. Return
+    /// <see cref="ConfigurationApplyResult.RestartRequired"/> when a live transition is unsafe.
+    /// The default implementation applies the new snapshot without a restart.
+    /// </summary>
+    protected virtual Task<ConfigurationApplyResult> OnConfigurationChangedAsync(
+        AgentConfigurationChangedContext change,
+        CancellationToken cancellationToken) =>
+        Task.FromResult(ConfigurationApplyResult.Applied);
+
+    internal async Task<ConfigurationApplyResult> ApplyPlatformConfigurationAsync(
+        AgentRuntimeConfiguration configuration,
+        IReadOnlyList<string>? changedKeys,
+        CancellationToken cancellationToken)
+    {
+        AgentSettings previous;
+        AgentSettings current;
+        lock (_settingsLock)
+        {
+            var definition = EnsureConfiguration();
+            if (configuration.DesiredRevision > 0 && configuration.DesiredRevision <= _configurationRevision)
+                return ConfigurationApplyResult.Applied;
+            var validationError = ValidateSettings(definition, configuration.Settings);
+            if (validationError is not null)
+                throw new InvalidOperationException(validationError);
+            previous = new AgentSettings(CloneSettings(_settings!));
+            _settings = CloneSettings(configuration.Settings);
+            _configurationRevision = configuration.DesiredRevision;
+            current = new AgentSettings(CloneSettings(_settings));
+        }
+
+        var changed = changedKeys?.Distinct(StringComparer.Ordinal).ToArray()
+            ?? configuration.Settings.Keys.Order(StringComparer.Ordinal).ToArray();
+        return await OnConfigurationChangedAsync(new AgentConfigurationChangedContext(
+            previous, current, changed, configuration.DesiredRevision, configuration.EffectiveDigest), cancellationToken);
+    }
 
     /// <summary>Deserializes a callback payload with the SDK web JSON contract.</summary>
     protected static T? DeserializePayload<T>(JsonElement payload) =>
