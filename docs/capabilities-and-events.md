@@ -44,12 +44,20 @@ specialized helper.
 | Prepare, inspect, publish, or clean an assigned repository workspace | the matching `git.workspace.*.v1` capability |
 | Read/manage sprints | the matching `work.sprint.*` capability |
 | Read/manage board automations | `work.automation.read` / `work.automation.manage` |
+| Read/add/reorder/requeue personal work | the matching `work.personal-todo.*.v1` capability |
 
 The full, generated reference is authoritative for capability spelling. C-Sweet's runtime registry
 is authoritative for schemas, risk, approval, quota, and scope.
 
 Use `context.Platform.Work` for typed work-management operations. Its request and response models
 are supplied by `CSweet.WorkManagement.Contracts`; still declare and obtain each matching grant.
+
+Use `context.Platform.PersonalTodo` to list accessible personal boards, add personal work for self
+or a direct report, reorder ready work as a direct manager, and requeue blocked work. Subscribe to
+`PersonalTodoEvents.Available` and override `HandlePersonalTodoAsync`. The SDK serializes queue
+consumption per installation and privately owns atomic claim, lease, completion, blocking, release,
+and retry transitions. Return `PersonalTodoResult.Completed(summary)` only after effects succeed;
+return `PersonalTodoResult.Blocked(reason)` when existing authority cannot perform the work.
 
 Use `context.Platform.ReadTeamRosterAsync()` only when teammate identity or team-role coverage
 changes the agent's work. The server resolves the caller and team; an unassigned or
@@ -86,6 +94,8 @@ Stable SDK event constants currently include:
 - `ManagementEvents.ResourceChangeRequested`
 - `ManagementEvents.ResourceChangeDecided`
 - `WorkItemEvents.Assigned`
+- `PersonalTodoEvents.Available`
+- `CommunicationEvents.MessageMentioned`
 
 `HiringRecommendationFulfilledEvent` is emitted exactly once after every unique seat requested by
 a recommendation is filled. It carries the recommendation and approved resource-change request

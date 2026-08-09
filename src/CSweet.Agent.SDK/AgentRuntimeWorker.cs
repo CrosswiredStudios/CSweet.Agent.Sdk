@@ -1,5 +1,6 @@
 using System.Text.Json;
 using CSweet.Agent.Contracts.Packaging;
+using CSweet.WorkManagement.Contracts;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,6 +17,7 @@ internal sealed class AgentRuntimeWorker<TAgent>(
 {
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(5);
     private readonly AgentRuntimeOptions _options = options.Value;
+    private readonly SemaphoreSlim _personalTodoGate = new(1, 1);
     private volatile bool _configurationRestartRequested;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -277,11 +279,64 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                     $"coordination-turn:{request.SessionId:N}:{request.TurnOrdinal}"),
                 cancellationToken);
         }
+        else if (string.Equals(envelope.EventType, PersonalTodoEvents.Available,
+                     StringComparison.Ordinal) && agent is CSweetAgentBase personalTodoAgent)
+        {
+            await DrainPersonalTodoAsync(
+                envelope.EventId, personalTodoAgent, context, cancellationToken);
+        }
         else
         {
             await agent.HandleEventAsync(envelope, context, cancellationToken);
         }
         return AgentWorkResult.Success(new { acknowledged = true });
+    }
+
+    private async Task DrainPersonalTodoAsync(
+        Guid eventId,
+        CSweetAgentBase personalTodoAgent,
+        AgentRuntimeContext context,
+        CancellationToken cancellationToken)
+    {
+        await _personalTodoGate.WaitAsync(cancellationToken);
+        try
+        {
+            while (true)
+            {
+                var claim = await context.Platform.PersonalTodo.ClaimAsync(eventId, cancellationToken);
+                if (claim.Item is null)
+                    return;
+                PersonalTodoResult result;
+                try
+                {
+                    result = await personalTodoAgent.HandlePersonalTodoAsync(
+                        claim.Item, context, cancellationToken);
+                }
+                catch
+                {
+                    await context.Platform.PersonalTodo.ReleaseAsync(
+                        claim.Item.Id, eventId, claim.Item.Revision, cancellationToken);
+                    throw;
+                }
+                if (result.IsCompleted)
+                {
+                    await context.Platform.PersonalTodo.CompleteAsync(
+                        claim.Item.Id, eventId, claim.Item.Revision,
+                        string.IsNullOrEmpty(result.Content) ? null : result.Content,
+                        cancellationToken);
+                }
+                else
+                {
+                    await context.Platform.PersonalTodo.BlockAsync(
+                        claim.Item.Id, eventId, claim.Item.Revision, result.Content,
+                        cancellationToken);
+                }
+            }
+        }
+        finally
+        {
+            _personalTodoGate.Release();
+        }
     }
 
     private static void ValidateCoordinationResult(

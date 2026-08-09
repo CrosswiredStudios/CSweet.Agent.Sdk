@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CSweet.WorkManagement.Contracts;
 
 namespace CSweet.Agent.SDK;
 
@@ -43,6 +44,17 @@ public abstract class CSweetAgentBase : ICSweetAgent
         AgentRuntimeContext context,
         CancellationToken cancellationToken) =>
         Task.CompletedTask;
+
+    /// <summary>
+    /// Handles the next atomically claimed item from this installation's personal queue. The SDK
+    /// owns claiming and transitions; implementations only report Completed or Blocked.
+    /// </summary>
+    public virtual Task<PersonalTodoResult> HandlePersonalTodoAsync(
+        PersonalTodoItem item,
+        AgentRuntimeContext context,
+        CancellationToken cancellationToken) =>
+        Task.FromResult(PersonalTodoResult.Blocked(
+            $"Agent '{AgentId}' does not support personal to-do work."));
 
     /// <summary>
     /// Handles one durable turn in a platform-governed agent collaboration. Implementations must

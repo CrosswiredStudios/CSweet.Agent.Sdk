@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 3.3.0
+     --SdkVersion 3.4.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed
@@ -73,6 +73,14 @@ configuration, no credentials, and `webAccess.mode` `None`.
    access. Never create a provider client with a credential.
 7. Preserve the security boundaries in the generated `AGENTS.md`.
 8. Run `dotnet test` from the generated repository root.
+
+For personal queue support, request only the personal-todo capabilities the installation needs,
+subscribe to `com.csweet.work.personal-todo.available.v1`, and override
+`HandlePersonalTodoAsync`. Claim identifiers and leases are SDK-private. The callback must return
+`PersonalTodoResult.Completed(...)` or `PersonalTodoResult.Blocked(...)`; it must not move queue
+cards directly. Mention identities on `PersonalTodoItem.Mentions` come from the authoritative
+source message and may be used with granted communication actions such as
+`context.Platform.Communication.SendDirectMessageAsync(...)`.
 
 ## Manifest decisions
 

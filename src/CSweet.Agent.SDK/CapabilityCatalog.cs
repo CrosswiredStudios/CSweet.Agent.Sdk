@@ -139,6 +139,14 @@ public static class CapabilityNames
         public const string OrchestrationRetry = WorkManagementCapabilityNames.OrchestrationRetry;
         public const string OrchestrationConfigureSoftwareTemplate =
             WorkManagementCapabilityNames.OrchestrationConfigureSoftwareTemplate;
+        public const string PersonalTodoRead = WorkManagementCapabilityNames.PersonalTodoRead;
+        public const string PersonalTodoAdd = WorkManagementCapabilityNames.PersonalTodoAdd;
+        public const string PersonalTodoReorder = WorkManagementCapabilityNames.PersonalTodoReorder;
+        public const string PersonalTodoRequeue = WorkManagementCapabilityNames.PersonalTodoRequeue;
+        public const string PersonalTodoClaim = WorkManagementCapabilityNames.PersonalTodoClaim;
+        public const string PersonalTodoComplete = WorkManagementCapabilityNames.PersonalTodoComplete;
+        public const string PersonalTodoBlock = WorkManagementCapabilityNames.PersonalTodoBlock;
+        public const string PersonalTodoRelease = WorkManagementCapabilityNames.PersonalTodoRelease;
     }
 
     public static class Web
@@ -278,7 +286,15 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.OrchestrationCancel,
                 CapabilityNames.WorkManagement.OrchestrationRetry,
                 CapabilityNames.WorkManagement.OrchestrationConfigureSoftwareTemplate,
-                CapabilityNames.WorkManagement.ExecutionRunV1),
+                CapabilityNames.WorkManagement.ExecutionRunV1,
+                CapabilityNames.WorkManagement.PersonalTodoRead,
+                CapabilityNames.WorkManagement.PersonalTodoAdd,
+                CapabilityNames.WorkManagement.PersonalTodoReorder,
+                CapabilityNames.WorkManagement.PersonalTodoRequeue,
+                CapabilityNames.WorkManagement.PersonalTodoClaim,
+                CapabilityNames.WorkManagement.PersonalTodoComplete,
+                CapabilityNames.WorkManagement.PersonalTodoBlock,
+                CapabilityNames.WorkManagement.PersonalTodoRelease),
             ["source-control"] = Set(
                 CapabilityNames.SourceControl.TeamRepositoryOptions,
                 CapabilityNames.SourceControl.ProvisionRepository),

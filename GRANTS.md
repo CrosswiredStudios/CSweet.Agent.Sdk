@@ -145,6 +145,14 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `WorkSprintCapabilities.ReadReports` — `work.sprint.report.read`
 - `WorkAutomationCapabilities.Read` — `work.automation.read`
 - `WorkAutomationCapabilities.Manage` — `work.automation.manage`
+- `PersonalTodoCapabilities.Read` — `work.personal-todo.read.v1`
+- `PersonalTodoCapabilities.Add` — `work.personal-todo.add.v1`
+- `PersonalTodoCapabilities.Reorder` — `work.personal-todo.reorder.v1`
+- `PersonalTodoCapabilities.Requeue` — `work.personal-todo.requeue.v1`
+- `PersonalTodoCapabilities.Claim` — `work.personal-todo.claim.v1` (SDK runtime only)
+- `PersonalTodoCapabilities.Complete` — `work.personal-todo.complete.v1` (SDK runtime only)
+- `PersonalTodoCapabilities.Block` — `work.personal-todo.block.v1` (SDK runtime only)
+- `PersonalTodoCapabilities.Release` — `work.personal-todo.release.v1` (SDK runtime only)
 
 ### Board orchestration
 
