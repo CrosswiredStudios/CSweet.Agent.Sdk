@@ -54,7 +54,10 @@ are supplied by `CSweet.WorkManagement.Contracts`; still declare and obtain each
 
 Use `context.Platform.PersonalTodo` to list accessible personal boards, add personal work for self
 or a direct report, update/archive/restore authorized work, reorder ready work as a direct manager,
-and requeue blocked work. Subscribe to `PersonalTodoEvents.Available` and override
+requeue blocked work, and explicitly activate sequenced Backlog work. Set `StartInBacklog` when an
+item must remain dormant; `ActivateAsync` promotes exactly that item to Ready and emits its wake-up.
+Use `PersonalTodoItem.CorrelationId` for non-secret domain lineage. Subscribe to
+`PersonalTodoEvents.Available` and override
 `HandlePersonalTodoAsync`. The SDK serializes queue consumption per installation, sweeps ready work
 once when a subscribed runtime connects, and privately owns atomic claim, lease, completion,
 blocking, release, and retry transitions. Return `PersonalTodoResult.Completed(summary)` only after

@@ -83,6 +83,8 @@ a wake event missed during an installation upgrade cannot strand ready work. Men
 `PersonalTodoItem.Mentions` come from validated source messages or structured ticket spans and may
 be used with granted communication actions such as
 `context.Platform.Communication.SendDirectMessageAsync(...)`.
+Create deferred sequences with `AddPersonalTodoItemRequest.StartInBacklog`; activate only the next
+authorized item through `PlatformPersonalTodoClient.ActivateAsync`.
 
 ## Manifest decisions
 
