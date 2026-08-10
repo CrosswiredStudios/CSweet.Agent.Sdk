@@ -43,6 +43,28 @@ public sealed class PlatformPersonalTodoClientTests
     }
 
     [Fact]
+    public async Task ActivateAsync_UsesTypedGrantGovernedCapability()
+    {
+        ActivatePersonalTodoItemRequest? captured = null;
+        var ownerId = Guid.NewGuid();
+        var item = new PersonalTodoItem(
+            Guid.NewGuid(), Guid.NewGuid(), ownerId, ownerId, "Owner", "Hire Product Manager", "",
+            PersonalTodoStatuses.Ready, WorkPriorities.High, 1024, 2, null, null, null, [], null,
+            null, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+        var runtime = new AgentTestRuntime().RegisterCapability<
+            ActivatePersonalTodoItemRequest, PersonalTodoItem>(
+            PersonalTodoCapabilities.Activate,
+            (request, _) => { captured = request; return Task.FromResult(item); });
+
+        var result = await runtime.CreateContext().Platform.PersonalTodo.ActivateAsync(
+            new ActivatePersonalTodoItemRequest(item.Id, 1, "activate-next"));
+
+        Assert.NotNull(captured);
+        Assert.Equal(item.Id, captured.ItemId);
+        Assert.Equal(PersonalTodoStatuses.Ready, result.Status);
+    }
+
+    [Fact]
     public async Task UpdateAsync_PreservesStructuredTicketMentions()
     {
         var ownerId = Guid.NewGuid();

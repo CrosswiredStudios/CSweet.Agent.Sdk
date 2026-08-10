@@ -149,6 +149,7 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `PersonalTodoCapabilities.Add` — `work.personal-todo.add.v1`
 - `PersonalTodoCapabilities.Reorder` — `work.personal-todo.reorder.v1`
 - `PersonalTodoCapabilities.Requeue` — `work.personal-todo.requeue.v1`
+- `PersonalTodoCapabilities.Activate` — `work.personal-todo.activate.v1`
 - `PersonalTodoCapabilities.Claim` — `work.personal-todo.claim.v1` (SDK runtime only)
 - `PersonalTodoCapabilities.Complete` — `work.personal-todo.complete.v1` (SDK runtime only)
 - `PersonalTodoCapabilities.Block` — `work.personal-todo.block.v1` (SDK runtime only)

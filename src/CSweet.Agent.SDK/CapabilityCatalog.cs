@@ -143,6 +143,7 @@ public static class CapabilityNames
         public const string PersonalTodoAdd = WorkManagementCapabilityNames.PersonalTodoAdd;
         public const string PersonalTodoReorder = WorkManagementCapabilityNames.PersonalTodoReorder;
         public const string PersonalTodoRequeue = WorkManagementCapabilityNames.PersonalTodoRequeue;
+        public const string PersonalTodoActivate = WorkManagementCapabilityNames.PersonalTodoActivate;
         public const string PersonalTodoClaim = WorkManagementCapabilityNames.PersonalTodoClaim;
         public const string PersonalTodoComplete = WorkManagementCapabilityNames.PersonalTodoComplete;
         public const string PersonalTodoBlock = WorkManagementCapabilityNames.PersonalTodoBlock;
@@ -294,6 +295,7 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.PersonalTodoAdd,
                 CapabilityNames.WorkManagement.PersonalTodoReorder,
                 CapabilityNames.WorkManagement.PersonalTodoRequeue,
+                CapabilityNames.WorkManagement.PersonalTodoActivate,
                 CapabilityNames.WorkManagement.PersonalTodoClaim,
                 CapabilityNames.WorkManagement.PersonalTodoComplete,
                 CapabilityNames.WorkManagement.PersonalTodoBlock,

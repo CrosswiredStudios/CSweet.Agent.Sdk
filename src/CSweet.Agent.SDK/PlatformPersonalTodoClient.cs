@@ -29,6 +29,11 @@ public sealed class PlatformPersonalTodoClient
         InvokeAsync<RequeuePersonalTodoItemRequest, PersonalTodoItem>(
             PersonalTodoCapabilities.Requeue, request, cancellationToken);
 
+    public Task<PersonalTodoItem> ActivateAsync(
+        ActivatePersonalTodoItemRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<ActivatePersonalTodoItemRequest, PersonalTodoItem>(
+            PersonalTodoCapabilities.Activate, request, cancellationToken);
+
     public Task<PersonalTodoItem> UpdateAsync(
         UpdatePersonalTodoItemRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<UpdatePersonalTodoItemRequest, PersonalTodoItem>(
