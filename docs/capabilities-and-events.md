@@ -61,8 +61,9 @@ Use `PersonalTodoItem.CorrelationId` for non-secret domain lineage. Subscribe to
 `HandlePersonalTodoAsync`. The SDK serializes queue consumption per installation, sweeps ready work
 once when a subscribed runtime connects, and privately owns atomic claim, lease, completion,
 blocking, release, and retry transitions. Return `PersonalTodoResult.Completed(summary)` only after
-effects succeed; return `PersonalTodoResult.Blocked(reason)` when existing authority cannot perform
-the work. `WorkItemMentionInput` preserves validated identity spans in ticket titles/descriptions;
+effects succeed; return `PersonalTodoResult.InProgress(summary)` when the card must stay in Doing
+while awaiting an external event; return `PersonalTodoResult.Blocked(reason)` when existing
+authority cannot perform the work. `WorkItemMentionInput` preserves validated identity spans in ticket titles/descriptions;
 `PersonalTodoItem.Mentions` exposes the deduplicated authoritative recipients to callbacks.
 
 Use `context.Platform.ReadTeamRosterAsync()` only when teammate identity or team-role coverage

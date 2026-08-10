@@ -43,6 +43,16 @@ public sealed class PlatformPersonalTodoClientTests
     }
 
     [Fact]
+    public void InProgressResult_RetainsDoingAfterTheExecutionClaimIsReleased()
+    {
+        var result = PersonalTodoResult.InProgress("Awaiting manager action.");
+
+        Assert.False(result.IsCompleted);
+        Assert.True(result.KeepInProgress);
+        Assert.Equal("Awaiting manager action.", result.Content);
+    }
+
+    [Fact]
     public async Task ActivateAsync_UsesTypedGrantGovernedCapability()
     {
         ActivatePersonalTodoItemRequest? captured = null;

@@ -47,7 +47,7 @@ public abstract class CSweetAgentBase : ICSweetAgent
 
     /// <summary>
     /// Handles the next atomically claimed item from this installation's personal queue. The SDK
-    /// owns claiming and transitions; implementations only report Completed or Blocked.
+    /// owns claiming and transitions; implementations report Completed, InProgress, or Blocked.
     /// </summary>
     public virtual Task<PersonalTodoResult> HandlePersonalTodoAsync(
         PersonalTodoItem item,

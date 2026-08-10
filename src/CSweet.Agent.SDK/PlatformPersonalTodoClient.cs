@@ -71,11 +71,15 @@ public sealed class PlatformPersonalTodoClient
                 $"personal-todo-block:{eventId:N}:{itemId:N}"), cancellationToken);
 
     internal Task<PersonalTodoItem> ReleaseAsync(
-        Guid itemId, Guid eventId, long expectedRevision, CancellationToken cancellationToken) =>
+        Guid itemId, Guid eventId, long expectedRevision, bool keepInProgress,
+        CancellationToken cancellationToken) =>
         InvokeAsync<ReleasePersonalTodoItemRequest, PersonalTodoItem>(
             PersonalTodoCapabilities.Release,
             new(itemId, eventId, expectedRevision,
-                $"personal-todo-release:{eventId:N}:{itemId:N}:{expectedRevision}"),
+                $"personal-todo-release:{eventId:N}:{itemId:N}:{expectedRevision}")
+            {
+                KeepInProgress = keepInProgress
+            },
             cancellationToken);
 
     private async Task<TResponse> InvokeAsync<TRequest, TResponse>(

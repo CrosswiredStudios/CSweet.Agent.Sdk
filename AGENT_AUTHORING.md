@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 3.7.0
+     --SdkVersion 3.8.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed
@@ -77,8 +77,10 @@ configuration, no credentials, and `webAccess.mode` `None`.
 For personal queue support, request only the personal-todo capabilities the installation needs,
 subscribe to `com.csweet.work.personal-todo.available.v1`, and override
 `HandlePersonalTodoAsync`. Claim identifiers and leases are SDK-private. The callback must return
-`PersonalTodoResult.Completed(...)` or `PersonalTodoResult.Blocked(...)`; it must not move queue
-cards directly. Subscribed agents also sweep their queue once when a runtime session connects, so
+`PersonalTodoResult.Completed(...)`, `PersonalTodoResult.InProgress(...)`, or
+`PersonalTodoResult.Blocked(...)`; it must not move queue cards directly. `InProgress` releases
+the transient claim while retaining the card in Doing until an external event resumes it.
+Subscribed agents also sweep their queue once when a runtime session connects, so
 a wake event missed during an installation upgrade cannot strand ready work. Mention identities on
 `PersonalTodoItem.Mentions` come from validated source messages or structured ticket spans and may
 be used with granted communication actions such as

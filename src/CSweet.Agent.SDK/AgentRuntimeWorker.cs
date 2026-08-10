@@ -336,7 +336,8 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 catch
                 {
                     await context.Platform.PersonalTodo.ReleaseAsync(
-                        claim.Item.Id, eventId, claim.Item.Revision, cancellationToken);
+                        claim.Item.Id, eventId, claim.Item.Revision,
+                        keepInProgress: false, cancellationToken);
                     throw;
                 }
                 if (result.IsCompleted)
@@ -345,6 +346,12 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                         claim.Item.Id, eventId, claim.Item.Revision,
                         string.IsNullOrEmpty(result.Content) ? null : result.Content,
                         cancellationToken);
+                }
+                else if (result.KeepInProgress)
+                {
+                    await context.Platform.PersonalTodo.ReleaseAsync(
+                        claim.Item.Id, eventId, claim.Item.Revision,
+                        keepInProgress: true, cancellationToken);
                 }
                 else
                 {
