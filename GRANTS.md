@@ -153,6 +153,9 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `PersonalTodoCapabilities.Complete` — `work.personal-todo.complete.v1` (SDK runtime only)
 - `PersonalTodoCapabilities.Block` — `work.personal-todo.block.v1` (SDK runtime only)
 - `PersonalTodoCapabilities.Release` — `work.personal-todo.release.v1` (SDK runtime only)
+- `PersonalTodoCapabilities.Update` — `work.personal-todo.update.v1`
+- `PersonalTodoCapabilities.Archive` — `work.personal-todo.archive.v1`
+- `PersonalTodoCapabilities.Restore` — `work.personal-todo.restore.v1`
 
 ### Board orchestration
 

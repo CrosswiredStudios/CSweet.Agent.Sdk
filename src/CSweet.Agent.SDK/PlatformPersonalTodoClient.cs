@@ -29,6 +29,21 @@ public sealed class PlatformPersonalTodoClient
         InvokeAsync<RequeuePersonalTodoItemRequest, PersonalTodoItem>(
             PersonalTodoCapabilities.Requeue, request, cancellationToken);
 
+    public Task<PersonalTodoItem> UpdateAsync(
+        UpdatePersonalTodoItemRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<UpdatePersonalTodoItemRequest, PersonalTodoItem>(
+            PersonalTodoCapabilities.Update, request, cancellationToken);
+
+    public Task<PersonalTodoItem> ArchiveAsync(
+        ArchivePersonalTodoItemRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<ArchivePersonalTodoItemRequest, PersonalTodoItem>(
+            PersonalTodoCapabilities.Archive, request, cancellationToken);
+
+    public Task<PersonalTodoItem> RestoreAsync(
+        RestorePersonalTodoItemRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<RestorePersonalTodoItemRequest, PersonalTodoItem>(
+            PersonalTodoCapabilities.Restore, request, cancellationToken);
+
     internal Task<PersonalTodoClaim> ClaimAsync(Guid eventId, CancellationToken cancellationToken) =>
         InvokeAsync<ClaimPersonalTodoItemRequest, PersonalTodoClaim>(
             PersonalTodoCapabilities.Claim,

@@ -44,7 +44,8 @@ examples must compile or be exercised by tests.
 
 ## Package versioning
 
-- Every change to code shipped by `CSweet.Agent.SDK` must increment the package version in
+- Every edit affecting code, contracts, dependencies, or package metadata shipped by
+  `CSweet.Agent.SDK` must increment the package version in
   `src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj` before the work is considered complete. Local
   project references can hide a stale package version, so an unchanged version is not acceptable.
 - Use semantic versioning: increment the patch/build number for compatible fixes, the minor number

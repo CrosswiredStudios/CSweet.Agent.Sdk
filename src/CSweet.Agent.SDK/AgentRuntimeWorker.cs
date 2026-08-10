@@ -58,6 +58,22 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                         stoppingToken);
                 }
 
+                if (agent is CSweetAgentBase personalTodoAgent &&
+                    ShouldRecoverPersonalTodoOnStartup(manifest))
+                {
+                    try
+                    {
+                        await DrainPersonalTodoAsync(
+                            Guid.NewGuid(), personalTodoAgent, connectedContext, stoppingToken);
+                    }
+                    catch (PlatformCapabilityException exception)
+                    {
+                        logger.LogWarning(exception,
+                            "Agent {AgentId} could not perform its personal queue startup sweep; subscribed wake events will still be processed.",
+                            agent.AgentId);
+                    }
+                }
+
                 using var connected = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
                 var workTask = RunWorkLoopAsync(
                     manifest,
@@ -94,6 +110,11 @@ internal sealed class AgentRuntimeWorker<TAgent>(
             await Task.Delay(RetryDelay, stoppingToken);
         }
     }
+
+    internal static bool ShouldRecoverPersonalTodoOnStartup(AgentManifest manifest) =>
+        manifest.Events.Subscribes.Contains(PersonalTodoEvents.Available, StringComparer.Ordinal) &&
+        manifest.Requires.Any(x =>
+            string.Equals(x.Name, PersonalTodoCapabilities.Claim, StringComparison.Ordinal));
 
     internal static async Task ApplyInitialConfigurationAsync(
         ICSweetAgent agent,

@@ -147,6 +147,9 @@ public static class CapabilityNames
         public const string PersonalTodoComplete = WorkManagementCapabilityNames.PersonalTodoComplete;
         public const string PersonalTodoBlock = WorkManagementCapabilityNames.PersonalTodoBlock;
         public const string PersonalTodoRelease = WorkManagementCapabilityNames.PersonalTodoRelease;
+        public const string PersonalTodoUpdate = WorkManagementCapabilityNames.PersonalTodoUpdate;
+        public const string PersonalTodoArchive = WorkManagementCapabilityNames.PersonalTodoArchive;
+        public const string PersonalTodoRestore = WorkManagementCapabilityNames.PersonalTodoRestore;
     }
 
     public static class Web
@@ -294,7 +297,10 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.PersonalTodoClaim,
                 CapabilityNames.WorkManagement.PersonalTodoComplete,
                 CapabilityNames.WorkManagement.PersonalTodoBlock,
-                CapabilityNames.WorkManagement.PersonalTodoRelease),
+                CapabilityNames.WorkManagement.PersonalTodoRelease,
+                CapabilityNames.WorkManagement.PersonalTodoUpdate,
+                CapabilityNames.WorkManagement.PersonalTodoArchive,
+                CapabilityNames.WorkManagement.PersonalTodoRestore),
             ["source-control"] = Set(
                 CapabilityNames.SourceControl.TeamRepositoryOptions,
                 CapabilityNames.SourceControl.ProvisionRepository),

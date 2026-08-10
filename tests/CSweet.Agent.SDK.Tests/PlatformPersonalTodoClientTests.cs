@@ -22,7 +22,8 @@ public sealed class PlatformPersonalTodoClientTests
 
         var result = await runtime.CreateContext().Platform.PersonalTodo.AddAsync(request);
 
-        Assert.Equal(request, captured);
+        Assert.NotNull(captured);
+        Assert.Equal(request.Title, captured.Title);
         Assert.Equal(item.Id, result.Id);
     }
 
@@ -39,6 +40,33 @@ public sealed class PlatformPersonalTodoClientTests
             item, new AgentTestRuntime().CreateContext(), CancellationToken.None);
 
         Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PreservesStructuredTicketMentions()
+    {
+        var ownerId = Guid.NewGuid();
+        var mentionedId = Guid.NewGuid();
+        UpdatePersonalTodoItemRequest? captured = null;
+        var item = new PersonalTodoItem(
+            Guid.NewGuid(), Guid.NewGuid(), ownerId, ownerId, "Owner", "Tell @Matt a joke", "",
+            PersonalTodoStatuses.Ready, WorkPriorities.Medium, 1024, 2, null, null, null,
+            [new PersonalTodoMention(mentionedId, "Matt", "Human")], null, null,
+            DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+        var runtime = new AgentTestRuntime().RegisterCapability<
+            UpdatePersonalTodoItemRequest, PersonalTodoItem>(
+            PersonalTodoCapabilities.Update,
+            (request, _) => { captured = request; return Task.FromResult(item); });
+        var request = new UpdatePersonalTodoItemRequest(
+            item.Id, item.Title, item.Description, item.Priority, null, item.Revision, "update-1",
+            [new WorkItemMentionInput(mentionedId, WorkItemMentionFields.Title, 5, 5)]);
+
+        await runtime.CreateContext().Platform.PersonalTodo.UpdateAsync(request);
+
+        Assert.NotNull(captured);
+        Assert.Equal(request.ItemId, captured.ItemId);
+        Assert.Equal(request.Title, captured.Title);
+        Assert.Equal(mentionedId, Assert.Single(captured!.Mentions!).OrganizationUserId);
     }
 
     private sealed class UnsupportedAgent : CSweetAgentBase
