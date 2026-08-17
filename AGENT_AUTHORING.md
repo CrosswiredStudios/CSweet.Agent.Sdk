@@ -35,7 +35,7 @@ safely inferred:
 | Events | Subscribe only to events the purpose requires |
 | Required capabilities | Request the minimum platform/provider authority needed |
 
-Default to `Manual` activation, one concurrent job, multiple installations supported, no
+Default to `OnDemand` activation, one concurrent job, multiple installations supported, no
 configuration, no credentials, and `webAccess.mode` `None`.
 
 ## Generation workflow
@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 3.8.0
+     --SdkVersion 3.9.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed

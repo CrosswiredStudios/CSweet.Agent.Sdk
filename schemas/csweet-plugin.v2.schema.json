@@ -62,7 +62,7 @@
           "type": "string",
           "pattern": "^net\\d+\\.\\d+(?:-[A-Za-z0-9.-]+)?$"
         },
-        "defaultActivationMode": { "enum": ["Manual", "Periodic", "AlwaysOn"] },
+        "defaultActivationMode": { "enum": ["AlwaysOn", "OnDemand", "Scheduled"] },
         "supportsMultipleInstallations": { "type": "boolean" },
         "maximumConcurrentJobs": { "type": "integer", "minimum": 1 },
         "environmentProfile": {

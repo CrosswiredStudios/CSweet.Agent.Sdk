@@ -18,7 +18,7 @@ public sealed class AgentManifestLoaderTests
               "name": "Example",
               "version": "1.0.0",
               "publisher": { "id": "example", "name": "Example" },
-              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "Manual" },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "OnDemand" },
               "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" },
               "provides": [],
               "requires": [],
@@ -30,6 +30,38 @@ public sealed class AgentManifestLoaderTests
 
             Assert.Equal("com.example.agent", manifest.Id);
             Assert.Equal("src/Example.csproj", manifest.Runtime.ProjectPath);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Theory]
+    [InlineData("Manual")]
+    [InlineData("Periodic")]
+    [InlineData("Unknown")]
+    public async Task LoadAsync_RejectsRemovedAndUnknownActivationModes(string activationMode)
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var json = """
+            {
+              "manifestVersion": "2.0", "kind": "agent", "id": "com.example.agent",
+              "name": "Example", "version": "1.0.0",
+              "publisher": { "id": "example", "name": "Example" },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "OnDemand" },
+              "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" },
+              "provides": [], "requires": [], "events": { "subscribes": [] }
+            }
+            """.Replace("OnDemand", activationMode, StringComparison.Ordinal);
+            await File.WriteAllTextAsync(path, json);
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                AgentManifestLoader.LoadAsync(path, CancellationToken.None));
+
+            Assert.Contains("AlwaysOn, OnDemand, or Scheduled", exception.Message);
         }
         finally
         {
@@ -51,7 +83,7 @@ public sealed class AgentManifestLoaderTests
               "name": "Example Chief",
               "version": "1.0.0",
               "publisher": { "id": "example", "name": "Example" },
-              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "Manual" },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "OnDemand" },
               "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" },
               "provides": [{ "name": "management.check-in.v1", "description": "Check in.", "inputSchema": { "type": "object" }, "outputSchema": { "type": "object" }, "executionTimeoutSeconds": 30, "idempotency": "work-item" }],
               "requires": [{ "name": "platform.business-profile.read.v1", "scope": "organization" }],
@@ -85,7 +117,7 @@ public sealed class AgentManifestLoaderTests
               "name": "Unknown Grant",
               "version": "1.0.0",
               "publisher": { "id": "example", "name": "Example" },
-              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "Manual" },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "OnDemand" },
               "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" },
               "provides": [{ "name": "example.unregistered.v1", "description": "Unknown.", "inputSchema": { "type": "object" }, "outputSchema": { "type": "object" }, "executionTimeoutSeconds": 30, "idempotency": "work-item" }],
               "requires": [],
@@ -113,7 +145,7 @@ public sealed class AgentManifestLoaderTests
             {
               "manifestVersion": "2.0", "kind": "agent", "id": "com.example.connected", "name": "Connected",
               "version": "1.0.0", "publisher": { "id": "example", "name": "Example" },
-              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "Manual", "supportsMultipleInstallations": true, "maximumConcurrentJobs": 1 },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "OnDemand", "supportsMultipleInstallations": true, "maximumConcurrentJobs": 1 },
               "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" },
               "provides": [{ "name": "example.setup.validate.v1", "description": "Validate setup.", "inputSchema": { "type": "object" }, "outputSchema": { "type": "object" }, "executionTimeoutSeconds": 30, "idempotency": "caller-key" }],
               "requires": [], "events": { "subscribes": [] }, "configuration": [], "credentials": [],
@@ -157,7 +189,7 @@ public sealed class AgentManifestLoaderTests
             {
               "manifestVersion": "2.0", "kind": "agent", "id": "com.example.unsafe", "name": "Unsafe", "version": "1.0.0",
               "publisher": { "id": "example", "name": "Example" },
-              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "Manual", "supportsMultipleInstallations": true, "maximumConcurrentJobs": 1 },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "OnDemand", "supportsMultipleInstallations": true, "maximumConcurrentJobs": 1 },
               "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" }, "provides": [], "requires": [], "events": { "subscribes": [] },
               "configuration": [], "credentials": [], "connections": [],
               "setup": { "required": true, "entryFlow": "onboarding", "flows": [{ "id": "onboarding", "title": "Setup", "steps": [{ "id": "unsafe", "kind": "{{kind}}", "title": "Unsafe" }] }] },
@@ -304,7 +336,7 @@ public sealed class AgentManifestLoaderTests
             "type": "dotnet-project",
             "projectPath": "{{projectPath.Replace("\\", "\\\\")}}",
             "targetFramework": "net10.0",
-            "defaultActivationMode": "Manual",
+            "defaultActivationMode": "OnDemand",
             "supportsMultipleInstallations": true,
             "maximumConcurrentJobs": 1
           },

@@ -110,6 +110,7 @@ public static class CapabilityNames
         public const string ItemRead = WorkManagementCapabilityNames.ItemRead;
         public const string ItemStart = WorkManagementCapabilityNames.ItemStart;
         public const string ItemCreate = WorkManagementCapabilityNames.ItemCreate;
+        public const string ItemFinalizeDelivery = WorkManagementCapabilityNames.ItemFinalizeDelivery;
         public const string ItemComment = WorkManagementCapabilityNames.ItemComment;
         public const string ItemEstimate = WorkManagementCapabilityNames.ItemEstimate;
         public const string ItemMove = WorkManagementCapabilityNames.ItemMove;
@@ -272,6 +273,7 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.BoardConfigureColumns,
                 CapabilityNames.WorkManagement.ItemRead,
                 CapabilityNames.WorkManagement.ItemCreate,
+                CapabilityNames.WorkManagement.ItemFinalizeDelivery,
                 CapabilityNames.WorkManagement.ItemComment,
                 CapabilityNames.WorkManagement.ItemEstimate,
                 CapabilityNames.WorkManagement.ItemMove,
@@ -399,6 +401,7 @@ public static class WorkItemCapabilities
     public const string Read = CapabilityNames.WorkManagement.ItemRead;
     public const string Start = CapabilityNames.WorkManagement.ItemStart;
     public const string Create = CapabilityNames.WorkManagement.ItemCreate;
+    public const string FinalizeDelivery = CapabilityNames.WorkManagement.ItemFinalizeDelivery;
     public const string Comment = CapabilityNames.WorkManagement.ItemComment;
     public const string Estimate = CapabilityNames.WorkManagement.ItemEstimate;
     public const string Move = CapabilityNames.WorkManagement.ItemMove;

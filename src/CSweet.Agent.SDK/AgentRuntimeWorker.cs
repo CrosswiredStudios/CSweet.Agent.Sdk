@@ -442,8 +442,8 @@ internal sealed class AgentRuntimeWorker<TAgent>(
     private static AgentActivationReason ResolveActivationReason(string? mode) => mode switch
     {
         "AlwaysOn" => AgentActivationReason.AlwaysOnStartup,
-        "Periodic" => AgentActivationReason.Scheduled,
-        "Manual" => AgentActivationReason.Manual,
+        "Scheduled" => AgentActivationReason.Scheduled,
+        "OnDemand" => AgentActivationReason.OnDemand,
         _ => AgentActivationReason.Unknown
     };
 

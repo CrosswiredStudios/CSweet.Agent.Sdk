@@ -70,7 +70,7 @@ public sealed class AgentRuntimeManifest
     public string Type { get; init; } = "dotnet-project";
     public string? ProjectPath { get; init; }
     public string? TargetFramework { get; init; }
-    public string? DefaultActivationMode { get; init; } = "Manual";
+    public string? DefaultActivationMode { get; init; } = "OnDemand";
     public IReadOnlyDictionary<string, string> Entrypoints { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     public bool SupportsMultipleInstallations { get; init; }

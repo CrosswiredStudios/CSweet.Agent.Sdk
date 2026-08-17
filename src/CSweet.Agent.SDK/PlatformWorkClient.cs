@@ -42,6 +42,11 @@ public sealed class PlatformWorkClient
         InvokeAsync<CreateWorkItemRequest, WorkItem>(
             WorkItemCapabilities.Create, request, cancellationToken);
 
+    public Task<WorkItem> FinalizeItemDeliveryAsync(
+        FinalizeWorkItemDeliveryRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<FinalizeWorkItemDeliveryRequest, WorkItem>(
+            WorkItemCapabilities.FinalizeDelivery, request, cancellationToken);
+
     public Task<WorkItemComment> CommentAsync(
         CommentOnWorkItemRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<CommentOnWorkItemRequest, WorkItemComment>(

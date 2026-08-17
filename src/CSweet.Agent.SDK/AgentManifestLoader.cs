@@ -175,8 +175,8 @@ public static class AgentManifestLoader
 
         if (!TargetFrameworkPattern.IsMatch(runtime.TargetFramework ?? string.Empty))
             errors.Add("runtime.targetFramework must be a .NET target framework such as net10.0.");
-        if (runtime.DefaultActivationMode is not ("AlwaysOn" or "Periodic" or "Manual"))
-            errors.Add("runtime.defaultActivationMode must be AlwaysOn, Periodic, or Manual.");
+        if (runtime.DefaultActivationMode is not ("AlwaysOn" or "OnDemand" or "Scheduled"))
+            errors.Add("runtime.defaultActivationMode must be AlwaysOn, OnDemand, or Scheduled.");
         if (runtime.MaximumConcurrentJobs < 1)
             errors.Add("runtime.maximumConcurrentJobs must be at least one.");
     }

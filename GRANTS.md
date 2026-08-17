@@ -126,6 +126,7 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `WorkItemCapabilities.Read` — `work.item.read`
 - `WorkItemCapabilities.Start` — `work.item.start`
 - `WorkItemCapabilities.Create` — `work.item.create`
+- `WorkItemCapabilities.FinalizeDelivery` — `work.item.delivery.finalize`
 - `WorkItemCapabilities.Comment` — `work.item.comment`
 - `WorkItemCapabilities.Estimate` — `work.item.estimate`
 - `WorkItemCapabilities.Move` — `work.item.move`

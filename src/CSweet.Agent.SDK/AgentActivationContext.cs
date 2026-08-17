@@ -6,7 +6,7 @@ public enum AgentActivationReason
     Unknown,
     Interactive,
     Scheduled,
-    Manual,
+    OnDemand,
     AlwaysOnStartup
 }
 
