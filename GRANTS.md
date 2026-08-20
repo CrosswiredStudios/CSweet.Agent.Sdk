@@ -114,6 +114,7 @@ memory, or unrelated employees. Team membership does not grant any other authori
 
 New governed software-board mutations:
 
+- `WorkBoardCapabilities.Configure` — `work.board.configure`
 - `WorkBoardCapabilities.ConfigureColumns` — `work.board.columns.configure`
 - `WorkOrchestrationCapabilities.ConfigureSoftwareTemplate` — `work.orchestration.software-template.configure`
 

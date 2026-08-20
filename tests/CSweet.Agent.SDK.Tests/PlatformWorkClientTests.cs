@@ -79,6 +79,7 @@ public sealed class PlatformWorkClientTests
         {
             WorkBoardCapabilities.Read,
             WorkBoardCapabilities.Create,
+            WorkBoardCapabilities.Configure,
             WorkBoardCapabilities.ConfigureColumns,
             WorkItemCapabilities.Read,
             WorkItemCapabilities.Create,
@@ -104,6 +105,11 @@ public sealed class PlatformWorkClientTests
         var columnId = Guid.NewGuid();
         var itemId = Guid.NewGuid();
         var runtime = new AgentTestRuntime()
+            .RegisterCapability<ConfigureWorkBoardRequest, WorkBoardSummary>(
+                WorkBoardCapabilities.Configure,
+                (request, _) => Task.FromResult(new WorkBoardSummary(
+                    request.BoardId, request.Name, request.Description ?? "", false, false,
+                    request.ExpectedRevision + 1, [WorkBoardCapabilities.Configure])))
             .RegisterCapability<ConfigureWorkBoardColumnsRequest, WorkBoardDetail>(
                 WorkBoardCapabilities.ConfigureColumns,
                 (request, _) => Task.FromResult(new WorkBoardDetail(
@@ -118,11 +124,15 @@ public sealed class PlatformWorkClientTests
                     null, 1024, request.ExpectedRevision + 1, null)));
         var work = runtime.CreateContext().Platform.Work;
 
+        var configured = await work.ConfigureBoardAsync(new ConfigureWorkBoardRequest(
+            boardId, 1, "Web Games", "Product outcome board", "board-name-v1"));
         var board = await work.ConfigureBoardColumnsAsync(new ConfigureWorkBoardColumnsRequest(
             boardId, 1, [new(null, "Backlog", "ToDo", "Disabled")], "columns-v1"));
         var item = await work.MoveItemAsync(new MoveWorkItemRequest(
             boardId, itemId, columnId, 1, "ready-v1"));
 
+        Assert.Equal("Web Games", configured.Name);
+        Assert.Equal(2, configured.Revision);
         Assert.Equal("Backlog", Assert.Single(board.Columns).Name);
         Assert.Equal(columnId, item.ColumnId);
     }

@@ -48,3 +48,10 @@ to the trusted control plane; opening or saving settings must not invoke agent c
 runtime. Runtime snapshots and durable refresh messages are authenticated platform data. The SDK
 accepts only monotonic revisions, swaps settings atomically, and exposes a read-only authoring
 snapshot. Agents have no API for writing control-plane configuration.
+
+## Runtime transport availability boundary
+
+The private authenticated broker transport bounds every HTTP exchange. Control requests fail
+after 30 seconds and capability calls fail after three minutes, allowing the runtime worker to
+cancel affected work and reconnect instead of retaining an expired session indefinitely. Agent
+code cannot disable these limits or access the underlying transport.

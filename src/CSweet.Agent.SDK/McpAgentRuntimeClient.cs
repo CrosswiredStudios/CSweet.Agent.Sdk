@@ -8,16 +8,48 @@ using Microsoft.Extensions.Options;
 
 namespace CSweet.Agent.SDK;
 
-internal sealed class McpAgentRuntimeClient(
-    HttpClient http,
-    IOptions<AgentRuntimeOptions> options,
-    ILogger<McpAgentRuntimeClient> logger) : IAgentRuntimeTransport
+internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly AgentRuntimeOptions _options = options.Value;
+    private static readonly TimeSpan DefaultControlRequestTimeout = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan DefaultCapabilityRequestTimeout = TimeSpan.FromMinutes(3);
+    private readonly HttpClient _http;
+    private readonly AgentRuntimeOptions _options;
+    private readonly ILogger<McpAgentRuntimeClient> _logger;
+    private readonly TimeSpan _controlRequestTimeout;
+    private readonly TimeSpan _capabilityRequestTimeout;
     private readonly SemaphoreSlim _sessionGate = new(1, 1);
     private string? _accessToken;
     private long _requestId;
+
+    public McpAgentRuntimeClient(
+        HttpClient http,
+        IOptions<AgentRuntimeOptions> options,
+        ILogger<McpAgentRuntimeClient> logger)
+        : this(
+            http,
+            options,
+            logger,
+            DefaultControlRequestTimeout,
+            DefaultCapabilityRequestTimeout)
+    {
+    }
+
+    internal McpAgentRuntimeClient(
+        HttpClient http,
+        IOptions<AgentRuntimeOptions> options,
+        ILogger<McpAgentRuntimeClient> logger,
+        TimeSpan controlRequestTimeout,
+        TimeSpan capabilityRequestTimeout)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(controlRequestTimeout, TimeSpan.Zero);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(capabilityRequestTimeout, TimeSpan.Zero);
+        _http = http;
+        _options = options.Value;
+        _logger = logger;
+        _controlRequestTimeout = controlRequestTimeout;
+        _capabilityRequestTimeout = capabilityRequestTimeout;
+    }
 
     public AgentRuntimeSession? Session { get; private set; }
 
@@ -48,7 +80,7 @@ internal sealed class McpAgentRuntimeClient(
             },
             workloadToken);
 
-        using var response = await http.SendAsync(request, cancellationToken);
+        using var response = await SendAsync(request, "initialize", cancellationToken);
         var result = await ReadResultAsync(response, cancellationToken);
         var meta = result.GetProperty("_meta").GetProperty("csweet");
         _accessToken = RequiredString(meta, "accessToken");
@@ -229,7 +261,7 @@ internal sealed class McpAgentRuntimeClient(
             method,
             parameters,
             _accessToken ?? throw new InvalidOperationException("The MCP runtime session is not initialized."));
-        using var response = await http.SendAsync(request, cancellationToken);
+        using var response = await SendAsync(request, method, cancellationToken);
         return await ReadResultAsync(response, cancellationToken);
     }
 
@@ -252,7 +284,7 @@ internal sealed class McpAgentRuntimeClient(
                 "csweet/session/renew",
                 new { sessionId = Session.SessionId },
                 _accessToken!);
-            using var response = await http.SendAsync(request, cancellationToken);
+            using var response = await SendAsync(request, "csweet/session/renew", cancellationToken);
             var result = await ReadResultAsync(response, cancellationToken);
             var meta = result.GetProperty("_meta").GetProperty("csweet");
             _accessToken = RequiredString(meta, "accessToken");
@@ -288,6 +320,30 @@ internal sealed class McpAgentRuntimeClient(
         request.Headers.TryAddWithoutValidation("X-CSweet-Runtime-Instance-Id", _options.RuntimeInstanceId);
         request.Headers.TryAddWithoutValidation("X-CSweet-Tick-Id", _options.TickId);
         return request;
+    }
+
+    private async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        string method,
+        CancellationToken cancellationToken)
+    {
+        var timeout = string.Equals(method, "tools/call", StringComparison.Ordinal)
+            ? _capabilityRequestTimeout
+            : _controlRequestTimeout;
+        using var timeoutCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCancellation.CancelAfter(timeout);
+        try
+        {
+            return await _http.SendAsync(request, timeoutCancellation.Token);
+        }
+        catch (OperationCanceledException exception) when (
+            !cancellationToken.IsCancellationRequested &&
+            timeoutCancellation.IsCancellationRequested)
+        {
+            throw new TimeoutException(
+                $"The MCP broker did not respond to '{method}' within {timeout.TotalSeconds:0} seconds.",
+                exception);
+        }
     }
 
     private async Task<string> ReadWorkloadTokenAsync(CancellationToken cancellationToken)
@@ -357,7 +413,7 @@ internal sealed class McpAgentRuntimeClient(
         _accessToken = null;
         Session = null;
         _sessionGate.Dispose();
-        logger.LogDebug("Disposed the C-Sweet MCP runtime client.");
+        _logger.LogDebug("Disposed the C-Sweet MCP runtime client.");
         return ValueTask.CompletedTask;
     }
 }

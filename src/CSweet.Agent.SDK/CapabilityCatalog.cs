@@ -106,6 +106,7 @@ public static class CapabilityNames
     {
         public const string BoardRead = WorkManagementCapabilityNames.BoardRead;
         public const string BoardCreate = WorkManagementCapabilityNames.BoardCreate;
+        public const string BoardConfigure = WorkManagementCapabilityNames.BoardConfigure;
         public const string BoardConfigureColumns = WorkManagementCapabilityNames.BoardConfigureColumns;
         public const string ItemRead = WorkManagementCapabilityNames.ItemRead;
         public const string ItemStart = WorkManagementCapabilityNames.ItemStart;
@@ -270,6 +271,7 @@ public static class CapabilityCatalog
             ["work-management"] = Set(
                 CapabilityNames.WorkManagement.BoardRead,
                 CapabilityNames.WorkManagement.BoardCreate,
+                CapabilityNames.WorkManagement.BoardConfigure,
                 CapabilityNames.WorkManagement.BoardConfigureColumns,
                 CapabilityNames.WorkManagement.ItemRead,
                 CapabilityNames.WorkManagement.ItemCreate,
@@ -393,6 +395,7 @@ public static class WorkBoardCapabilities
 {
     public const string Read = CapabilityNames.WorkManagement.BoardRead;
     public const string Create = CapabilityNames.WorkManagement.BoardCreate;
+    public const string Configure = CapabilityNames.WorkManagement.BoardConfigure;
     public const string ConfigureColumns = CapabilityNames.WorkManagement.BoardConfigureColumns;
 }
 

@@ -39,7 +39,7 @@ specialized helper.
 | Read a conversation or send a message | `communication.chat.read.v1` / `communication.message.send.v1` |
 | Coordinate two eligible agents durably | `communication.coordination.start.v1` / `communication.coordination.respond.v1` / `communication.coordination.read.v1` / `communication.coordination.cancel.v1` |
 | Search available agents | `platform.agent-catalog.search.v1` |
-| Read/create work boards | `work.board.read` / `work.board.create` |
+| Read/create/configure work boards | `work.board.read` / `work.board.create` / `work.board.configure` |
 | Read/create/update work items | `work.item.read`, `work.item.create`, `work.item.start`, and the specific transition capability |
 | Prepare, inspect, publish, or clean an assigned repository workspace | the matching `git.workspace.*.v1` capability |
 | Read/manage sprints | the matching `work.sprint.*` capability |
@@ -102,7 +102,12 @@ Stable SDK event constants currently include:
 - `ManagementEvents.ResourceChangeDecided`
 - `WorkItemEvents.Assigned`
 - `PersonalTodoEvents.Available`
+- `CommunicationEvents.MessageReceived`
 - `CommunicationEvents.MessageMentioned`
+
+`CommunicationMessageReceivedEvent` is the public payload for direct human or agent conversation
+turns. Its `Context` uses `CommunicationMessageContextKeys` for broker-authenticated sender identity;
+message content must never override those values.
 
 `HiringRecommendationFulfilledEvent` is emitted exactly once after every unique seat requested by
 a recommendation is filled. It carries the recommendation and approved resource-change request

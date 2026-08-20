@@ -9,8 +9,29 @@ public static class AgentCoordinationEvents
 
 public static class CommunicationEvents
 {
+    public const string MessageReceived = "com.csweet.user.message.received.v1";
     public const string MessageMentioned = "com.csweet.communication.message.mentioned.v1";
 }
+
+/// <summary>Broker-authenticated context keys supplied with a received conversation turn.</summary>
+public static class CommunicationMessageContextKeys
+{
+    public const string SenderOrganizationUserId = "senderOrganizationUserId";
+    public const string SenderDisplayName = "senderDisplayName";
+    public const string SenderEmployeeType = "senderEmployeeType";
+    public const string SenderRole = "senderRole";
+}
+
+/// <summary>The stable payload delivered for a human or agent conversation turn.</summary>
+public sealed record CommunicationMessageReceivedEvent(
+    Guid ProviderProfileId,
+    string ConversationId,
+    string UserId,
+    string Message,
+    IReadOnlyDictionary<string, string>? Context,
+    Guid TurnId = default,
+    int Attempt = 0,
+    Guid MessageId = default);
 
 public static class AgentCoordinationDispositions
 {

@@ -3,6 +3,24 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class PlatformCommunicationClientTests
 {
     [Fact]
+    public void MessageReceivedEvent_ExposesStableWireContractAndAuthoritativeContextKeys()
+    {
+        var payload = new CommunicationMessageReceivedEvent(
+            Guid.NewGuid(), Guid.NewGuid().ToString("D"), Guid.NewGuid().ToString("D"),
+            "I am onboarded and ready to begin planning.",
+            new Dictionary<string, string>
+            {
+                [CommunicationMessageContextKeys.SenderOrganizationUserId] = Guid.NewGuid().ToString("D"),
+                [CommunicationMessageContextKeys.SenderEmployeeType] = "Agent",
+                [CommunicationMessageContextKeys.SenderRole] = "Software Architect"
+            });
+
+        Assert.Equal("com.csweet.user.message.received.v1", CommunicationEvents.MessageReceived);
+        Assert.Equal("Agent", payload.Context![CommunicationMessageContextKeys.SenderEmployeeType]);
+        Assert.Equal("Software Architect", payload.Context[CommunicationMessageContextKeys.SenderRole]);
+    }
+
+    [Fact]
     public async Task StartCoordinationAsync_UsesTypedGrantGovernedCapability()
     {
         var targetId = Guid.NewGuid();

@@ -32,6 +32,11 @@ public sealed class PlatformWorkClient
         InvokeAsync<CreateWorkBoardRequest, WorkBoardSummary>(
             WorkBoardCapabilities.Create, request, cancellationToken);
 
+    public Task<WorkBoardSummary> ConfigureBoardAsync(
+        ConfigureWorkBoardRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<ConfigureWorkBoardRequest, WorkBoardSummary>(
+            WorkBoardCapabilities.Configure, request, cancellationToken);
+
     public Task<WorkBoardDetail> ConfigureBoardColumnsAsync(
         ConfigureWorkBoardColumnsRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<ConfigureWorkBoardColumnsRequest, WorkBoardDetail>(

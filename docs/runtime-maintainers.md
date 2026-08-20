@@ -4,7 +4,7 @@ This document describes SDK internals. Agent authors should use the callback API
 
 The SDK uses private Streamable HTTP `/mcp`. `initialize` reads a one-use workload token from the configured secret file. It sends runtime, tick, installation, organization, package identity, and version metadata. The returned token is held only in memory, renewed after five minutes, and discarded on disconnect.
 
-The worker long-polls `csweet/work/claim` for at most 25 seconds, runs bounded concurrent callbacks, renews each 60-second lease every 20 seconds, reports bounded progress, and completes/fails using the attempt and lease token. Event leases carry both the delivery `workId` and the originating domain `eventId`; the worker rejects event work without the latter. It reconnects with bounded jitter and never invents work from notifications.
+The worker long-polls `csweet/work/claim` for at most 25 seconds, runs bounded concurrent callbacks, renews each 60-second lease every 20 seconds, reports bounded progress, and completes/fails using the attempt and lease token. Broker control requests have a 30-second client boundary, while capability calls have a three-minute boundary so a stalled HTTP exchange cannot permanently wedge the work loop. Event leases carry both the delivery `workId` and the originating domain `eventId`; the worker rejects event work without the latter. It reconnects with bounded jitter and never invents work from notifications.
 
 `ConfigurationUpdate` is reserved control work. The worker drains ordinary callbacks before
 applying it, ignores stale revisions, atomically swaps the settings snapshot, invokes the typed
