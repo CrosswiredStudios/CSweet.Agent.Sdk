@@ -85,6 +85,8 @@ public static class CapabilityNames
         public const string CoordinationStart = "communication.coordination.start.v1";
         public const string CoordinationRespond = "communication.coordination.respond.v1";
         public const string CoordinationRead = "communication.coordination.read.v1";
+        public const string CoordinationList = "communication.coordination.list.v1";
+        public const string CoordinationResume = "communication.coordination.resume.v1";
         public const string CoordinationCancel = "communication.coordination.cancel.v1";
     }
 
@@ -150,6 +152,7 @@ public static class CapabilityNames
         public const string PersonalTodoComplete = WorkManagementCapabilityNames.PersonalTodoComplete;
         public const string PersonalTodoBlock = WorkManagementCapabilityNames.PersonalTodoBlock;
         public const string PersonalTodoRelease = WorkManagementCapabilityNames.PersonalTodoRelease;
+        public const string PersonalTodoDefer = WorkManagementCapabilityNames.PersonalTodoDefer;
         public const string PersonalTodoUpdate = WorkManagementCapabilityNames.PersonalTodoUpdate;
         public const string PersonalTodoArchive = WorkManagementCapabilityNames.PersonalTodoArchive;
         public const string PersonalTodoRestore = WorkManagementCapabilityNames.PersonalTodoRestore;
@@ -259,6 +262,8 @@ public static class CapabilityCatalog
                 CapabilityNames.Communication.CoordinationStart,
                 CapabilityNames.Communication.CoordinationRespond,
                 CapabilityNames.Communication.CoordinationRead,
+                CapabilityNames.Communication.CoordinationList,
+                CapabilityNames.Communication.CoordinationResume,
                 CapabilityNames.Communication.CoordinationCancel),
             ["management"] = Set(
                 CapabilityNames.Management.CheckIn,
@@ -304,6 +309,7 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.PersonalTodoComplete,
                 CapabilityNames.WorkManagement.PersonalTodoBlock,
                 CapabilityNames.WorkManagement.PersonalTodoRelease,
+                CapabilityNames.WorkManagement.PersonalTodoDefer,
                 CapabilityNames.WorkManagement.PersonalTodoUpdate,
                 CapabilityNames.WorkManagement.PersonalTodoArchive,
                 CapabilityNames.WorkManagement.PersonalTodoRestore),
@@ -371,6 +377,8 @@ public static class CommunicationCapabilities
     public const string CoordinationStart = CapabilityNames.Communication.CoordinationStart;
     public const string CoordinationRespond = CapabilityNames.Communication.CoordinationRespond;
     public const string CoordinationRead = CapabilityNames.Communication.CoordinationRead;
+    public const string CoordinationList = CapabilityNames.Communication.CoordinationList;
+    public const string CoordinationResume = CapabilityNames.Communication.CoordinationResume;
     public const string CoordinationCancel = CapabilityNames.Communication.CoordinationCancel;
 }
 

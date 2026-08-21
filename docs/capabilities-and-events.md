@@ -37,7 +37,7 @@ specialized helper.
 | Read or propose business memory | `memory.business.read.v1` / `memory.business.propose.v1` |
 | Read or propose user memory | `memory.user.read.v1` / `memory.user.propose.v1` |
 | Read a conversation or send a message | `communication.chat.read.v1` / `communication.message.send.v1` |
-| Coordinate two eligible agents durably | `communication.coordination.start.v1` / `communication.coordination.respond.v1` / `communication.coordination.read.v1` / `communication.coordination.cancel.v1` |
+| Coordinate two eligible agents durably | `communication.coordination.start.v1` / `communication.coordination.respond.v1` / `communication.coordination.read.v1` / `communication.coordination.list.v1` / `communication.coordination.resume.v1` / `communication.coordination.cancel.v1` |
 | Search available agents | `platform.agent-catalog.search.v1` |
 | Read/create/configure work boards | `work.board.read` / `work.board.create` / `work.board.configure` |
 | Read/create/update work items | `work.item.read`, `work.item.create`, `work.item.start`, and the specific transition capability |
@@ -63,7 +63,9 @@ once when a subscribed runtime connects, and privately owns atomic claim, lease,
 blocking, release, and retry transitions. Return `PersonalTodoResult.Completed(summary)` only after
 effects succeed; return `PersonalTodoResult.InProgress(summary)` when the card must stay in Doing
 while awaiting an external event; return `PersonalTodoResult.Blocked(reason)` when existing
-authority cannot perform the work. `WorkItemMentionInput` preserves validated identity spans in ticket titles/descriptions;
+authority cannot perform the work. Return `PersonalTodoResult.WaitingUntil(...)` to persist a
+future review time, waiting reason, and optional coworker identity through
+`work.personal-todo.defer.v1`. `WorkItemMentionInput` preserves validated identity spans in ticket titles/descriptions;
 `PersonalTodoItem.Mentions` exposes the deduplicated authoritative recipients to callbacks.
 
 Use `context.Platform.ReadTeamRosterAsync()` only when teammate identity or team-role coverage
@@ -76,6 +78,11 @@ the roster grant never implies chat, board, tool, memory, or agent-to-agent acce
 Events are durable, exact-installation work. Subscribe only to known events whose payload your
 agent understands. Compare `message.EventType` to SDK constants where available, and deserialize
 `message.Data` into a typed record.
+
+Agents that subscribe to `com.csweet.agent.attention.review-due.v1` receive the typed
+`AgentAttentionReviewDueEvent` at startup/reconnection and at their configured cadence. Override
+`HandleAttentionReviewAsync` for deterministic reconciliation. The platform publishes this event;
+agents cannot select its target or publish lifecycle events themselves.
 
 `message.WorkId` identifies one durable delivery and may change when the same domain event is
 delivered elsewhere. `message.EventId` is the authoritative, stable identity of the originating

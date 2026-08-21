@@ -71,6 +71,8 @@ public sealed class AgentRuntimeManifest
     public string? ProjectPath { get; init; }
     public string? TargetFramework { get; init; }
     public string? DefaultActivationMode { get; init; } = "OnDemand";
+    /// <summary>Preferred platform-owned attention cadence for this package.</summary>
+    public int? DefaultTickFrequencySeconds { get; init; }
     public IReadOnlyDictionary<string, string> Entrypoints { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     public bool SupportsMultipleInstallations { get; init; }

@@ -56,6 +56,12 @@ public abstract class CSweetAgentBase : ICSweetAgent
         Task.FromResult(PersonalTodoResult.Blocked(
             $"Agent '{AgentId}' does not support personal to-do work."));
 
+    /// <summary>Reconciles durable role commitments without requiring a model call.</summary>
+    public virtual Task HandleAttentionReviewAsync(
+        AgentAttentionReviewContext review,
+        AgentRuntimeContext context,
+        CancellationToken cancellationToken) => Task.CompletedTask;
+
     /// <summary>
     /// Handles one durable turn in a platform-governed agent collaboration. Implementations must
     /// explicitly continue, complete, or block; the SDK submits the returned disposition.

@@ -11,6 +11,7 @@
     "projectPath": "src/HelloAgent/HelloAgent.csproj",
     "targetFramework": "net10.0",
     "defaultActivationMode": "OnDemand",
+    "defaultTickFrequencySeconds": 300,
     "supportsMultipleInstallations": true,
     "maximumConcurrentJobs": 1
   },

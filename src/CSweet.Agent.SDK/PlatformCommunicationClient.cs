@@ -177,6 +177,16 @@ public sealed record RespondToAgentCoordinationRequest(
 
 public sealed record ReadAgentCoordinationRequest(Guid SessionId);
 
+public sealed record ListAgentCoordinationRequest(Guid? ChatId = null, bool ActiveOnly = false);
+
+public sealed record AgentCoordinationSessions(IReadOnlyList<AgentCoordinationSession> Sessions);
+
+public sealed record ResumeAgentCoordinationRequest(
+    Guid SessionId,
+    long ExpectedRevision,
+    string Reason,
+    string IdempotencyKey);
+
 public sealed record CancelAgentCoordinationRequest(
     Guid SessionId,
     long ExpectedRevision,
@@ -362,6 +372,23 @@ public sealed class PlatformCommunicationClient
         CancellationToken token = default) =>
         _platform.InvokeAsync<ReadAgentCoordinationRequest, AgentCoordinationSession>(
             CommunicationCapabilities.CoordinationRead, new(sessionId), token);
+
+    public Task<AgentCoordinationSessions> ListCoordinationAsync(
+        Guid? chatId = null,
+        bool activeOnly = false,
+        CancellationToken token = default) =>
+        _platform.InvokeAsync<ListAgentCoordinationRequest, AgentCoordinationSessions>(
+            CommunicationCapabilities.CoordinationList, new(chatId, activeOnly), token);
+
+    public Task<AgentCoordinationSession> ResumeCoordinationAsync(
+        Guid sessionId,
+        long expectedRevision,
+        string reason,
+        string idempotencyKey,
+        CancellationToken token = default) =>
+        _platform.InvokeAsync<ResumeAgentCoordinationRequest, AgentCoordinationSession>(
+            CommunicationCapabilities.CoordinationResume,
+            new(sessionId, expectedRevision, reason, idempotencyKey), token);
 
     public Task<AgentCoordinationSession> CancelCoordinationAsync(
         Guid sessionId,

@@ -94,6 +94,8 @@ memory, or unrelated employees. Team membership does not grant any other authori
 - `CommunicationCapabilities.CoordinationStart` — `communication.coordination.start.v1`
 - `CommunicationCapabilities.CoordinationRespond` — `communication.coordination.respond.v1`
 - `CommunicationCapabilities.CoordinationRead` — `communication.coordination.read.v1`
+- `CommunicationCapabilities.CoordinationList` — `communication.coordination.list.v1`
+- `CommunicationCapabilities.CoordinationResume` — `communication.coordination.resume.v1`
 - `CommunicationCapabilities.CoordinationCancel` — `communication.coordination.cancel.v1`
 - `CommunicationCapabilities.MessageIngest` — `communication.message.ingest.v1`
 - `CommunicationCapabilities.Send` — `communication.send.v1`
@@ -156,6 +158,7 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `PersonalTodoCapabilities.Complete` — `work.personal-todo.complete.v1` (SDK runtime only)
 - `PersonalTodoCapabilities.Block` — `work.personal-todo.block.v1` (SDK runtime only)
 - `PersonalTodoCapabilities.Release` — `work.personal-todo.release.v1` (SDK runtime only)
+- `PersonalTodoCapabilities.Defer` — `work.personal-todo.defer.v1` (SDK runtime only)
 - `PersonalTodoCapabilities.Update` — `work.personal-todo.update.v1`
 - `PersonalTodoCapabilities.Archive` — `work.personal-todo.archive.v1`
 - `PersonalTodoCapabilities.Restore` — `work.personal-todo.restore.v1`

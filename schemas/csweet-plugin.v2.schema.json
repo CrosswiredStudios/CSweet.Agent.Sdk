@@ -63,6 +63,7 @@
           "pattern": "^net\\d+\\.\\d+(?:-[A-Za-z0-9.-]+)?$"
         },
         "defaultActivationMode": { "enum": ["AlwaysOn", "OnDemand", "Scheduled"] },
+        "defaultTickFrequencySeconds": { "type": "integer", "minimum": 60, "maximum": 86400 },
         "supportsMultipleInstallations": { "type": "boolean" },
         "maximumConcurrentJobs": { "type": "integer", "minimum": 1 },
         "environmentProfile": {

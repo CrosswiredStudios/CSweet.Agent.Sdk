@@ -81,16 +81,25 @@ public sealed class AgentTestRuntime
         var stableEventId = eventId ?? Guid.NewGuid();
         if (stableEventId == Guid.Empty)
             throw new ArgumentException("Event ID must not be empty.", nameof(eventId));
+        var occurredAt = DateTimeOffset.UtcNow;
+        var payload = JsonSerializer.SerializeToElement(data, JsonOptions);
+        var context = CreateContext();
+        if (string.Equals(eventType, AgentAttentionEvents.ReviewDue, StringComparison.Ordinal) &&
+            agent is CSweetAgentBase attentiveAgent)
+        {
+            var review = payload.Deserialize<AgentAttentionReviewDueEvent>(JsonOptions)
+                ?? throw new InvalidOperationException("The attention review payload is empty.");
+            await attentiveAgent.HandleAttentionReviewAsync(
+                new AgentAttentionReviewContext(
+                    review.ReviewId, review.OccurredAt, review.NextReviewAt, review.Reason),
+                context, cancellationToken);
+            return;
+        }
         await agent.HandleEventAsync(
             new AgentEventEnvelope(
-                Guid.NewGuid(),
-                stableEventId,
-                eventType,
-                JsonSerializer.SerializeToElement(data, JsonOptions),
-                DateTimeOffset.UtcNow,
-                "test-correlation"),
-            CreateContext(),
-            cancellationToken);
+                Guid.NewGuid(), stableEventId, eventType, payload,
+                occurredAt, "test-correlation"),
+            context, cancellationToken);
     }
 
     private sealed record TestCapability(

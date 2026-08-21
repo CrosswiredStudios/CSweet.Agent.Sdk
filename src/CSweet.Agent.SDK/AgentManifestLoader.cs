@@ -177,6 +177,9 @@ public static class AgentManifestLoader
             errors.Add("runtime.targetFramework must be a .NET target framework such as net10.0.");
         if (runtime.DefaultActivationMode is not ("AlwaysOn" or "OnDemand" or "Scheduled"))
             errors.Add("runtime.defaultActivationMode must be AlwaysOn, OnDemand, or Scheduled.");
+        if (runtime.DefaultTickFrequencySeconds is { } frequency &&
+            frequency is < 60 or > 86_400)
+            errors.Add("runtime.defaultTickFrequencySeconds must be between 60 and 86400.");
         if (runtime.MaximumConcurrentJobs < 1)
             errors.Add("runtime.maximumConcurrentJobs must be at least one.");
     }

@@ -82,6 +82,21 @@ public sealed class PlatformPersonalTodoClient
             },
             cancellationToken);
 
+    internal Task<PersonalTodoItem> DeferAsync(
+        Guid itemId,
+        Guid eventId,
+        long expectedRevision,
+        DateTimeOffset nextReviewAt,
+        string reason,
+        Guid? waitingOnOrganizationUserId,
+        CancellationToken cancellationToken) =>
+        InvokeAsync<DeferPersonalTodoItemRequest, PersonalTodoItem>(
+            PersonalTodoCapabilities.Defer,
+            new(itemId, eventId, expectedRevision, nextReviewAt, reason,
+                waitingOnOrganizationUserId,
+                $"personal-todo-defer:{eventId:N}:{itemId:N}:{expectedRevision}"),
+            cancellationToken);
+
     private async Task<TResponse> InvokeAsync<TRequest, TResponse>(
         string capability, TRequest payload, CancellationToken cancellationToken)
     {

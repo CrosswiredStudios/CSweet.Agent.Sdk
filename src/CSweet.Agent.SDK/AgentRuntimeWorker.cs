@@ -282,7 +282,31 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 lease.Payload,
                 DateTimeOffset.UtcNow,
                 lease.CorrelationId);
-        if (string.Equals(envelope.EventType, AgentCoordinationEvents.TurnRequested, StringComparison.Ordinal) &&
+        if (string.Equals(envelope.EventType, AgentAttentionEvents.ReviewDue, StringComparison.Ordinal) &&
+            agent is CSweetAgentBase attentiveAgent)
+        {
+            var review = envelope.Data.Deserialize<AgentAttentionReviewDueEvent>(
+                CSweetAgentBase.SerializerOptions)
+                ?? throw new InvalidOperationException("The attention review payload is empty.");
+            await attentiveAgent.HandleAttentionReviewAsync(
+                new AgentAttentionReviewContext(
+                    review.ReviewId, review.OccurredAt, review.NextReviewAt, review.Reason),
+                context, cancellationToken);
+            try
+            {
+                await DrainPersonalTodoAsync(
+                    envelope.EventId, attentiveAgent, context, cancellationToken, maximumItems: 3);
+            }
+            catch (PlatformCapabilityException exception) when (
+                string.Equals(exception.Capability, PersonalTodoCapabilities.Claim, StringComparison.Ordinal) &&
+                exception.Code is PlatformCapabilityErrorCode.Denied or PlatformCapabilityErrorCode.NotFound)
+            {
+                logger.LogDebug(exception,
+                    "Agent {AgentId} does not have an actionable personal queue for this attention review.",
+                    agent.AgentId);
+            }
+        }
+        else if (string.Equals(envelope.EventType, AgentCoordinationEvents.TurnRequested, StringComparison.Ordinal) &&
             agent is CSweetAgentBase baseAgent)
         {
             var request = envelope.Data.Deserialize<AgentCoordinationTurnRequest>(
@@ -304,7 +328,7 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                      StringComparison.Ordinal) && agent is CSweetAgentBase personalTodoAgent)
         {
             await DrainPersonalTodoAsync(
-                envelope.EventId, personalTodoAgent, context, cancellationToken);
+                envelope.EventId, personalTodoAgent, context, cancellationToken, maximumItems: 3);
         }
         else
         {
@@ -317,12 +341,13 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         Guid eventId,
         CSweetAgentBase personalTodoAgent,
         AgentRuntimeContext context,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int maximumItems = 3)
     {
         await _personalTodoGate.WaitAsync(cancellationToken);
         try
         {
-            while (true)
+            for (var handled = 0; handled < maximumItems; handled++)
             {
                 var claim = await context.Platform.PersonalTodo.ClaimAsync(eventId, cancellationToken);
                 if (claim.Item is null)
@@ -345,6 +370,13 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                     await context.Platform.PersonalTodo.CompleteAsync(
                         claim.Item.Id, eventId, claim.Item.Revision,
                         string.IsNullOrEmpty(result.Content) ? null : result.Content,
+                        cancellationToken);
+                }
+                else if (result.NextReviewAt is { } nextReviewAt)
+                {
+                    await context.Platform.PersonalTodo.DeferAsync(
+                        claim.Item.Id, eventId, claim.Item.Revision,
+                        nextReviewAt, result.Content, result.WaitingOnOrganizationUserId,
                         cancellationToken);
                 }
                 else if (result.KeepInProgress)

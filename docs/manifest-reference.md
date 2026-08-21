@@ -19,6 +19,7 @@ machine-readable definition is [`schemas/csweet-plugin.v2.schema.json`](../schem
     "projectPath": "src/ResearchAgent/ResearchAgent.csproj",
     "targetFramework": "net10.0",
     "defaultActivationMode": "OnDemand",
+    "defaultTickFrequencySeconds": 300,
     "supportsMultipleInstallations": true,
     "maximumConcurrentJobs": 1
   },
@@ -78,6 +79,7 @@ machine-readable definition is [`schemas/csweet-plugin.v2.schema.json`](../schem
 | `runtime.projectPath` | Relative `.csproj` path with no parent traversal |
 | `runtime.targetFramework` | .NET target framework; current authoring target is `net10.0` |
 | `runtime.defaultActivationMode` | `AlwaysOn`, `OnDemand`, or `Scheduled`; prefer `OnDemand` for event-driven agents |
+| `runtime.defaultTickFrequencySeconds` | Preferred platform-owned attention/run cadence, 60–86400 seconds; installation policy may impose a higher minimum |
 | `runtime.supportsMultipleInstallations` | Whether separate installations can run independently |
 | `runtime.maximumConcurrentJobs` | At least 1; start at 1 until concurrency safety is proven |
 | `protocol` | `minimumVersion` `2.0`, `maximumVersion` beginning with `2.` |
