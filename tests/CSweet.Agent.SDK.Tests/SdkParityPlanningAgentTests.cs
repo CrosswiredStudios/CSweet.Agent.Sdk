@@ -6,8 +6,8 @@ namespace CSweet.Agent.SDK.Tests;
 
 public sealed class SdkParityPlanningAgentTests
 {
-    private const string DesignCapability = "software-architecture.design.v1";
-    private const string PublishCapability = "software-architecture.publish-plan.v1";
+    private const string DesignCapability = "software-architecture.design.v2";
+    private const string PublishCapability = "software-architecture.publish-plan.v2";
 
     [Fact]
     public async Task PackagedSdkAgentCanProvideArchitectureAndUseGovernedPlanningPrimitives()
