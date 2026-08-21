@@ -233,8 +233,14 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         {
             if (lease.Kind == AgentWorkKind.ConfigurationUpdate)
                 _configurationRestartRequested = true;
-            logger.LogError(exception, "Agent {AgentId} failed work {WorkId} ({WorkName}).", agent.AgentId, lease.WorkId, lease.Name);
-            await runtime.FailAsync(lease, "The agent failed while processing the work item.", runtimeCancellation);
+            var diagnosticId = Guid.NewGuid();
+            logger.LogError(exception,
+                "Agent {AgentId} failed work {WorkId} ({WorkName}). Diagnostic {DiagnosticId}.",
+                agent.AgentId, lease.WorkId, lease.Name, diagnosticId);
+            await runtime.FailAsync(
+                lease,
+                DescribeFailure(exception, diagnosticId),
+                runtimeCancellation);
         }
         finally
         {
@@ -243,6 +249,38 @@ internal sealed class AgentRuntimeWorker<TAgent>(
             catch (OperationCanceledException) when (deadline.IsCancellationRequested) { }
         }
     }
+
+    internal static string DescribeFailure(Exception exception, Guid diagnosticId)
+    {
+        if (exception is PlatformCapabilityException capability)
+        {
+            var code = capability.Code switch
+            {
+                PlatformCapabilityErrorCode.Denied => "platform.capability.denied",
+                PlatformCapabilityErrorCode.Unavailable => "platform.capability.unavailable",
+                PlatformCapabilityErrorCode.NotFound => "platform.capability.not_found",
+                PlatformCapabilityErrorCode.Conflict => "platform.capability.conflict",
+                PlatformCapabilityErrorCode.ValidationFailed => "platform.capability.validation_failed",
+                PlatformCapabilityErrorCode.ApprovalRequired => "platform.capability.approval_required",
+                PlatformCapabilityErrorCode.BudgetExceeded => "platform.capability.budget_exceeded",
+                _ => "platform.capability.unknown"
+            };
+            return $"agent-failure:v1;code={code};capability={SanitizeFailureToken(capability.Capability)};diagnosticId={diagnosticId:D}";
+        }
+
+        if (exception is HttpRequestException)
+            return $"agent-failure:v1;code=runtime.transport;diagnosticId={diagnosticId:D}";
+        if (exception is JsonException)
+            return $"agent-failure:v1;code=agent.payload_invalid;diagnosticId={diagnosticId:D}";
+        if (exception is InvalidOperationException)
+            return $"agent-failure:v1;code=agent.invalid_operation;diagnosticId={diagnosticId:D}";
+        return $"agent-failure:v1;code=agent.unhandled;diagnosticId={diagnosticId:D}";
+    }
+
+    private static string SanitizeFailureToken(string value) =>
+        new(value.Where(character => char.IsLetterOrDigit(character) || character is '.' or '-' or '_')
+            .Take(300)
+            .ToArray());
 
     private async Task<AgentWorkResult> ApplyConfigurationUpdateAsync(
         AgentWorkLease lease,

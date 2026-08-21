@@ -21,6 +21,23 @@ public sealed class AgentRuntimePersonalTodoRecoveryTests
         Assert.False(AgentRuntimeWorker<TestAgent>.ShouldRecoverPersonalTodoOnStartup(noClaim));
     }
 
+    [Fact]
+    public void RuntimeFailuresExposeSafeClassificationAndDiagnosticInsteadOfExceptionText()
+    {
+        var diagnosticId = Guid.Parse("11111111-2222-3333-4444-555555555555");
+        var exception = new PlatformCapabilityException(
+            "software-architecture.design.v2",
+            PlatformCapabilityErrorCode.NotFound,
+            "sensitive provider detail");
+
+        var failure = AgentRuntimeWorker<TestAgent>.DescribeFailure(exception, diagnosticId);
+
+        Assert.Equal(
+            "agent-failure:v1;code=platform.capability.not_found;capability=software-architecture.design.v2;diagnosticId=11111111-2222-3333-4444-555555555555",
+            failure);
+        Assert.DoesNotContain("sensitive", failure, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static AgentManifest Manifest(
         IReadOnlyList<string> events,
         IReadOnlyList<AgentRequiredCapability> requires) => new()
