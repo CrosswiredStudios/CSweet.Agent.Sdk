@@ -147,3 +147,7 @@ remote UI, redirects, and executable expressions are not manifest features and f
 Progressive permission sets should separate required read-only access from optional mutations.
 Enabling an optional feature must be initiated by the user and creates a fresh platform-owned
 authorization flow; plugins cannot silently add scopes.
+Numeric configuration fields may declare `lessThanFieldKey`. Both fields must be numeric, the
+referenced key must exist, and the dependent value must remain strictly lower. This is useful for
+relationships such as model output tokens being lower than context-window tokens. New signed
+defaults must also satisfy the relationship.

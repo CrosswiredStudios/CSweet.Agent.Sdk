@@ -96,6 +96,8 @@ public sealed record AgentManifestConfigurationField
     public bool Secret { get; init; }
     /// <summary>Optional scalar value used to initialize a new installation.</summary>
     public JsonElement? DefaultValue { get; init; }
+    /// <summary>For numeric fields, requires this value to be strictly less than the referenced numeric field.</summary>
+    public string? LessThanFieldKey { get; init; }
 }
 
 /// <summary>A named credential binding; credential values are never included in a manifest.</summary>

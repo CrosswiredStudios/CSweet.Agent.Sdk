@@ -165,7 +165,8 @@ public sealed record StartAgentCoordinationRequest(
     Guid SourceConversationId,
     Guid SourceChatTurnId,
     Guid SourceMessageId,
-    string IdempotencyKey);
+    string IdempotencyKey,
+    AgentCoordinationArtifactSubmission? Artifact = null);
 
 public sealed record RespondToAgentCoordinationRequest(
     Guid SessionId,
@@ -173,7 +174,8 @@ public sealed record RespondToAgentCoordinationRequest(
     int ExpectedTurnOrdinal,
     string Disposition,
     string Content,
-    string IdempotencyKey);
+    string IdempotencyKey,
+    AgentCoordinationArtifactSubmission? Artifact = null);
 
 public sealed record ReadAgentCoordinationRequest(Guid SessionId);
 
@@ -205,7 +207,27 @@ public sealed record AgentCoordinationTurn(
     Guid SpeakerOrganizationUserId,
     string Disposition,
     string Content,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    AgentCoordinationArtifact? Artifact = null);
+
+/// <summary>A bounded, caller-authored structured artifact attached to one coordination turn.</summary>
+public sealed record AgentCoordinationArtifactSubmission(
+    string Type,
+    string SchemaVersion,
+    string Key,
+    int PageOrdinal,
+    bool IsFinalPage,
+    JsonElement Payload);
+
+/// <summary>A durable coordination artifact whose digest was computed by the platform.</summary>
+public sealed record AgentCoordinationArtifact(
+    string Type,
+    string SchemaVersion,
+    string Key,
+    int PageOrdinal,
+    bool IsFinalPage,
+    JsonElement Payload,
+    string Digest);
 
 public sealed record AgentCoordinationSession(
     Guid Id,
@@ -240,16 +262,25 @@ public sealed record AgentCoordinationTurnRequest(
     bool IsFinalization,
     IReadOnlyList<AgentCoordinationTurn> Transcript);
 
-public sealed record AgentCoordinationTurnResult(string Disposition, string Content)
+public sealed record AgentCoordinationTurnResult(
+    string Disposition,
+    string Content,
+    AgentCoordinationArtifactSubmission? Artifact = null)
 {
-    public static AgentCoordinationTurnResult Continue(string content) =>
-        new(AgentCoordinationDispositions.Continue, content);
+    public static AgentCoordinationTurnResult Continue(
+        string content,
+        AgentCoordinationArtifactSubmission? artifact = null) =>
+        new(AgentCoordinationDispositions.Continue, content, artifact);
 
-    public static AgentCoordinationTurnResult Completed(string content) =>
-        new(AgentCoordinationDispositions.Completed, content);
+    public static AgentCoordinationTurnResult Completed(
+        string content,
+        AgentCoordinationArtifactSubmission? artifact = null) =>
+        new(AgentCoordinationDispositions.Completed, content, artifact);
 
-    public static AgentCoordinationTurnResult Blocked(string content) =>
-        new(AgentCoordinationDispositions.Blocked, content);
+    public static AgentCoordinationTurnResult Blocked(
+        string content,
+        AgentCoordinationArtifactSubmission? artifact = null) =>
+        new(AgentCoordinationDispositions.Blocked, content, artifact);
 }
 
 /// <summary>Typed, grant-governed access to C-Sweet communications and agent coordination.</summary>

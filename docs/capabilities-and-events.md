@@ -38,6 +38,16 @@ specialized helper.
 | Read or propose user memory | `memory.user.read.v1` / `memory.user.propose.v1` |
 | Read a conversation or send a message | `communication.chat.read.v1` / `communication.message.send.v1` |
 | Coordinate two eligible agents durably | `communication.coordination.start.v1` / `communication.coordination.respond.v1` / `communication.coordination.read.v1` / `communication.coordination.list.v1` / `communication.coordination.resume.v1` / `communication.coordination.cancel.v1` |
+
+Coordination turns may attach one `AgentCoordinationArtifactSubmission`. The artifact has a stable
+type, schema version, key, zero-based page ordinal, final-page flag, and JSON payload. The platform
+limits the payload to 256 KiB, persists it with the turn, and returns an
+`AgentCoordinationArtifact` containing the platform-computed SHA-256 digest. Use artifacts as
+bounded durable checkpoints; do not put an entire project plan or transcript in one artifact.
+
+Expected provider failures can use `AgentWorkResult.Failure(message, code, retryable)`. Provider
+capability consumers receive the safe code and retryability through `PlatformCapabilityException`;
+full exceptions remain in runtime logs.
 | Search available agents | `platform.agent-catalog.search.v1` |
 | Read/create/configure work boards | `work.board.read` / `work.board.create` / `work.board.configure` |
 | Read/create/update work items | `work.item.read`, `work.item.create`, `work.item.start`, and the specific transition capability |

@@ -93,7 +93,8 @@ public sealed class AgentConfigurationBuilder
         decimal? minimum = null,
         decimal? maximum = null,
         decimal? step = null,
-        decimal? defaultValue = null) =>
+        decimal? defaultValue = null,
+        string? lessThanFieldKey = null) =>
         AddField(
             new AgentConfigurationField(
                 key,
@@ -103,7 +104,8 @@ public sealed class AgentConfigurationBuilder
                 description,
                 Minimum: minimum,
                 Maximum: maximum,
-                Step: step),
+                Step: step,
+                LessThanFieldKey: lessThanFieldKey),
             defaultValue);
 
     public AgentConfigurationBuilder Text(
@@ -164,6 +166,18 @@ public sealed class AgentConfigurationBuilder
         if (duplicateKey is not null)
         {
             throw new InvalidOperationException($"Agent configuration field '{duplicateKey}' is defined more than once.");
+        }
+
+        foreach (var field in _fields.Where(x => !string.IsNullOrWhiteSpace(x.LessThanFieldKey)))
+        {
+            var target = _fields.SingleOrDefault(x =>
+                string.Equals(x.Key, field.LessThanFieldKey, StringComparison.Ordinal));
+            if (target is null)
+                throw new InvalidOperationException(
+                    $"Agent configuration field '{field.Key}' references unknown less-than field '{field.LessThanFieldKey}'.");
+            if (field.Type != AgentConfigurationFieldTypes.Number || target.Type != AgentConfigurationFieldTypes.Number)
+                throw new InvalidOperationException(
+                    $"Agent configuration less-than constraint '{field.Key}' -> '{target.Key}' requires number fields.");
         }
 
         return new AgentConfigurationDefinition(

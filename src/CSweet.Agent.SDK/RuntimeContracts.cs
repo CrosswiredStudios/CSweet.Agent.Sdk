@@ -37,7 +37,9 @@ public sealed record AgentEventEnvelope(
 public sealed record AgentWorkResult(
     bool Succeeded,
     JsonElement? Value = null,
-    string? Error = null)
+    string? Error = null,
+    string? FailureCode = null,
+    bool? Retryable = null)
 {
     private static readonly JsonSerializerOptions SerializerOptions =
         new(JsonSerializerDefaults.Web);
@@ -47,8 +49,11 @@ public sealed record AgentWorkResult(
         new(true, JsonSerializer.SerializeToElement(value, SerializerOptions));
 
     /// <summary>Creates a safe expected failure result.</summary>
-    public static AgentWorkResult Failure(string error) =>
-        new(false, Error: error);
+    public static AgentWorkResult Failure(
+        string error,
+        string failureCode = "agent.rejected",
+        bool retryable = false) =>
+        new(false, Error: error, FailureCode: failureCode, Retryable: retryable);
 }
 
 public sealed record AgentRuntimeSession(

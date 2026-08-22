@@ -198,6 +198,27 @@ public static class AgentManifestLoader
         foreach (var contribution in (manifest.Ui ?? []).Where(x => !string.IsNullOrWhiteSpace(x.Capability)))
             if (!provided.Contains(contribution.Capability!))
                 errors.Add($"UI contribution '{contribution.Id}' references capability '{contribution.Capability}' that is not declared in provides.");
+
+        var configuration = manifest.Configuration ?? [];
+        var configurationByKey = configuration
+            .Where(x => !string.IsNullOrWhiteSpace(x.Key))
+            .GroupBy(x => x.Key, StringComparer.Ordinal)
+            .ToDictionary(x => x.Key, x => x.First(), StringComparer.Ordinal);
+        foreach (var field in configuration.Where(x => !string.IsNullOrWhiteSpace(x.LessThanFieldKey)))
+        {
+            if (!configurationByKey.TryGetValue(field.LessThanFieldKey!, out var target))
+            {
+                errors.Add($"Configuration field '{field.Key}' references unknown lessThanFieldKey '{field.LessThanFieldKey}'.");
+                continue;
+            }
+            if (!string.Equals(field.Type, "number", StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(target.Type, "number", StringComparison.OrdinalIgnoreCase))
+                errors.Add($"Configuration lessThanFieldKey '{field.Key}' -> '{target.Key}' requires number fields.");
+            if (field.DefaultValue is { } value && target.DefaultValue is { } targetValue &&
+                value.ValueKind == JsonValueKind.Number && targetValue.ValueKind == JsonValueKind.Number &&
+                value.TryGetDecimal(out var number) && targetValue.TryGetDecimal(out var limit) && number >= limit)
+                errors.Add($"Configuration default '{field.Key}' must be less than '{target.Key}'.");
+        }
     }
 
     private static void ValidateConnectionsAndSetup(AgentManifest manifest, ICollection<string> errors)

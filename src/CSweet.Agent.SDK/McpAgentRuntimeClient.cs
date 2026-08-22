@@ -199,10 +199,15 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
             new { name = descriptor.Name, arguments },
             cancellationToken);
         if (result.TryGetProperty("isError", out var isError) && isError.GetBoolean())
+        {
+            var failure = ReadFailureMetadata(result);
             throw new PlatformCapabilityException(
                 capability,
                 PlatformCapabilityErrorCode.Unavailable,
-                ReadToolText(result) ?? $"Capability '{capability}' failed.");
+                ReadToolText(result) ?? $"Capability '{capability}' failed.",
+                failureCode: failure.Code,
+                retryable: failure.Retryable);
+        }
         if (result.TryGetProperty("structuredContent", out var structured) &&
             structured.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
             return structured.Clone();
@@ -406,6 +411,20 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
             .TryGetProperty("text", out var text)
             ? text.GetString()
             : null;
+    }
+
+    private static (string? Code, bool? Retryable) ReadFailureMetadata(JsonElement result)
+    {
+        if (!result.TryGetProperty("_meta", out var meta) ||
+            !meta.TryGetProperty("csweet", out var csweet) ||
+            csweet.ValueKind != JsonValueKind.Object)
+            return (null, null);
+        return (
+            csweet.TryGetProperty("failureCode", out var code) ? code.GetString() : null,
+            csweet.TryGetProperty("retryable", out var retryable) &&
+            retryable.ValueKind is JsonValueKind.True or JsonValueKind.False
+                ? retryable.GetBoolean()
+                : null);
     }
 
     public ValueTask DisposeAsync()

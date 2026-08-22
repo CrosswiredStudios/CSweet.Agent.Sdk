@@ -33,7 +33,7 @@ public sealed class AgentRuntimePersonalTodoRecoveryTests
         var failure = AgentRuntimeWorker<TestAgent>.DescribeFailure(exception, diagnosticId);
 
         Assert.Equal(
-            "agent-failure:v1;code=platform.capability.not_found;capability=software-architecture.design.v2;diagnosticId=11111111-2222-3333-4444-555555555555",
+            "agent-failure:v1;code=platform.capability.not_found;retryable=false;capability=software-architecture.design.v2;diagnosticId=11111111-2222-3333-4444-555555555555",
             failure);
         Assert.DoesNotContain("sensitive", failure, StringComparison.OrdinalIgnoreCase);
     }

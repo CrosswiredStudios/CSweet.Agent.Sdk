@@ -1,7 +1,24 @@
+using System.Text.Json;
+
 namespace CSweet.Agent.SDK.Tests;
 
 public sealed class PlatformCommunicationClientTests
 {
+    [Fact]
+    public void CoordinationArtifact_CarriesBoundedPagingMetadataAndPlatformDigest()
+    {
+        var payload = JsonSerializer.SerializeToElement(new { storyKey = "STORY-01", tasks = new[] { "TASK-01" } });
+        var submission = new AgentCoordinationArtifactSubmission(
+            "software-architecture.task-proposal.v1", "1.0", "plan:story-01:tasks", 2, true, payload);
+        var artifact = new AgentCoordinationArtifact(
+            submission.Type, submission.SchemaVersion, submission.Key, submission.PageOrdinal,
+            submission.IsFinalPage, submission.Payload, "ABC123");
+
+        Assert.Equal(2, artifact.PageOrdinal);
+        Assert.True(artifact.IsFinalPage);
+        Assert.Equal("ABC123", artifact.Digest);
+        Assert.Equal("STORY-01", artifact.Payload.GetProperty("storyKey").GetString());
+    }
     [Fact]
     public void MessageReceivedEvent_ExposesStableWireContractAndAuthoritativeContextKeys()
     {

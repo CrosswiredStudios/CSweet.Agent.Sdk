@@ -92,6 +92,27 @@ public sealed class AgentRuntimeConfigurationTests
         Assert.Equal(1, agent.CallbackCount);
     }
 
+    [Fact]
+    public async Task RelationalTokenBudget_RejectsOutputEqualToContext()
+    {
+        var agent = new BudgetAgent();
+        var invalid = new AgentRuntimeConfiguration(
+            "1",
+            new Dictionary<string, JsonElement>
+            {
+                ["maxContextWindowTokens"] = JsonSerializer.SerializeToElement(128000),
+                ["maxOutputTokens"] = JsonSerializer.SerializeToElement(128000)
+            });
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            agent.ApplyPlatformConfigurationAsync(
+                invalid, ["maxContextWindowTokens", "maxOutputTokens"], CancellationToken.None));
+
+        Assert.Contains("must be less than", error.Message, StringComparison.Ordinal);
+        Assert.Equal(32000, agent.ContextTokens);
+        Assert.Equal(8000, agent.OutputTokens);
+    }
+
     private sealed class ConfigurableAgent : CSweetAgentBase
     {
         public override string AgentId => "com.example.configurable";
@@ -113,5 +134,19 @@ public sealed class AgentRuntimeConfigurationTests
             LastChangedKeys = change.ChangedKeys;
             return Task.FromResult(ConfigurationApplyResult.Applied);
         }
+    }
+
+    private sealed class BudgetAgent : CSweetAgentBase
+    {
+        public override string AgentId => "com.example.budget";
+        public override string Version => "1.0.0";
+        public int ContextTokens => Settings.GetInt32("maxContextWindowTokens");
+        public int OutputTokens => Settings.GetInt32("maxOutputTokens");
+
+        protected override AgentConfigurationBuilder Configure(AgentConfigurationBuilder builder) =>
+            builder
+                .Number("maxContextWindowTokens", "Context", true, defaultValue: 32000)
+                .Number("maxOutputTokens", "Output", true, defaultValue: 8000,
+                    lessThanFieldKey: "maxContextWindowTokens");
     }
 }

@@ -254,7 +254,9 @@ internal sealed class AgentRuntimeWorker<TAgent>(
     {
         if (exception is PlatformCapabilityException capability)
         {
-            var code = capability.Code switch
+            var code = !string.IsNullOrWhiteSpace(capability.FailureCode)
+                ? SanitizeFailureToken(capability.FailureCode)
+                : capability.Code switch
             {
                 PlatformCapabilityErrorCode.Denied => "platform.capability.denied",
                 PlatformCapabilityErrorCode.Unavailable => "platform.capability.unavailable",
@@ -265,7 +267,7 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 PlatformCapabilityErrorCode.BudgetExceeded => "platform.capability.budget_exceeded",
                 _ => "platform.capability.unknown"
             };
-            return $"agent-failure:v1;code={code};capability={SanitizeFailureToken(capability.Capability)};diagnosticId={diagnosticId:D}";
+            return $"agent-failure:v1;code={code};retryable={(capability.Retryable == true).ToString().ToLowerInvariant()};capability={SanitizeFailureToken(capability.Capability)};diagnosticId={diagnosticId:D}";
         }
 
         if (exception is HttpRequestException)
@@ -359,7 +361,8 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                     request.TurnOrdinal,
                     result.Disposition,
                     result.Content,
-                    $"coordination-turn:{request.SessionId:N}:{request.TurnOrdinal}"),
+                    $"coordination-turn:{request.SessionId:N}:{request.TurnOrdinal}",
+                    result.Artifact),
                 cancellationToken);
         }
         else if (string.Equals(envelope.EventType, PersonalTodoEvents.Available,
@@ -452,6 +455,25 @@ internal sealed class AgentRuntimeWorker<TAgent>(
             throw new InvalidOperationException("A coordination turn must Continue, Complete, or Block.");
         if (request.IsFinalization && result.Disposition == AgentCoordinationDispositions.Continue)
             throw new InvalidOperationException("A finalization turn cannot continue the collaboration.");
+        if (result.Artifact is { } artifact)
+            ValidateCoordinationArtifact(artifact);
+    }
+
+    private static void ValidateCoordinationArtifact(AgentCoordinationArtifactSubmission artifact)
+    {
+        const int maximumArtifactBytes = 256 * 1024;
+        if (string.IsNullOrWhiteSpace(artifact.Type) || artifact.Type.Length > 200)
+            throw new InvalidOperationException("A coordination artifact requires a stable type of at most 200 characters.");
+        if (string.IsNullOrWhiteSpace(artifact.SchemaVersion) || artifact.SchemaVersion.Length > 50)
+            throw new InvalidOperationException("A coordination artifact requires a schema version of at most 50 characters.");
+        if (string.IsNullOrWhiteSpace(artifact.Key) || artifact.Key.Length > 500)
+            throw new InvalidOperationException("A coordination artifact requires a stable key of at most 500 characters.");
+        if (artifact.PageOrdinal < 0)
+            throw new InvalidOperationException("A coordination artifact page ordinal cannot be negative.");
+        if (artifact.Payload.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+            throw new InvalidOperationException("A coordination artifact requires a JSON payload.");
+        if (System.Text.Encoding.UTF8.GetByteCount(artifact.Payload.GetRawText()) > maximumArtifactBytes)
+            throw new InvalidOperationException("A coordination artifact cannot exceed 256 KiB.");
     }
 
     private static bool IsAcknowledgementOnly(string content)

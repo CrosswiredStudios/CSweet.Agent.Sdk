@@ -214,6 +214,7 @@ public abstract class CSweetAgentBase : ICSweetAgent
         var knownFields = configuration.Fields.ToDictionary(field => field.Key, StringComparer.Ordinal);
         var currentSettings = new AgentSettings(CloneSettings(_settings!));
 
+        var merged = MergeSettings(_settings!, settings);
         foreach (var (key, value) in settings)
         {
             if (!knownFields.TryGetValue(key, out var field))
@@ -228,7 +229,17 @@ public abstract class CSweetAgentBase : ICSweetAgent
             {
                 return validationError;
             }
+
+
         }
+
+        foreach (var field in configuration.Fields.Where(x => !string.IsNullOrWhiteSpace(x.LessThanFieldKey)))
+            if (merged.TryGetValue(field.Key, out var value) &&
+                value.ValueKind == JsonValueKind.Number && value.TryGetDecimal(out var dependentValue) &&
+                merged.TryGetValue(field.LessThanFieldKey!, out var targetValue) &&
+                targetValue.ValueKind == JsonValueKind.Number && targetValue.TryGetDecimal(out var limit) &&
+                dependentValue >= limit)
+                return $"Setting '{field.Key}' must be less than setting '{field.LessThanFieldKey}'.";
 
         return null;
     }

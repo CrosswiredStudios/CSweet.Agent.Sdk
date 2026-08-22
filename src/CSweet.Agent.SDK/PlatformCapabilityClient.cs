@@ -213,14 +213,24 @@ public sealed class AgentPlatformAccessor
 
 public sealed class PlatformCapabilityException : Exception
 {
-    public PlatformCapabilityException(string capability, PlatformCapabilityErrorCode code, string message, Exception? inner = null)
+    public PlatformCapabilityException(
+        string capability,
+        PlatformCapabilityErrorCode code,
+        string message,
+        Exception? inner = null,
+        string? failureCode = null,
+        bool? retryable = null)
         : base(message, inner)
     {
         Capability = capability;
         Code = code;
+        FailureCode = failureCode;
+        Retryable = retryable;
     }
 
     public string Capability { get; }
     public PlatformCapabilityErrorCode Code { get; }
+    public string? FailureCode { get; }
+    public bool? Retryable { get; }
 
 }
