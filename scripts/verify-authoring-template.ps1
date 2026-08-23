@@ -3,8 +3,6 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $sdkRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$contractsRoot = [System.IO.Path]::GetFullPath(
-    (Join-Path $sdkRoot '../CSweet.WorkManagement.Contracts'))
 $tempBase = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
 $tempRoot = Join-Path $tempBase ("csweet-agent-template-" + [Guid]::NewGuid().ToString('N'))
 $feed = Join-Path $tempRoot 'feed'
@@ -26,22 +24,6 @@ try {
   </packageSources>
 </configuration>
 "@ | Set-Content -LiteralPath $nugetConfig -Encoding utf8
-
-    $contractsProject = Join-Path $contractsRoot `
-        'src/CSweet.WorkManagement.Contracts/CSweet.WorkManagement.Contracts.csproj'
-    & dotnet restore $contractsProject --configfile $nugetConfig
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Work Management Contracts restore failed.'
-    }
-
-    & dotnet pack $contractsProject `
-        --configuration Release `
-        --output $feed `
-        --no-restore `
-        -p:PackageVersion=2.1.0
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Work Management Contracts package creation failed.'
-    }
 
     $sdkProject = Join-Path $sdkRoot 'src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj'
     & dotnet restore $sdkProject `
