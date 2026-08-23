@@ -12,6 +12,7 @@ internal static class PlatformChatCapabilities
 internal sealed record PlatformChatContent(
     string Kind,
     string? Text = null,
+    string? ProtectedData = null,
     string? CallId = null,
     string? Name = null,
     IReadOnlyDictionary<string, JsonElement>? Arguments = null,
@@ -33,7 +34,9 @@ internal sealed record PlatformChatRequest(
     IReadOnlyList<PlatformChatMessage> Messages,
     string? Instructions = null,
     IReadOnlyList<PlatformChatTool>? Tools = null,
-    PlatformChatTelemetry? Telemetry = null);
+    PlatformChatTelemetry? Telemetry = null,
+    ReasoningOutput? ReasoningOutput = null,
+    ReasoningEffort? ReasoningEffort = null);
 
 internal sealed record PlatformChatTelemetry(
     Guid? ConversationId,
@@ -107,7 +110,9 @@ public sealed class PlatformChatClient : IChatClient
                 _selection.Invocation?.ChatTurnId,
                 invocationKind,
                 invocationSequence,
-                CountMemoryCharacters(messageList)));
+                CountMemoryCharacters(messageList)),
+            options?.Reasoning?.Output,
+            options?.Reasoning?.Effort);
         await foreach (var result in _tools.InvokeStreamingAsync(
             PlatformChatCapabilities.ChatStream,
             JsonSerializer.SerializeToElement(payload, JsonOptions),
@@ -187,6 +192,10 @@ public sealed class PlatformChatClient : IChatClient
     private static PlatformChatContent ToBrokerContent(AIContent content) => content switch
     {
         TextContent text => new PlatformChatContent("text", Text: text.Text),
+        TextReasoningContent reasoning => new PlatformChatContent(
+            "reasoning",
+            Text: reasoning.Text,
+            ProtectedData: reasoning.ProtectedData),
         FunctionCallContent call => new PlatformChatContent(
             "function_call",
             CallId: call.CallId,
@@ -206,6 +215,10 @@ public sealed class PlatformChatClient : IChatClient
     private static AIContent ToAiContent(PlatformChatContent content) => content.Kind switch
     {
         "text" => new TextContent(content.Text ?? string.Empty),
+        "reasoning" => new TextReasoningContent(content.Text ?? string.Empty)
+        {
+            ProtectedData = content.ProtectedData
+        },
         "function_call" when !string.IsNullOrWhiteSpace(content.CallId) &&
             !string.IsNullOrWhiteSpace(content.Name) => new FunctionCallContent(
                 content.CallId,

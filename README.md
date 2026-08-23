@@ -1,6 +1,6 @@
 # C-Sweet Agent SDK
 
-`CSweet.Agent.SDK` 3.12.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 3.13.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -17,7 +17,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.12.0
+  --SdkVersion 3.13.0
 cd ResearchAgent
 dotnet test
 ```
@@ -25,7 +25,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 3.12.0
+dotnet add package CSweet.Agent.SDK --version 3.13.0
 ```
 
 ```csharp
@@ -58,6 +58,9 @@ sealed class MyAgent : CSweetAgentBase
 `AgentRuntimeContext.Platform` exposes typed, grant-governed services.
 `GetModelToolsAsync()` returns the current model-visible grant.
 `CreateChatClient()` provides platform-governed model streaming.
+`CreateTurnStream()` writes ordered reasoning, activity, draft, reset, final-commit, and failure
+events for an interactive chat turn. Forward only provider-emitted human-readable reasoning;
+protected or encrypted reasoning must never be passed to the writer.
 `AgentTestRuntime` runs callbacks and fake capabilities entirely in memory.
 Git workspace responses support exact-commit preparation, published-branch resumption,
 tracked-change inspection, and governed merge status metadata (`None`, `Queued`, `Merged`,

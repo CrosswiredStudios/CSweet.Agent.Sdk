@@ -57,4 +57,12 @@ public sealed class AgentRuntimeContext
     /// <summary>Creates a platform-governed model client without exposing provider credentials.</summary>
     public Microsoft.Extensions.AI.IChatClient CreateChatClient(AgentLlmSelection selection) =>
         new PlatformChatClient(Platform, selection);
+
+    /// <summary>Creates an ordered durable stream for one interactive chat turn.</summary>
+    public AgentTurnStreamWriter CreateTurnStream(
+        string conversationId,
+        Guid turnId,
+        int attempt = 0,
+        string sensitivity = "Internal") =>
+        new(_progress, conversationId, turnId, attempt, sensitivity);
 }

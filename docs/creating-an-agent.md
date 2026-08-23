@@ -17,7 +17,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.12.0
+  --SdkVersion 3.13.0
 cd ResearchAgent
 dotnet test
 ```
@@ -135,6 +135,23 @@ var tools = await context.GetModelToolsAsync(cancellationToken);
 Request `platform.llm.chat-stream.v1`, obtain model/provider choices from approved configuration,
 and pass only the tools returned for the current live grant. Do not cache model tools across grant
 revisions and do not create provider SDK clients with API keys.
+
+For interactive chat, create one durable turn stream and forward model updates as they arrive:
+
+```csharp
+await using var stream = context.CreateTurnStream(conversationId, turnId, attempt);
+await stream.ActivityStartedAsync("Reviewing the request.", cancellationToken: cancellationToken);
+await stream.WriteReasoningAsync(providerReasoningDelta, cancellationToken);
+await stream.WriteDraftAsync(answerDelta, cancellationToken);
+await stream.CompleteReasoningAsync(cancellationToken);
+await stream.CommitAsync(validatedAnswer, cancellationToken);
+```
+
+Use `ResetDraftAsync` before a validation retry and `FailAsync` for a safe terminal failure.
+Only `CommitAsync` contains the authoritative answer. Forward all human-readable reasoning the
+provider emits, but never forward protected or encrypted reasoning blobs.
+Pass the optional `sensitivity` value to `CreateTurnStream` when the whole trace requires a level
+other than `Internal`; the server still applies chat authorization and sensitivity policy.
 
 ## 6. Add configuration
 

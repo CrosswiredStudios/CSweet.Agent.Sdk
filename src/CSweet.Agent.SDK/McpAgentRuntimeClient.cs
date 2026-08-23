@@ -1,3 +1,5 @@
+using System.Net;
+using System.Diagnostics.Metrics;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -13,6 +15,12 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly TimeSpan DefaultControlRequestTimeout = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan DefaultCapabilityRequestTimeout = TimeSpan.FromMinutes(3);
+    private static readonly Meter Meter = new("CSweet.Agent.SDK.Streaming");
+    private static readonly Counter<long> StreamFallbacks = Meter.CreateCounter<long>("csweet.agent.sdk.stream.fallbacks");
+    private static readonly Counter<long> StreamFrames = Meter.CreateCounter<long>("csweet.agent.sdk.stream.frames");
+    private static readonly Counter<long> DuplicateFrames = Meter.CreateCounter<long>("csweet.agent.sdk.stream.duplicate_frames");
+    private static readonly Counter<long> StreamFailures = Meter.CreateCounter<long>("csweet.agent.sdk.stream.failures");
+    private static readonly Histogram<double> FirstFrameLatency = Meter.CreateHistogram<double>("csweet.agent.sdk.stream.first_frame", "ms");
     private readonly HttpClient _http;
     private readonly AgentRuntimeOptions _options;
     private readonly ILogger<McpAgentRuntimeClient> _logger;
@@ -222,7 +230,95 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
         JsonElement arguments,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        yield return await InvokeAsync(capability, arguments, cancellationToken);
+        var tools = await ListToolsAsync(cancellationToken);
+        var descriptor = tools.SingleOrDefault(x =>
+            string.Equals(x.Capability, capability, StringComparison.Ordinal))
+            ?? throw new PlatformCapabilityException(
+                capability,
+                PlatformCapabilityErrorCode.Denied,
+                $"Capability '{capability}' is not in the active installation grant.");
+        var token = _accessToken
+            ?? throw new InvalidOperationException("The MCP runtime session is not initialized.");
+        using var request = CreateRequest(
+            "csweet/tools/call-stream",
+            new { name = descriptor.Name, arguments },
+            token);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
+        var streamStopwatch = System.Diagnostics.Stopwatch.StartNew();
+        using var timeoutCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCancellation.CancelAfter(_capabilityRequestTimeout);
+        using var response = await _http.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            timeoutCancellation.Token);
+
+        if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed)
+        {
+            StreamFallbacks.Add(1, new KeyValuePair<string, object?>("reason", "unsupported_host"));
+            yield return await InvokeAsync(capability, arguments, cancellationToken);
+            yield break;
+        }
+        response.EnsureSuccessStatusCode();
+        if (!string.Equals(response.Content.Headers.ContentType?.MediaType, "text/event-stream", StringComparison.OrdinalIgnoreCase))
+        {
+            StreamFallbacks.Add(1, new KeyValuePair<string, object?>("reason", "non_sse_response"));
+            yield return await InvokeAsync(capability, arguments, cancellationToken);
+            yield break;
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(timeoutCancellation.Token);
+        using var reader = new StreamReader(stream);
+        var expectedSequence = 0;
+        var terminalSeen = false;
+        var firstFrame = true;
+        while (await reader.ReadLineAsync(timeoutCancellation.Token) is { } line)
+        {
+            if (!line.StartsWith("data:", StringComparison.Ordinal))
+                continue;
+            using var frame = JsonDocument.Parse(line["data:".Length..].Trim());
+            var root = frame.RootElement;
+            var sequence = root.GetProperty("sequence").GetInt32();
+            if (sequence < expectedSequence)
+            {
+                DuplicateFrames.Add(1);
+                continue;
+            }
+            if (sequence != expectedSequence)
+            {
+                StreamFailures.Add(1, new KeyValuePair<string, object?>("reason", "out_of_order"));
+                throw new InvalidOperationException("The MCP capability stream returned an out-of-order frame.");
+            }
+            expectedSequence++;
+            if (firstFrame)
+            {
+                FirstFrameLatency.Record(streamStopwatch.Elapsed.TotalMilliseconds);
+                firstFrame = false;
+            }
+            StreamFrames.Add(1);
+            if (root.TryGetProperty("isError", out var isError) && isError.GetBoolean())
+            {
+                throw new PlatformCapabilityException(
+                    capability,
+                    PlatformCapabilityErrorCode.Unavailable,
+                    root.TryGetProperty("error", out var error) ? error.GetString() ?? "The streaming capability failed." : "The streaming capability failed.",
+                    failureCode: root.TryGetProperty("failureCode", out var failureCode) ? failureCode.GetString() : null,
+                    retryable: root.TryGetProperty("retryable", out var retryable) &&
+                               retryable.ValueKind is JsonValueKind.True or JsonValueKind.False
+                        ? retryable.GetBoolean()
+                        : null);
+            }
+            if (root.TryGetProperty("structuredContent", out var structured) &&
+                structured.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
+                yield return structured.Clone();
+            terminalSeen = root.TryGetProperty("hasMore", out var hasMore) && !hasMore.GetBoolean();
+            if (terminalSeen)
+                yield break;
+        }
+        if (!terminalSeen)
+        {
+            StreamFailures.Add(1, new KeyValuePair<string, object?>("reason", "missing_terminal"));
+            throw new InvalidOperationException("The MCP capability stream ended without a terminal frame.");
+        }
     }
 
     public async Task<IReadOnlyList<AgentToolDescriptor>> ListToolsAsync(
