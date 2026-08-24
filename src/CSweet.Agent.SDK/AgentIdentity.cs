@@ -37,7 +37,13 @@ public sealed record AgentTeammate(
     string? CompanyRole,
     string? TeamRole,
     string RelationshipToCaller,
-    string Presence);
+    string Presence)
+{
+    public Guid? AgentInstallationId { get; init; }
+    public IReadOnlyList<string> EffectiveCapabilities { get; init; } = [];
+    public string RuntimeEligibility { get; init; } = "Unknown";
+    public bool IsAvailable { get; init; } = true;
+}
 
 public sealed record TeamRoleCoverage(string Role, int Count);
 

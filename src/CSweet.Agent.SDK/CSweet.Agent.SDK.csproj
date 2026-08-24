@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <PackageId>CSweet.Agent.SDK</PackageId>
-    <Version>3.13.0</Version>
+    <Version>3.14.0</Version>
     <PackageVersion Condition="'$(CSweetAgentSdkPackageVersion)' != ''">$(CSweetAgentSdkPackageVersion)</PackageVersion>
     <Authors>C-Sweet</Authors>
     <Company>C-Sweet</Company>

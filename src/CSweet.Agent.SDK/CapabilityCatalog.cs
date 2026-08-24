@@ -54,6 +54,11 @@ public static class CapabilityNames
         public const string EngagementInboxUpsert = "platform.engagement-inbox.upsert.v1";
         public const string MetricSnapshotWrite = "platform.metric-snapshot.write.v1";
         public const string SynchronizationCheckpoint = "platform.synchronization-checkpoint.v1";
+        public const string AgentOperatingStateRead = "platform.agent-operating-state.read.v1";
+        public const string AgentOperatingStateWrite = "platform.agent-operating-state.write.v1";
+        public const string StaffingReplenishmentPropose = "platform.management.staffing-replenishment.propose.v1";
+        public const string StaffingReplenishmentRead = "platform.management.staffing-replenishment.read.v1";
+        public const string StaffingReplenishmentDecide = "platform.management.staffing-replenishment.decide.v1";
         public const string MediaTransfer = "platform.media.transfer.v1";
     }
 
@@ -242,6 +247,11 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.EngagementInboxUpsert,
                 CapabilityNames.Platform.MetricSnapshotWrite,
                 CapabilityNames.Platform.SynchronizationCheckpoint,
+                CapabilityNames.Platform.AgentOperatingStateRead,
+                CapabilityNames.Platform.AgentOperatingStateWrite,
+                CapabilityNames.Platform.StaffingReplenishmentPropose,
+                CapabilityNames.Platform.StaffingReplenishmentRead,
+                CapabilityNames.Platform.StaffingReplenishmentDecide,
                 CapabilityNames.Platform.MediaTransfer),
             ["memory"] = Set(
                 CapabilityNames.Memory.BusinessRead,

@@ -33,6 +33,7 @@ specialized helper.
 | Read business profile | `platform.business-profile.read.v1` |
 | Read organization/workstream snapshot | `platform.organization.snapshot.read.v1` |
 | Read this agent employee's bounded team roster | `platform.team-roster.read.v1` |
+| Read/write this installation's durable operating assessment | `platform.agent-operating-state.read.v1` / `platform.agent-operating-state.write.v1` |
 | Ask a bounded structured question | `platform.user-input.request.v1` |
 | Read or propose business memory | `memory.business.read.v1` / `memory.business.propose.v1` |
 | Read or propose user memory | `memory.user.read.v1` / `memory.user.propose.v1` |
@@ -110,6 +111,9 @@ Stable SDK event constants currently include:
 - `AgentLifecycleEvents.Onboarded`
 - `HiringEvents.EmployeeHired`
 - `HiringEvents.RecommendationFulfilled`
+- `WorkforceEvents.Changed`
+- `StaffingReplenishmentEvents.Requested`
+- `StaffingReplenishmentEvents.Decided`
 - `ManagementEvents.ReviewDue`
 - `ManagementEvents.StatusReported`
 - `ManagementEvents.ResourceNeedReported`

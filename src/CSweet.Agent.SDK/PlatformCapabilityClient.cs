@@ -109,6 +109,39 @@ public sealed class PlatformCapabilityClient
             request ?? new TeamRosterRequest(),
             token);
 
+    public async Task<AgentOperatingStateResponse?> ReadOperatingStateAsync(
+        AgentOperatingStateReadRequest request,
+        CancellationToken token = default)
+    {
+        var response = await InvokeAsync<AgentOperatingStateReadRequest, AgentOperatingStateReadResponse>(
+            PlatformCapabilities.AgentOperatingStateRead, request, token);
+        return response.State;
+    }
+
+    public Task<AgentOperatingStateResponse> WriteOperatingStateAsync(
+        AgentOperatingStateWriteRequest request,
+        CancellationToken token = default) =>
+        InvokeAsync<AgentOperatingStateWriteRequest, AgentOperatingStateResponse>(
+            PlatformCapabilities.AgentOperatingStateWrite, request, token);
+
+    public Task<StaffingReplenishmentResponse> ProposeStaffingReplenishmentAsync(
+        StaffingReplenishmentProposalRequest request,
+        CancellationToken token = default) =>
+        InvokeAsync<StaffingReplenishmentProposalRequest, StaffingReplenishmentResponse>(
+            PlatformCapabilities.StaffingReplenishmentPropose, request, token);
+
+    public Task<StaffingReplenishmentReadResponse> ReadStaffingReplenishmentsAsync(
+        StaffingReplenishmentReadRequest request,
+        CancellationToken token = default) =>
+        InvokeAsync<StaffingReplenishmentReadRequest, StaffingReplenishmentReadResponse>(
+            PlatformCapabilities.StaffingReplenishmentRead, request, token);
+
+    public Task<StaffingReplenishmentResponse> DecideStaffingReplenishmentAsync(
+        StaffingReplenishmentDecisionRequest request,
+        CancellationToken token = default) =>
+        InvokeAsync<StaffingReplenishmentDecisionRequest, StaffingReplenishmentResponse>(
+            PlatformCapabilities.StaffingReplenishmentDecide, request, token);
+
     public async Task<TResponse> InvokeAsync<TRequest, TResponse>(
         string capability,
         TRequest payload,

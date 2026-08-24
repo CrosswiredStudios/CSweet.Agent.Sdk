@@ -1,23 +1,80 @@
-name: publish
+name: publish-nuget
 
 on:
   push:
+    branches: [main]
+    paths:
+      - src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj
     tags:
-      - "v*"
+      - "v*.*.*"
+  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: nuget-publish-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  nuget:
+  publish:
+    if: github.ref_type == 'tag' || github.ref_name == 'main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - run: dotnet test CSweetAgentSdk.slnx --configuration Release
+      - name: Read and verify package version
+        id: package
+        shell: pwsh
+        run: |
+          $project = [xml](Get-Content src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj)
+          $packageId = [string]$project.Project.PropertyGroup.PackageId
+          $version = [string]$project.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($packageId) -or [string]::IsNullOrWhiteSpace($version)) {
+            throw "PackageId and Version must be defined in the package project."
+          }
+          if ('${{ github.ref_type }}' -eq 'tag') {
+            $tagVersion = '${{ github.ref_name }}'.TrimStart('v')
+            if ($tagVersion -ne $version) {
+              throw "Tag version $tagVersion does not match package version $version."
+            }
+          }
+          "id=$packageId" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=v$version" >> $env:GITHUB_OUTPUT
+      - run: dotnet restore CSweetAgentSdk.slnx -p:UseLocalCSweetWorkManagementContracts=false
+      - run: dotnet build CSweetAgentSdk.slnx --configuration Release --no-restore -p:UseLocalCSweetWorkManagementContracts=false
+      - run: dotnet test CSweetAgentSdk.slnx --configuration Release --no-build --no-restore -p:UseLocalCSweetWorkManagementContracts=false
       - shell: pwsh
         run: ./scripts/verify-authoring-template.ps1
-      - run: dotnet pack src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj --configuration Release --no-build --output artifacts
-      - run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - run: dotnet pack src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj --configuration Release --no-build --no-restore --output artifacts/packages -p:UseLocalCSweetWorkManagementContracts=false
+      - name: Publish package to NuGet.org
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_API_KEY)) {
+            throw "The NUGET_API_KEY repository secret is not configured."
+          }
+          Get-ChildItem artifacts/packages -Filter *.nupkg |
+            Where-Object Extension -eq '.nupkg' |
+            ForEach-Object {
+              dotnet nuget push $_.FullName --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+              if ($LASTEXITCODE -ne 0) { throw "NuGet push failed for $($_.Name)." }
+            }
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+          PACKAGE_ID: ${{ steps.package.outputs.id }}
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          gh release view $env:RELEASE_TAG --repo '${{ github.repository }}' *> $null
+          if ($LASTEXITCODE -eq 0) { exit 0 }
+          gh release create $env:RELEASE_TAG --repo '${{ github.repository }}' --target '${{ github.sha }}' --title "$env:PACKAGE_ID $env:PACKAGE_VERSION" --generate-notes
+          if ($LASTEXITCODE -ne 0) { throw "GitHub release creation failed." }

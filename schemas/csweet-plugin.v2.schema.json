@@ -73,6 +73,22 @@
         "workspaceAccess": { "enum": ["None", "ReadOnly", "ReadWrite"] }
       }
     },
+    "rolePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "declaredRoleKeys"],
+      "properties": {
+        "profile": {
+          "enum": ["manager.v1", "individual-contributor.v1", "independent-reviewer.v1", "executive-advisor.v1"]
+        },
+        "declaredRoleKeys": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/identifier" }
+        }
+      }
+    },
     "protocol": {
       "type": "object",
       "additionalProperties": false,
@@ -146,7 +162,8 @@
       "properties": {
         "name": { "$ref": "#/$defs/nonEmptyString" },
         "scope": { "$ref": "#/$defs/nonEmptyString" },
-        "purpose": { "$ref": "#/$defs/nonEmptyString" }
+        "purpose": { "$ref": "#/$defs/nonEmptyString" },
+        "modelVisible": { "type": "boolean", "default": true }
       }
     },
     "configurationField": {

@@ -28,6 +28,11 @@ public static class PlatformCapabilities
     public const string HiringWorkflowStage = CapabilityNames.Platform.HiringWorkflowStage;
     public const string UserActionSuggest = CapabilityNames.Platform.UserActionSuggest;
     public const string TeamRosterRead = CapabilityNames.Platform.TeamRosterRead;
+    public const string AgentOperatingStateRead = CapabilityNames.Platform.AgentOperatingStateRead;
+    public const string AgentOperatingStateWrite = CapabilityNames.Platform.AgentOperatingStateWrite;
+    public const string StaffingReplenishmentPropose = CapabilityNames.Platform.StaffingReplenishmentPropose;
+    public const string StaffingReplenishmentRead = CapabilityNames.Platform.StaffingReplenishmentRead;
+    public const string StaffingReplenishmentDecide = CapabilityNames.Platform.StaffingReplenishmentDecide;
     public const string ManagedActionDecide = CapabilityNames.Platform.ManagedActionDecide;
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
@@ -39,7 +44,9 @@ public static class PlatformCapabilities
         UserInputRequest, HiringRecommendationList, HiringRecommendationUpsert,
         HiringRecommendationResolve, HiringRecommendationWithdraw, ResourceChangePropose,
         ResourceChangeRead, ResourceChangeDecide, HiringWorkflowStage, UserActionSuggest,
-        TeamRosterRead, ManagedActionDecide
+        TeamRosterRead, AgentOperatingStateRead, AgentOperatingStateWrite,
+        StaffingReplenishmentPropose, StaffingReplenishmentRead, StaffingReplenishmentDecide,
+        ManagedActionDecide
     };
 }
 
@@ -47,6 +54,30 @@ public static class HiringEvents
 {
     public const string EmployeeHired = "com.csweet.employee.hired.v1";
     public const string RecommendationFulfilled = "com.csweet.hiring-recommendation.fulfilled.v1";
+}
+
+public static class WorkforceEvents
+{
+    public const string Changed = "com.csweet.workforce.changed.v1";
+}
+
+public static class StaffingReplenishmentEvents
+{
+    public const string Requested = "com.csweet.management.staffing-replenishment.requested.v1";
+    public const string Decided = "com.csweet.management.staffing-replenishment.decided.v1";
+}
+
+public static class AgentRolePolicyProfiles
+{
+    public const string Manager = "manager.v1";
+    public const string IndividualContributor = "individual-contributor.v1";
+    public const string IndependentReviewer = "independent-reviewer.v1";
+    public const string ExecutiveAdvisor = "executive-advisor.v1";
+
+    public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        Manager, IndividualContributor, IndependentReviewer, ExecutiveAdvisor
+    };
 }
 
 public static class UserActionWorkflows

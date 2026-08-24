@@ -16,8 +16,8 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - run: dotnet build CSweetAgentSdk.slnx --configuration Release
-      - run: dotnet pack src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj --configuration Release --no-build --output artifacts
-      - run: dotnet test CSweetAgentSdk.slnx --configuration Release --no-build
+      - run: dotnet build CSweetAgentSdk.slnx --configuration Release -p:UseLocalCSweetWorkManagementContracts=false
+      - run: dotnet pack src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj --configuration Release --no-build --output artifacts -p:UseLocalCSweetWorkManagementContracts=false
+      - run: dotnet test CSweetAgentSdk.slnx --configuration Release --no-build -p:UseLocalCSweetWorkManagementContracts=false
       - shell: pwsh
         run: ./scripts/verify-authoring-template.ps1

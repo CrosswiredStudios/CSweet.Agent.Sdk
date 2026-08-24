@@ -214,6 +214,11 @@ declared and approved in their manifest.
 - `CapabilityNames.EngagementInboxUpsert` — `platform.engagement-inbox.upsert.v1`
 - `CapabilityNames.MetricSnapshotWrite` — `platform.metric-snapshot.write.v1`
 - `CapabilityNames.SynchronizationCheckpoint` — `platform.synchronization-checkpoint.v1`
+- `PlatformCapabilities.AgentOperatingStateRead` — `platform.agent-operating-state.read.v1`
+- `PlatformCapabilities.AgentOperatingStateWrite` — `platform.agent-operating-state.write.v1`
+- `PlatformCapabilities.StaffingReplenishmentPropose` — `platform.management.staffing-replenishment.propose.v1`
+- `PlatformCapabilities.StaffingReplenishmentRead` — `platform.management.staffing-replenishment.read.v1`
+- `PlatformCapabilities.StaffingReplenishmentDecide` — `platform.management.staffing-replenishment.decide.v1`
 - `CapabilityNames.MediaTransfer` — `platform.media.transfer.v1`
 
 ## Contribution rule

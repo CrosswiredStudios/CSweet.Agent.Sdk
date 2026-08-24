@@ -10,6 +10,7 @@ public static class AgentAttentionReasons
     public const string Startup = "Startup";
     public const string Periodic = "Periodic";
     public const string Recovered = "Recovered";
+    public const string StateChanged = "StateChanged";
 }
 
 /// <summary>A platform-issued request to reconcile durable commitments.</summary>
@@ -17,10 +18,18 @@ public sealed record AgentAttentionReviewDueEvent(
     Guid ReviewId,
     DateTimeOffset OccurredAt,
     DateTimeOffset NextReviewAt,
-    string Reason);
+    string Reason)
+{
+    public string? TriggerCategory { get; init; }
+    public Guid? CorrelationId { get; init; }
+}
 
 public sealed record AgentAttentionReviewContext(
     Guid ReviewId,
     DateTimeOffset OccurredAt,
     DateTimeOffset NextReviewAt,
-    string Reason);
+    string Reason)
+{
+    public string? TriggerCategory { get; init; }
+    public Guid? CorrelationId { get; init; }
+}

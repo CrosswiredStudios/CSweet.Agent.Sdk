@@ -330,7 +330,11 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 ?? throw new InvalidOperationException("The attention review payload is empty.");
             await attentiveAgent.HandleAttentionReviewAsync(
                 new AgentAttentionReviewContext(
-                    review.ReviewId, review.OccurredAt, review.NextReviewAt, review.Reason),
+                    review.ReviewId, review.OccurredAt, review.NextReviewAt, review.Reason)
+                {
+                    TriggerCategory = review.TriggerCategory,
+                    CorrelationId = review.CorrelationId
+                },
                 context, cancellationToken);
             try
             {
