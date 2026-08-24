@@ -38,6 +38,22 @@ public sealed class AgentRuntimePersonalTodoRecoveryTests
         Assert.DoesNotContain("sensitive", failure, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void UnboundedPlatformDeadlineDoesNotOverflowTheRuntimeTimer()
+    {
+        using var cancellation = new CancellationTokenSource();
+
+        var configured = AgentRuntimeWorker<TestAgent>.ConfigureWorkDeadline(
+            cancellation,
+            DateTimeOffset.MaxValue - DateTimeOffset.UtcNow);
+
+        Assert.True(configured);
+        Assert.False(cancellation.IsCancellationRequested);
+        Assert.False(AgentRuntimeWorker<TestAgent>.ConfigureWorkDeadline(
+            cancellation,
+            TimeSpan.Zero));
+    }
+
     private static AgentManifest Manifest(
         IReadOnlyList<string> events,
         IReadOnlyList<AgentRequiredCapability> requires) => new()

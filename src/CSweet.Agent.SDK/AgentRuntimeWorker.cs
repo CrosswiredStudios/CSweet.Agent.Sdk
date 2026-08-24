@@ -207,12 +207,11 @@ internal sealed class AgentRuntimeWorker<TAgent>(
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(runtimeCancellation);
         var remaining = lease.Deadline - DateTimeOffset.UtcNow;
-        if (remaining <= TimeSpan.Zero)
+        if (!ConfigureWorkDeadline(deadline, remaining))
         {
             await runtime.FailAsync(lease, "The work deadline elapsed before execution.", runtimeCancellation);
             return;
         }
-        deadline.CancelAfter(remaining);
         var progress = new LeaseProgressReporter(runtime, lease);
         var context = CreateContext(platform, identity, progress);
         var renewal = RenewLeaseAsync(lease, deadline);
@@ -295,6 +294,22 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         if (exception is InvalidOperationException)
             return $"agent-failure:v1;code=agent.invalid_operation;diagnosticId={diagnosticId:D}";
         return $"agent-failure:v1;code=agent.unhandled;diagnosticId={diagnosticId:D}";
+    }
+
+    internal static bool ConfigureWorkDeadline(
+        CancellationTokenSource cancellation,
+        TimeSpan remaining)
+    {
+        if (remaining <= TimeSpan.Zero)
+            return false;
+
+        // Platform work with no domain deadline is represented by DateTimeOffset.MaxValue.
+        // CancelAfter rejects delays beyond the runtime timer range, while the enclosing
+        // runtime cancellation still provides the installation's finite safety boundary.
+        var maximumTimerDelay = TimeSpan.FromMilliseconds(uint.MaxValue - 1d);
+        if (remaining <= maximumTimerDelay)
+            cancellation.CancelAfter(remaining);
+        return true;
     }
 
     private static string SanitizeFailureToken(string value) =>
