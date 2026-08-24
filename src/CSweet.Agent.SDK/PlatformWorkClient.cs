@@ -57,6 +57,11 @@ public sealed class PlatformWorkClient
         InvokeAsync<CommentOnWorkItemRequest, WorkItemComment>(
             WorkItemCapabilities.Comment, request, cancellationToken);
 
+    public Task<WorkItemCommentPage> ReadCommentsAsync(
+        ReadWorkItemCommentsRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<ReadWorkItemCommentsRequest, WorkItemCommentPage>(
+            WorkItemCapabilities.ReadComments, request, cancellationToken);
+
     public Task<WorkItem> EstimateAsync(
         EstimateWorkItemRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<EstimateWorkItemRequest, WorkItem>(
@@ -112,6 +117,16 @@ public sealed class PlatformWorkClient
         Guid boardId, CancellationToken cancellationToken = default) =>
         InvokeAsync<WorkBoardReference, WorkSprintReport>(
             WorkSprintCapabilities.ReadReports, new(boardId), cancellationToken);
+
+    public Task<WorkSprintExecutionResponse?> ReadOrchestrationAsync(
+        ReadWorkOrchestrationRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<ReadWorkOrchestrationRequest, WorkSprintExecutionResponse?>(
+            WorkOrchestrationCapabilities.Read, request, cancellationToken);
+
+    public Task<WorkStageExecutionResponse> RetryBlockedStageAsync(
+        RetryWorkStageExecutionRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<RetryWorkStageExecutionRequest, WorkStageExecutionResponse>(
+            WorkOrchestrationCapabilities.Retry, request, cancellationToken);
 
     private async Task<TResponse> InvokeAsync<TRequest, TResponse>(
         string capability, TRequest request, CancellationToken cancellationToken)

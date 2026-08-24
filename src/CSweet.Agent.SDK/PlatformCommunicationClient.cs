@@ -168,6 +168,27 @@ public sealed record StartAgentCoordinationRequest(
     string IdempotencyKey,
     AgentCoordinationArtifactSubmission? Artifact = null);
 
+public sealed record StartWorkItemCoordinationRequest(
+    Guid TargetOrganizationUserId,
+    Guid BoardId,
+    Guid ItemId,
+    Guid SprintExecutionId,
+    Guid StageExecutionId,
+    long AssignmentRevision,
+    string Subject,
+    string Objective,
+    IReadOnlyList<string> SuccessCriteria,
+    string InitialMessage,
+    string IdempotencyKey,
+    AgentCoordinationArtifactSubmission? Artifact = null);
+
+public sealed record AgentCoordinationWorkSource(
+    Guid BoardId,
+    Guid ItemId,
+    Guid SprintExecutionId,
+    Guid StageExecutionId,
+    long AssignmentRevision);
+
 public sealed record RespondToAgentCoordinationRequest(
     Guid SessionId,
     long ExpectedRevision,
@@ -248,7 +269,12 @@ public sealed record AgentCoordinationSession(
     string? FinalSummary,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    IReadOnlyList<AgentCoordinationTurn> Turns);
+    IReadOnlyList<AgentCoordinationTurn> Turns)
+{
+    public string SourceKind { get; init; } = "Chat";
+    public AgentCoordinationWorkSource? WorkSource { get; init; }
+    public int? MaximumTurns { get; init; }
+}
 
 public sealed record AgentCoordinationTurnRequest(
     Guid SessionId,
@@ -260,7 +286,12 @@ public sealed record AgentCoordinationTurnRequest(
     AgentCoordinationParticipant Self,
     AgentCoordinationParticipant Counterpart,
     bool IsFinalization,
-    IReadOnlyList<AgentCoordinationTurn> Transcript);
+    IReadOnlyList<AgentCoordinationTurn> Transcript)
+{
+    public string SourceKind { get; init; } = "Chat";
+    public AgentCoordinationWorkSource? WorkSource { get; init; }
+    public int? MaximumTurns { get; init; }
+}
 
 public sealed record AgentCoordinationTurnResult(
     string Disposition,
@@ -391,6 +422,12 @@ public sealed class PlatformCommunicationClient
         CancellationToken token = default) =>
         _platform.InvokeAsync<StartAgentCoordinationRequest, AgentCoordinationSession>(
             CommunicationCapabilities.CoordinationStart, request, token);
+
+    public Task<AgentCoordinationSession> StartWorkItemCoordinationAsync(
+        StartWorkItemCoordinationRequest request,
+        CancellationToken token = default) =>
+        _platform.InvokeAsync<StartWorkItemCoordinationRequest, AgentCoordinationSession>(
+            CommunicationCapabilities.CoordinationStartWork, request, token);
 
     public Task<AgentCoordinationSession> RespondToCoordinationAsync(
         RespondToAgentCoordinationRequest request,

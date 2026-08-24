@@ -35,3 +35,33 @@ public sealed record AgentOperatingStateResponse(
     long Revision,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
+
+public sealed record AgentOperatingState<TPayload>(
+    Guid Id,
+    string StateKey,
+    string SchemaId,
+    int SchemaVersion,
+    string Status,
+    IReadOnlyDictionary<string, string> SourceRevisions,
+    IReadOnlyList<string> ConditionCodes,
+    string DecisionFingerprint,
+    IReadOnlyList<string> OpenCommitmentCorrelations,
+    Guid AttentionReviewId,
+    TPayload Payload,
+    long Revision,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt);
+
+public sealed record WriteAgentOperatingStateRequest<TPayload>(
+    string StateKey,
+    string SchemaId,
+    int SchemaVersion,
+    string Status,
+    IReadOnlyDictionary<string, string> SourceRevisions,
+    IReadOnlyList<string> ConditionCodes,
+    string DecisionFingerprint,
+    IReadOnlyList<string> OpenCommitmentCorrelations,
+    Guid AttentionReviewId,
+    TPayload Payload,
+    long? ExpectedRevision,
+    string IdempotencyKey);

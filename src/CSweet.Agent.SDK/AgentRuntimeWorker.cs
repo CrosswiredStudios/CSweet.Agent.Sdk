@@ -154,7 +154,25 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 continue;
             }
 
-            var lease = await runtime.ClaimAsync(maximumConcurrency - running.Count, cancellationToken);
+            AgentWorkLease? lease;
+            try
+            {
+                lease = await runtime.ClaimAsync(maximumConcurrency - running.Count, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception) when (running.Count > 0)
+            {
+                // Claim polling only fills unused capacity. A transient polling failure must not
+                // tear down the session and cancel work that already owns a renewable lease.
+                logger.LogWarning(exception,
+                    "Agent work claim polling failed while {RunningCount} work item(s) remain active; preserving active leases and retrying.",
+                    running.Count);
+                await Task.Delay(RetryDelay, cancellationToken);
+                continue;
+            }
             if (lease is null)
                 continue;
             if (lease.Kind == AgentWorkKind.ConfigurationUpdate)

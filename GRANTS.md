@@ -92,6 +92,7 @@ memory, or unrelated employees. Team membership does not grant any other authori
 - `CommunicationCapabilities.ChatDelete` — `communication.chat.delete.v1`
 - `CommunicationCapabilities.MessageSend` — `communication.message.send.v1`
 - `CommunicationCapabilities.CoordinationStart` — `communication.coordination.start.v1`
+- `CommunicationCapabilities.CoordinationStartWork` — `communication.coordination.start-work.v1`
 - `CommunicationCapabilities.CoordinationRespond` — `communication.coordination.respond.v1`
 - `CommunicationCapabilities.CoordinationRead` — `communication.coordination.read.v1`
 - `CommunicationCapabilities.CoordinationList` — `communication.coordination.list.v1`
@@ -131,6 +132,7 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `WorkItemCapabilities.Create` — `work.item.create`
 - `WorkItemCapabilities.FinalizeDelivery` — `work.item.delivery.finalize`
 - `WorkItemCapabilities.Comment` — `work.item.comment`
+- `WorkItemCapabilities.ReadComments` — `work.item.comments.read`
 - `WorkItemCapabilities.Estimate` — `work.item.estimate`
 - `WorkItemCapabilities.Move` — `work.item.move`
 - `WorkItemCapabilities.Complete` — `work.item.complete`

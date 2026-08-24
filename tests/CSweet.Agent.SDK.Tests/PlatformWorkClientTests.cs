@@ -73,6 +73,44 @@ public sealed class PlatformWorkClientTests
     }
 
     [Fact]
+    public async Task SupportReadsAndRetry_UseExactAuthoritativeContracts()
+    {
+        var boardId = Guid.NewGuid();
+        var itemId = Guid.NewGuid();
+        var executionId = Guid.NewGuid();
+        var stageId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var execution = new WorkSprintExecutionResponse(
+            executionId, boardId, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Running", 3,
+            now, now, null, []);
+        var runtime = new AgentTestRuntime()
+            .RegisterCapability<ReadWorkItemCommentsRequest, WorkItemCommentPage>(
+                WorkItemCapabilities.ReadComments,
+                (_, _) => Task.FromResult(new WorkItemCommentPage([], 1, 100, false, 4)))
+            .RegisterCapability<ReadWorkOrchestrationRequest, WorkSprintExecutionResponse?>(
+                WorkOrchestrationCapabilities.Read, (_, _) => Task.FromResult<WorkSprintExecutionResponse?>(execution))
+            .RegisterCapability<RetryWorkStageExecutionRequest, WorkStageExecutionResponse>(
+                WorkOrchestrationCapabilities.Retry, (request, _) =>
+                {
+                    Assert.Equal(9, request.ExpectedAssignmentRevision);
+                    return Task.FromResult(new WorkStageExecutionResponse(
+                        stageId, "development", "AgentExecution", 0, "Pending",
+                        "AgentInstallation", null, Guid.NewGuid(), null, 1, null, null, null, now, now)
+                    { AssignmentRevision = 9, MaximumAttempts = 5 });
+                });
+        var work = runtime.CreateContext().Platform.Work;
+
+        var comments = await work.ReadCommentsAsync(new ReadWorkItemCommentsRequest(boardId, itemId));
+        var read = await work.ReadOrchestrationAsync(new ReadWorkOrchestrationRequest(boardId, SprintExecutionId: executionId));
+        var retried = await work.RetryBlockedStageAsync(new RetryWorkStageExecutionRequest(
+            boardId, executionId, stageId, "retry") { ExpectedAssignmentRevision = 9 });
+
+        Assert.Equal(4, comments.SourceRevision);
+        Assert.Equal(executionId, read!.Id);
+        Assert.Equal(stageId, retried.Id);
+    }
+
+    [Fact]
     public void WorkCapabilities_AreCanonicalAndManifestEligible()
     {
         var capabilities = new[]

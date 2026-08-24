@@ -83,6 +83,40 @@ public sealed class PlatformCommunicationClientTests
     }
 
     [Fact]
+    public async Task StartWorkCoordinationAsync_PinsTheAssignmentSnapshot()
+    {
+        var targetId = Guid.NewGuid();
+        var boardId = Guid.NewGuid();
+        var itemId = Guid.NewGuid();
+        var sprintExecutionId = Guid.NewGuid();
+        var stageExecutionId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var runtime = new AgentTestRuntime().RegisterCapability<
+            StartWorkItemCoordinationRequest, AgentCoordinationSession>(
+            CommunicationCapabilities.CoordinationStartWork,
+            (request, _) => Task.FromResult(new AgentCoordinationSession(
+                Guid.NewGuid(), Guid.NewGuid(), Guid.Empty, Guid.Empty, Guid.Empty,
+                new(Guid.NewGuid(), Guid.NewGuid(), "Developer", "Software Developer"),
+                new(targetId, Guid.NewGuid(), "Architect", "Software Architect"),
+                request.Subject, request.Objective, request.SuccessCriteria,
+                AgentCoordinationStatuses.Active, 1, 1, targetId, false, null, now, now, [])
+            {
+                SourceKind = "WorkItem",
+                WorkSource = new(boardId, itemId, sprintExecutionId, stageExecutionId, request.AssignmentRevision),
+                MaximumTurns = 6
+            }));
+
+        var session = await runtime.CreateContext().Platform.Communication.StartWorkItemCoordinationAsync(
+            new(targetId, boardId, itemId, sprintExecutionId, stageExecutionId, 7,
+                "Blocked implementation", "Resolve the technical blocker", ["Retry is safe"],
+                "Please advise.", "support-7"));
+
+        Assert.Equal("WorkItem", session.SourceKind);
+        Assert.Equal(7, session.WorkSource!.AssignmentRevision);
+        Assert.Equal(6, session.MaximumTurns);
+    }
+
+    [Fact]
     public async Task BaseAgent_ReturnsSafeUnsupportedCoordinationDisposition()
     {
         var self = new AgentCoordinationParticipant(

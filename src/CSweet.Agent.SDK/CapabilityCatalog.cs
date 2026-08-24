@@ -88,6 +88,7 @@ public static class CapabilityNames
         public const string IdentityAssign = "communication.identity.assign.v1";
         public const string LinkCodeRegister = "communication.link-code.register.v1";
         public const string CoordinationStart = "communication.coordination.start.v1";
+        public const string CoordinationStartWork = "communication.coordination.start-work.v1";
         public const string CoordinationRespond = "communication.coordination.respond.v1";
         public const string CoordinationRead = "communication.coordination.read.v1";
         public const string CoordinationList = "communication.coordination.list.v1";
@@ -120,6 +121,7 @@ public static class CapabilityNames
         public const string ItemCreate = WorkManagementCapabilityNames.ItemCreate;
         public const string ItemFinalizeDelivery = WorkManagementCapabilityNames.ItemFinalizeDelivery;
         public const string ItemComment = WorkManagementCapabilityNames.ItemComment;
+        public const string ItemCommentsRead = WorkManagementCapabilityNames.ItemCommentsRead;
         public const string ItemEstimate = WorkManagementCapabilityNames.ItemEstimate;
         public const string ItemMove = WorkManagementCapabilityNames.ItemMove;
         public const string ItemComplete = WorkManagementCapabilityNames.ItemComplete;
@@ -270,6 +272,7 @@ public static class CapabilityCatalog
                 CapabilityNames.Communication.IdentityAssign,
                 CapabilityNames.Communication.LinkCodeRegister,
                 CapabilityNames.Communication.CoordinationStart,
+                CapabilityNames.Communication.CoordinationStartWork,
                 CapabilityNames.Communication.CoordinationRespond,
                 CapabilityNames.Communication.CoordinationRead,
                 CapabilityNames.Communication.CoordinationList,
@@ -292,6 +295,7 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.ItemCreate,
                 CapabilityNames.WorkManagement.ItemFinalizeDelivery,
                 CapabilityNames.WorkManagement.ItemComment,
+                CapabilityNames.WorkManagement.ItemCommentsRead,
                 CapabilityNames.WorkManagement.ItemEstimate,
                 CapabilityNames.WorkManagement.ItemMove,
                 CapabilityNames.WorkManagement.ItemTransfer,
@@ -385,6 +389,7 @@ public static class CommunicationCapabilities
     public const string IdentityAssign = CapabilityNames.Communication.IdentityAssign;
     public const string LinkCodeRegister = CapabilityNames.Communication.LinkCodeRegister;
     public const string CoordinationStart = CapabilityNames.Communication.CoordinationStart;
+    public const string CoordinationStartWork = CapabilityNames.Communication.CoordinationStartWork;
     public const string CoordinationRespond = CapabilityNames.Communication.CoordinationRespond;
     public const string CoordinationRead = CapabilityNames.Communication.CoordinationRead;
     public const string CoordinationList = CapabilityNames.Communication.CoordinationList;
@@ -424,6 +429,7 @@ public static class WorkItemCapabilities
     public const string Create = CapabilityNames.WorkManagement.ItemCreate;
     public const string FinalizeDelivery = CapabilityNames.WorkManagement.ItemFinalizeDelivery;
     public const string Comment = CapabilityNames.WorkManagement.ItemComment;
+    public const string ReadComments = CapabilityNames.WorkManagement.ItemCommentsRead;
     public const string Estimate = CapabilityNames.WorkManagement.ItemEstimate;
     public const string Move = CapabilityNames.WorkManagement.ItemMove;
     public const string Complete = CapabilityNames.WorkManagement.ItemComplete;

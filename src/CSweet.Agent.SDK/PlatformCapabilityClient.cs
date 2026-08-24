@@ -109,6 +109,41 @@ public sealed class PlatformCapabilityClient
             request ?? new TeamRosterRequest(),
             token);
 
+    /// <summary>Reads a stable, complete roster and retries the full paging pass once on revision drift.</summary>
+    public async Task<AgentTeamContext?> ReadCompleteTeamRosterAsync(
+        int pageSize = 50,
+        CancellationToken token = default)
+    {
+        if (pageSize is < 1 or > 200)
+            throw new ArgumentOutOfRangeException(nameof(pageSize));
+
+        for (var pass = 0; pass < 2; pass++)
+        {
+            AgentTeamContext? first = null;
+            var members = new List<AgentTeammate>();
+            var page = 1;
+            while (true)
+            {
+                var team = (await ReadTeamRosterAsync(new TeamRosterRequest(page, pageSize), token)).Team;
+                if (team is null)
+                    return null;
+                first ??= team;
+                if (team.TeamId != first.TeamId || team.Revision != first.Revision)
+                    break;
+
+                members.AddRange(team.Members);
+                if (!team.HasMore)
+                    return first with { Members = members, TotalMemberCount = members.Count, HasMore = false };
+                page++;
+            }
+        }
+
+        throw new PlatformCapabilityException(
+            PlatformCapabilities.TeamRosterRead,
+            PlatformCapabilityErrorCode.Conflict,
+            "The team roster changed during both complete paging attempts.");
+    }
+
     public async Task<AgentOperatingStateResponse?> ReadOperatingStateAsync(
         AgentOperatingStateReadRequest request,
         CancellationToken token = default)
@@ -123,6 +158,54 @@ public sealed class PlatformCapabilityClient
         CancellationToken token = default) =>
         InvokeAsync<AgentOperatingStateWriteRequest, AgentOperatingStateResponse>(
             PlatformCapabilities.AgentOperatingStateWrite, request, token);
+
+    public async Task<AgentOperatingState<TPayload>?> ReadOperatingStateAsync<TPayload>(
+        string stateKey,
+        CancellationToken token = default)
+    {
+        var state = await ReadOperatingStateAsync(new AgentOperatingStateReadRequest(stateKey), token);
+        if (state is null)
+            return null;
+        try
+        {
+            var payload = state.Payload.Deserialize<TPayload>(JsonOptions)
+                ?? throw new JsonException("The typed operating-state payload was empty.");
+            return new AgentOperatingState<TPayload>(
+                state.Id, state.StateKey, state.SchemaId, state.SchemaVersion, state.Status,
+                state.SourceRevisions, state.ConditionCodes, state.DecisionFingerprint,
+                state.OpenCommitmentCorrelations, state.AttentionReviewId, payload, state.Revision,
+                state.CreatedAt, state.UpdatedAt);
+        }
+        catch (JsonException exception)
+        {
+            throw new PlatformCapabilityException(
+                PlatformCapabilities.AgentOperatingStateRead,
+                PlatformCapabilityErrorCode.ValidationFailed,
+                "The operating-state payload does not match the requested assessment type.", exception);
+        }
+    }
+
+    public async Task<AgentOperatingState<TPayload>> WriteOperatingStateAsync<TPayload>(
+        WriteAgentOperatingStateRequest<TPayload> request,
+        CancellationToken token = default)
+    {
+        var response = await WriteOperatingStateAsync(new AgentOperatingStateWriteRequest(
+            request.StateKey, request.SchemaId, request.SchemaVersion, request.Status,
+            request.SourceRevisions, request.ConditionCodes, request.DecisionFingerprint,
+            request.OpenCommitmentCorrelations, request.AttentionReviewId,
+            JsonSerializer.SerializeToElement(request.Payload, JsonOptions), request.ExpectedRevision,
+            request.IdempotencyKey), token);
+        var payload = response.Payload.Deserialize<TPayload>(JsonOptions)
+            ?? throw new PlatformCapabilityException(
+                PlatformCapabilities.AgentOperatingStateWrite,
+                PlatformCapabilityErrorCode.ValidationFailed,
+                "The platform returned an empty typed operating-state payload.");
+        return new AgentOperatingState<TPayload>(
+            response.Id, response.StateKey, response.SchemaId, response.SchemaVersion, response.Status,
+            response.SourceRevisions, response.ConditionCodes, response.DecisionFingerprint,
+            response.OpenCommitmentCorrelations, response.AttentionReviewId, payload, response.Revision,
+            response.CreatedAt, response.UpdatedAt);
+    }
 
     public Task<StaffingReplenishmentResponse> ProposeStaffingReplenishmentAsync(
         StaffingReplenishmentProposalRequest request,
@@ -172,6 +255,35 @@ public sealed class PlatformCapabilityClient
             .Where(descriptor => descriptor.ModelVisible)
             .Select(descriptor => (AITool)new RemotePlatformFunction(_tools, descriptor))
             .ToList();
+    }
+
+    /// <summary>Resolves exactly the approved model-visible bindings requested by a confined harness.</summary>
+    public async Task<IReadOnlyList<AITool>> GetModelToolsAsync(
+        IReadOnlyCollection<string> capabilities,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(capabilities);
+        if (capabilities.Count == 0)
+            return [];
+        var requested = capabilities.ToHashSet(StringComparer.Ordinal);
+        if (requested.Count != capabilities.Count)
+            throw new PlatformCapabilityException("model-tools", PlatformCapabilityErrorCode.ValidationFailed,
+                "Requested model capability names must be unique.");
+        var descriptors = await _tools.ListToolsAsync(cancellationToken);
+        var resolved = new List<AITool>(requested.Count);
+        foreach (var capability in capabilities)
+        {
+            var matches = descriptors.Where(x => string.Equals(x.Capability, capability, StringComparison.Ordinal)).ToList();
+            if (matches.Count != 1 || !matches[0].ModelVisible)
+                throw new PlatformCapabilityException(capability, PlatformCapabilityErrorCode.Denied,
+                    matches.Count == 0
+                        ? "The requested capability has no approved binding."
+                        : matches.Count > 1
+                            ? "The requested capability has duplicate approved bindings."
+                            : "The requested capability is not model-visible.");
+            resolved.Add(new RemotePlatformFunction(_tools, matches[0]));
+        }
+        return resolved;
     }
 
     private sealed class RemotePlatformFunction(
