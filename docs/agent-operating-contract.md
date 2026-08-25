@@ -35,6 +35,18 @@ manager. A reusable planning flow separates recommendation from commitment:
    rationale. They never carry employee or installation IDs. The PM filters its approved pool and
    selects exact assignees by stable lowest-load ordering.
 
+The interaction is manager-led: **directive → deliverable or clarification → decision plus next
+directive**. Every nonterminal turn carries a recognized typed artifact. If product information is
+missing, the Architect returns one `software-architecture.question.v2` batch. The PM answers within
+its mandate and reissues the current brief linked to the question digest. An architecture decision
+embeds the next brief, so approval can lead directly into Story planning without an acknowledgement
+or follow-up chat turn. Human-readable content is only a UI summary.
+
+Use `AgentCoordinationTranscript` to find the latest artifact by type and speaker, deserialize its
+payload, and verify a digest before continuing. On restart or a text-only turn, recover the next
+stage from persisted artifacts; never ask another agent to resend context that is already in the
+coordination transcript.
+
 Persist the approved digest in each Story and Task `WorkItemPlanningSpecification` as
 `architectureArtifactDigest`. This is the authoritative board-to-coordination link used by later
 support and drift checks; copying the design narrative into memory or ticket prose is insufficient.
@@ -67,5 +79,8 @@ blocked stage and unchanged assignment revision. The platform remains the sole t
 - Never use memory as an approval, assignment, blocker, workflow, or idempotency source.
 - Never mutate an executing assignment snapshot. Apply recommendations only to future work.
 - Do not acknowledge coordination autonomously or continue past the turn bound.
+- Do not emit a nonterminal text-only turn; pair it with the typed artifact that owns the next action.
+- Specialists recover prior manager directives from the transcript instead of asking managers to
+  repair transport metadata.
 - Deduplicate attention commitments and support sessions using stable domain correlations.
 - Reread all authoritative sources after an operating-state compare-and-swap conflict.

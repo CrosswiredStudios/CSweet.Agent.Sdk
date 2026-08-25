@@ -5,6 +5,37 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class PlatformCommunicationClientTests
 {
     [Fact]
+    public void TranscriptHelpers_SelectTypedArtifactsBySenderAndDigest()
+    {
+        var managerId = Guid.NewGuid();
+        var architectId = Guid.NewGuid();
+        var brief = JsonSerializer.SerializeToElement(new { stage = "design", planKey = "plan-1" });
+        var design = JsonSerializer.SerializeToElement(new { planKey = "plan-1", revision = 0 });
+        var turns = new AgentCoordinationTurn[]
+        {
+            new(Guid.NewGuid(), 0, managerId, AgentCoordinationDispositions.Continue, "Design this.",
+                DateTimeOffset.UtcNow,
+                new AgentCoordinationArtifact("product-management.architecture-brief.v2", "2.1", "plan-1:design",
+                    0, true, brief, "brief-digest")),
+            new(Guid.NewGuid(), 1, architectId, AgentCoordinationDispositions.Continue, "Design ready.",
+                DateTimeOffset.UtcNow,
+                new AgentCoordinationArtifact("software-architecture.design-proposal.v1", "1.0", "plan-1:design",
+                    0, true, design, "design-digest"))
+        };
+
+        var transcript = new AgentCoordinationTranscript(turns);
+        var selected = transcript.LatestArtifactTurn(
+            ["product-management.architecture-brief.v2"], managerId);
+        var payload = transcript.DeserializeArtifact<Dictionary<string, JsonElement>>(selected!);
+
+        Assert.Equal(0, selected!.Ordinal);
+        Assert.Equal("design", payload["stage"].GetString());
+        Assert.True(transcript.HasArtifactDigest("DESIGN-DIGEST"));
+        Assert.Single(transcript.ArtifactTurns(
+            ["software-architecture.design-proposal.v1"], architectId));
+    }
+
+    [Fact]
     public void CoordinationArtifact_CarriesBoundedPagingMetadataAndPlatformDigest()
     {
         var payload = JsonSerializer.SerializeToElement(new { storyKey = "STORY-01", tasks = new[] { "TASK-01" } });
