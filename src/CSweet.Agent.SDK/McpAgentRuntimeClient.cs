@@ -15,6 +15,8 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly TimeSpan DefaultControlRequestTimeout = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan DefaultCapabilityRequestTimeout = TimeSpan.FromMinutes(3);
+    private static readonly TimeSpan DefaultRateLimitRetryDelay = TimeSpan.FromSeconds(10);
+    private const int MaximumRateLimitAttempts = 3;
     private static readonly Meter Meter = new("CSweet.Agent.SDK.Streaming");
     private static readonly Counter<long> StreamFallbacks = Meter.CreateCounter<long>("csweet.agent.sdk.stream.fallbacks");
     private static readonly Counter<long> StreamFrames = Meter.CreateCounter<long>("csweet.agent.sdk.stream.frames");
@@ -26,6 +28,7 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
     private readonly ILogger<McpAgentRuntimeClient> _logger;
     private readonly TimeSpan _controlRequestTimeout;
     private readonly TimeSpan _capabilityRequestTimeout;
+    private readonly TimeSpan _rateLimitRetryDelay;
     private readonly SemaphoreSlim _sessionGate = new(1, 1);
     private string? _accessToken;
     private long _requestId;
@@ -39,7 +42,8 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
             options,
             logger,
             DefaultControlRequestTimeout,
-            DefaultCapabilityRequestTimeout)
+            DefaultCapabilityRequestTimeout,
+            DefaultRateLimitRetryDelay)
     {
     }
 
@@ -48,15 +52,19 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
         IOptions<AgentRuntimeOptions> options,
         ILogger<McpAgentRuntimeClient> logger,
         TimeSpan controlRequestTimeout,
-        TimeSpan capabilityRequestTimeout)
+        TimeSpan capabilityRequestTimeout,
+        TimeSpan? rateLimitRetryDelay = null)
     {
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(controlRequestTimeout, TimeSpan.Zero);
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(capabilityRequestTimeout, TimeSpan.Zero);
+        if (rateLimitRetryDelay <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(rateLimitRetryDelay));
         _http = http;
         _options = options.Value;
         _logger = logger;
         _controlRequestTimeout = controlRequestTimeout;
         _capabilityRequestTimeout = capabilityRequestTimeout;
+        _rateLimitRetryDelay = rateLimitRetryDelay ?? DefaultRateLimitRetryDelay;
     }
 
     public AgentRuntimeSession? Session { get; private set; }
@@ -435,7 +443,31 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
         timeoutCancellation.CancelAfter(timeout);
         try
         {
-            return await _http.SendAsync(request, timeoutCancellation.Token);
+            var content = request.Content is null
+                ? null
+                : await request.Content.ReadAsByteArrayAsync(timeoutCancellation.Token);
+            var contentHeaders = request.Content?.Headers
+                .Select(header => new KeyValuePair<string, IEnumerable<string>>(header.Key, header.Value.ToArray()))
+                .ToArray() ?? [];
+
+            for (var attempt = 1; ; attempt++)
+            {
+                using var attemptRequest = CopyRequest(request, content, contentHeaders);
+                var response = await _http.SendAsync(attemptRequest, timeoutCancellation.Token);
+                if (response.StatusCode != HttpStatusCode.TooManyRequests ||
+                    attempt >= MaximumRateLimitAttempts)
+                    return response;
+
+                var retryAfter = ResolveRetryDelay(response);
+                response.Dispose();
+                _logger.LogWarning(
+                    "The MCP broker rate-limited '{Method}'. Retrying attempt {Attempt} of {MaximumAttempts} after {RetryDelay}.",
+                    method,
+                    attempt + 1,
+                    MaximumRateLimitAttempts,
+                    retryAfter);
+                await Task.Delay(retryAfter, timeoutCancellation.Token);
+            }
         }
         catch (OperationCanceledException exception) when (
             !cancellationToken.IsCancellationRequested &&
@@ -445,6 +477,37 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
                 $"The MCP broker did not respond to '{method}' within {timeout.TotalSeconds:0} seconds.",
                 exception);
         }
+    }
+
+    private TimeSpan ResolveRetryDelay(HttpResponseMessage response)
+    {
+        var retryAfter = response.Headers.RetryAfter?.Delta;
+        if (retryAfter is null && response.Headers.RetryAfter?.Date is { } retryAt)
+            retryAfter = retryAt - DateTimeOffset.UtcNow;
+        return retryAfter.HasValue && retryAfter.Value > TimeSpan.Zero &&
+               retryAfter.Value <= TimeSpan.FromSeconds(30)
+            ? retryAfter.Value
+            : _rateLimitRetryDelay;
+    }
+
+    private static HttpRequestMessage CopyRequest(
+        HttpRequestMessage source,
+        byte[]? content,
+        IReadOnlyList<KeyValuePair<string, IEnumerable<string>>> contentHeaders)
+    {
+        var copy = new HttpRequestMessage(source.Method, source.RequestUri)
+        {
+            Version = source.Version,
+            VersionPolicy = source.VersionPolicy
+        };
+        foreach (var header in source.Headers)
+            copy.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        if (content is null)
+            return copy;
+        copy.Content = new ByteArrayContent(content);
+        foreach (var header in contentHeaders)
+            copy.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        return copy;
     }
 
     private async Task<string> ReadWorkloadTokenAsync(CancellationToken cancellationToken)
@@ -461,13 +524,43 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
         HttpResponseMessage response,
         CancellationToken cancellationToken)
     {
+        if (!response.IsSuccessStatusCode)
+        {
+            var message = response.ReasonPhrase;
+            if (response.Content.Headers.ContentLength is not 0)
+            {
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                if (!string.IsNullOrWhiteSpace(body))
+                {
+                    try
+                    {
+                        using var errorDocument = JsonDocument.Parse(body);
+                        var error = errorDocument.RootElement.TryGetProperty("error", out var value)
+                            ? value
+                            : errorDocument.RootElement;
+                        if (error.ValueKind == JsonValueKind.Object &&
+                            error.TryGetProperty("message", out var errorMessage))
+                            message = errorMessage.GetString() ?? message;
+                    }
+                    catch (JsonException)
+                    {
+                        // Non-success response bodies are not required to use the MCP envelope.
+                    }
+                }
+            }
+            throw new HttpRequestException(
+                $"The MCP service rejected the request: {message ?? response.StatusCode.ToString()}",
+                null,
+                response.StatusCode);
+        }
+
         var document = await response.Content.ReadFromJsonAsync<JsonDocument>(JsonOptions, cancellationToken)
             ?? throw new InvalidOperationException("The MCP service returned an empty response.");
         using (document)
         {
             var root = document.RootElement;
             var hasError = root.TryGetProperty("error", out var error);
-            if (!response.IsSuccessStatusCode || hasError)
+            if (hasError)
             {
                 var message = error.ValueKind == JsonValueKind.Object &&
                               error.TryGetProperty("message", out var errorMessage)

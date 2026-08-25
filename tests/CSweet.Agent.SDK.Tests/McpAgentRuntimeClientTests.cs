@@ -45,6 +45,79 @@ public sealed class McpAgentRuntimeClientTests
     }
 
     [Fact]
+    public async Task InitializeAsync_RateLimitRetriesAndDoesNotClassifyEmptyBodyAsInvalidJson()
+    {
+        var tokenPath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(tokenPath, "workload-token");
+        try
+        {
+            var handler = new RateLimitedHandler(succeedOnAttempt: 3);
+            using var http = new HttpClient(handler);
+            await using var client = new McpAgentRuntimeClient(
+                http,
+                Options.Create(new AgentRuntimeOptions
+                {
+                    McpEndpoint = "http://agenthost/mcp",
+                    WorkloadTokenFile = tokenPath,
+                    InstallationId = Guid.NewGuid().ToString(),
+                    BusinessId = Guid.NewGuid().ToString(),
+                    RuntimeInstanceId = Guid.NewGuid().ToString(),
+                    TickId = Guid.NewGuid().ToString()
+                }),
+                NullLogger<McpAgentRuntimeClient>.Instance,
+                TimeSpan.FromSeconds(2),
+                TimeSpan.FromSeconds(2),
+                TimeSpan.FromMilliseconds(1));
+
+            var session = await client.InitializeAsync(Manifest(), CancellationToken.None);
+
+            Assert.Equal("session-1", session.SessionId);
+            Assert.Equal(3, handler.Attempts);
+        }
+        finally
+        {
+            File.Delete(tokenPath);
+        }
+    }
+
+    [Fact]
+    public async Task InitializeAsync_ExhaustedRateLimitIsRetryableTransportFailure()
+    {
+        var tokenPath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(tokenPath, "workload-token");
+        try
+        {
+            using var http = new HttpClient(new RateLimitedHandler(succeedOnAttempt: int.MaxValue));
+            await using var client = new McpAgentRuntimeClient(
+                http,
+                Options.Create(new AgentRuntimeOptions
+                {
+                    McpEndpoint = "http://agenthost/mcp",
+                    WorkloadTokenFile = tokenPath,
+                    InstallationId = Guid.NewGuid().ToString(),
+                    BusinessId = Guid.NewGuid().ToString(),
+                    RuntimeInstanceId = Guid.NewGuid().ToString(),
+                    TickId = Guid.NewGuid().ToString()
+                }),
+                NullLogger<McpAgentRuntimeClient>.Instance,
+                TimeSpan.FromSeconds(2),
+                TimeSpan.FromSeconds(2),
+                TimeSpan.FromMilliseconds(1));
+
+            var exception = await Assert.ThrowsAsync<HttpRequestException>(() =>
+                client.InitializeAsync(Manifest(), CancellationToken.None));
+            var failure = AgentRuntimeWorker<TestAgent>.DescribeFailure(exception, Guid.Empty);
+
+            Assert.Equal(HttpStatusCode.TooManyRequests, exception.StatusCode);
+            Assert.Contains("code=runtime.rate_limited;retryable=true", failure, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(tokenPath);
+        }
+    }
+
+    [Fact]
     public async Task InvokeStreamingAsync_preserves_frames_and_rejects_out_of_order_sequences()
     {
         var ordered = string.Join('\n',
@@ -103,6 +176,50 @@ public sealed class McpAgentRuntimeClientTests
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             throw new InvalidOperationException("The cancellation token should end the simulated request.");
         }
+    }
+
+    private sealed class RateLimitedHandler(int succeedOnAttempt) : HttpMessageHandler
+    {
+        public int Attempts { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            Attempts++;
+            if (Attempts < succeedOnAttempt)
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.TooManyRequests)
+                {
+                    Content = new ByteArrayContent([])
+                });
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new
+                {
+                    jsonrpc = "2.0",
+                    id = 1,
+                    result = new
+                    {
+                        _meta = new
+                        {
+                            csweet = new
+                            {
+                                accessToken = "session-token",
+                                expiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
+                                sessionId = "session-1",
+                                grantRevision = 1
+                            }
+                        }
+                    }
+                }), Encoding.UTF8, "application/json")
+            });
+        }
+    }
+
+    private sealed class TestAgent : CSweetAgentBase
+    {
+        public override string AgentId => "com.example.failure-test";
+        public override string Version => "1.0.0";
     }
 
     private sealed class StreamingFixture : IAsyncDisposable

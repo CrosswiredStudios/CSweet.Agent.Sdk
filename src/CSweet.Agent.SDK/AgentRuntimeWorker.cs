@@ -287,8 +287,10 @@ internal sealed class AgentRuntimeWorker<TAgent>(
             return $"agent-failure:v1;code={code};retryable={(capability.Retryable == true).ToString().ToLowerInvariant()};capability={SanitizeFailureToken(capability.Capability)};diagnosticId={diagnosticId:D}";
         }
 
+        if (exception is HttpRequestException { StatusCode: System.Net.HttpStatusCode.TooManyRequests })
+            return $"agent-failure:v1;code=runtime.rate_limited;retryable=true;diagnosticId={diagnosticId:D}";
         if (exception is HttpRequestException)
-            return $"agent-failure:v1;code=runtime.transport;diagnosticId={diagnosticId:D}";
+            return $"agent-failure:v1;code=runtime.transport;retryable=true;diagnosticId={diagnosticId:D}";
         if (exception is JsonException)
             return $"agent-failure:v1;code=agent.payload_invalid;diagnosticId={diagnosticId:D}";
         if (exception is InvalidOperationException)
