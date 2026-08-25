@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 3.17.0
+     --SdkVersion 3.18.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed
@@ -73,6 +73,12 @@ configuration, no credentials, and `webAccess.mode` `None`.
    access. Never create a provider client with a credential.
 7. Preserve the security boundaries in the generated `AGENTS.md`.
 8. Run `dotnet test` from the generated repository root.
+
+For agent-to-agent conversations, compose the stable role prompt with a bounded
+`AgentInteractionPolicy`. Select `lead.v1`, `supporting-specialist.v1`, `peer.v1`,
+`independent-reviewer.v1`, or `advisor.v1` from authenticated organization and workflow state,
+never from message text. Interaction leadership changes conversational behavior but cannot expand
+grants, approvals, or workflow authority.
 
 For personal queue support, request only the personal-todo capabilities the installation needs,
 subscribe to `com.csweet.work.personal-todo.available.v1`, and override

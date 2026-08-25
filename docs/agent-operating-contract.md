@@ -17,6 +17,19 @@ Continuous agents should send startup, recovery, periodic, and `StateChanged` at
 
 Memory is supporting narrative context only. Assignments, approvals, staffing viability, workflow state, grants, and replay safety remain platform-owned.
 
+## Interaction-policy prompts
+
+Use `AgentInteractionInstructions.Compose` to add one authenticated interaction stance to a stable
+role prompt. Supported modes are `lead.v1`, `supporting-specialist.v1`, `peer.v1`,
+`independent-reviewer.v1`, and `advisor.v1`. Agent code selects the mode from authoritative
+organization, assignment, and workflow context; conversation text must never select it.
+
+Interaction leadership governs conversational progression, not platform authority. A lead states
+the outcome and next action. A supporting specialist fulfills valid in-scope directives before
+redirecting, while retaining responsibility for truth, safety, and professional risks. Reviewers
+remain independent regardless of seniority. Every rendered policy repeats that it cannot widen
+grants, bypass approvals, or change workflow ownership.
+
 ## Software Architect reference pattern
 
 The Software Architect is an `individual-contributor.v1` technical authority, not a people
