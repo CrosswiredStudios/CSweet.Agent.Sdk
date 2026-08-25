@@ -216,7 +216,9 @@ public sealed record AvailableAgentSearchQuery(
     decimal? MaximumPrice = null,
     string? Currency = null,
     string? Sort = null,
-    int Limit = 25);
+    int Limit = 25,
+    string? RoleCategoryKey = null,
+    IReadOnlyList<string>? PreferredSpecializationKeys = null);
 
 /// <summary>A safe, source-independent agent listing. Local filesystem paths are never returned.</summary>
 public sealed record AvailableAgent(
@@ -245,7 +247,9 @@ public sealed record AvailableAgent(
     string? RoleName = null,
     string? LicenseSpdxId = null,
     string? LicenseUrl = null,
-    IReadOnlyList<string>? IconUrls = null);
+    IReadOnlyList<string>? IconUrls = null,
+    IReadOnlyList<string>? RoleCategoryKeys = null,
+    IReadOnlyList<string>? SpecializationKeys = null);
 
 /// <summary>Health information for one catalog source. A failed source does not fail the aggregate search.</summary>
 public sealed record AgentCatalogSourceHealth(
@@ -354,6 +358,10 @@ public sealed record ResourceChangeRole(
     string? ReportsToRoleKey)
 {
     public Guid? TeamId { get; init; }
+    /// <summary>Stable high-level role required to fill this plan slot. RoleKey remains the slot identity.</summary>
+    public string RoleCategoryKey { get; init; } = string.Empty;
+    /// <summary>Optional strengths preferred for this slot. They never make an otherwise eligible candidate ineligible.</summary>
+    public IReadOnlyList<string> PreferredSpecializationKeys { get; init; } = [];
 }
 
 public sealed record ResourceChangeProposalRequest(

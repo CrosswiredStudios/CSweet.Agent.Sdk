@@ -43,6 +43,10 @@ public sealed record AgentTeammate(
     public IReadOnlyList<string> EffectiveCapabilities { get; init; } = [];
     public string RuntimeEligibility { get; init; } = "Unknown";
     public bool IsAvailable { get; init; } = true;
+    /// <summary>Manifest-declared high-level roles that this agent can fill.</summary>
+    public IReadOnlyList<string> DeclaredRoleKeys { get; init; } = [];
+    /// <summary>Optional manifest-declared strengths; these rank candidates but do not establish eligibility.</summary>
+    public IReadOnlyList<string> SpecializationKeys { get; init; } = [];
 }
 
 public sealed record TeamRoleCoverage(string Role, int Count);

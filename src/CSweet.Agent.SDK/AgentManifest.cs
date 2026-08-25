@@ -12,6 +12,7 @@ public sealed class AgentManifest
     public required string Version { get; init; }
     public required AgentPublisher Publisher { get; init; }
     public required AgentRuntimeManifest Runtime { get; init; }
+    public AgentRolePolicyManifest? RolePolicy { get; init; }
     public required AgentProtocolManifest Protocol { get; init; }
 
     /// <summary>Compatibility projection of the names declared in <see cref="Provides"/>.</summary>
@@ -36,6 +37,16 @@ public sealed class AgentManifest
     public AgentWebAccessManifest WebAccess { get; init; } = new();
     public IReadOnlyList<AgentUiContribution> Ui { get; init; } = [];
     public AgentCatalogMetadata Catalog { get; init; } = new();
+}
+
+/// <summary>Declares how an agent operates and which stable organizational roles it can fill.</summary>
+public sealed record AgentRolePolicyManifest
+{
+    public string Profile { get; init; } = string.Empty;
+    /// <summary>Stable high-level role categories, for example software-architect.</summary>
+    public IReadOnlyList<string> DeclaredRoleKeys { get; init; } = [];
+    /// <summary>Optional domain strengths used to rank otherwise eligible agents.</summary>
+    public IReadOnlyList<string> SpecializationKeys { get; init; } = [];
 }
 
 /// <summary>A capability implemented by this package.</summary>

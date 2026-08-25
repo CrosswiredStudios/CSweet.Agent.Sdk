@@ -86,6 +86,7 @@ public static class AgentManifestLoader
         }
 
         ValidateRuntime(manifest.Runtime, errors);
+        ValidateRolePolicy(manifest, errors);
         if (manifest.Protocol is null ||
             manifest.Protocol.MinimumVersion != "2.0" ||
             !manifest.Protocol.MaximumVersion.StartsWith("2.", StringComparison.Ordinal))
@@ -135,6 +136,7 @@ public static class AgentManifestLoader
         Version = manifest.Version,
         Publisher = manifest.Publisher,
         Runtime = manifest.Runtime,
+        RolePolicy = manifest.RolePolicy,
         Protocol = manifest.Protocol,
         Provides = manifest.Provides ?? [],
         Requires = manifest.Requires ?? [],
@@ -151,6 +153,32 @@ public static class AgentManifestLoader
         RequestedSubscriptions = manifest.Events?.Subscribes ?? [],
         RequestedNetworkAccess = manifest.RequestedNetworkAccess
     };
+
+    private static void ValidateRolePolicy(AgentManifest manifest, ICollection<string> errors)
+    {
+        if (manifest.RolePolicy is null)
+            return;
+        if (!AgentRolePolicyProfiles.All.Contains(manifest.RolePolicy.Profile))
+            errors.Add("rolePolicy.profile must name a supported platform policy profile.");
+        ValidateRoleTokens(manifest.RolePolicy.DeclaredRoleKeys, "rolePolicy.declaredRoleKeys", required: true, errors);
+        ValidateRoleTokens(manifest.RolePolicy.SpecializationKeys, "rolePolicy.specializationKeys", required: false, errors);
+    }
+
+    private static void ValidateRoleTokens(
+        IReadOnlyList<string>? values,
+        string field,
+        bool required,
+        ICollection<string> errors)
+    {
+        values ??= [];
+        if ((required && values.Count == 0) || values.Count > 32 ||
+            values.Any(value => string.IsNullOrWhiteSpace(value) || value.Length > 160 ||
+                                !RoleTaxonomy.IsCanonicalKey(value)) ||
+            values.Distinct(StringComparer.Ordinal).Count() != values.Count)
+        {
+            errors.Add($"{field} must contain {(required ? "one to 32" : "up to 32")} unique lowercase kebab-case keys of at most 160 characters.");
+        }
+    }
 
     private static void ValidateRuntime(AgentRuntimeManifest? runtime, ICollection<string> errors)
     {

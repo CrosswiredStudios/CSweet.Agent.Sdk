@@ -5,9 +5,15 @@ Protocol-v2 agent manifests may declare a role policy:
 ```json
 "rolePolicy": {
   "profile": "manager.v1",
-  "declaredRoleKeys": ["software-product-manager"]
+  "declaredRoleKeys": ["software-product-manager"],
+  "specializationKeys": ["software-delivery"]
 }
 ```
+
+`declaredRoleKeys` are stable high-level eligibility categories. Human-facing job titles and
+resource-plan `roleKey` values may be more specific. `specializationKeys` are optional strengths
+used to rank otherwise eligible agents; they do not prevent a generalist in the declared role
+category from filling a specialized plan slot.
 
 Supported profiles are `manager.v1`, `individual-contributor.v1`, `independent-reviewer.v1`, and `executive-advisor.v1`.
 

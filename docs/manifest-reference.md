@@ -10,6 +10,11 @@ machine-readable definition is [`schemas/csweet-plugin.v2.schema.json`](../schem
   "$schema": "https://raw.githubusercontent.com/CrosswiredStudios/CSweetAgentSdk/main/schemas/csweet-plugin.v2.schema.json",
   "manifestVersion": "2.0",
   "kind": "agent",
+  "rolePolicy": {
+    "profile": "individual-contributor.v1",
+    "declaredRoleKeys": ["researcher"],
+    "specializationKeys": ["market-research"]
+  },
   "id": "com.example.research-agent",
   "name": "Research Agent",
   "version": "0.1.0",
@@ -151,3 +156,16 @@ Numeric configuration fields may declare `lessThanFieldKey`. Both fields must be
 referenced key must exist, and the dependent value must remain strictly lower. This is useful for
 relationships such as model output tokens being lower than context-window tokens. New signed
 defaults must also satisfy the relationship.
+## Role policy and specialization
+
+Every agent manifest declares a `rolePolicy`. `declaredRoleKeys` contains the stable, high-level role categories the agent can fill, such as `software-architect` or `software-developer`. These keys—not display names or job titles—control role eligibility.
+
+`specializationKeys` contains optional strengths such as `game-development`, `distributed-systems`, or `realtime-3d`. Specializations may improve catalog ranking for a staffing preference, but they never make an agent ineligible for a matching high-level role category.
+
+```json
+"rolePolicy": {
+  "profile": "individual-contributor.v1",
+  "declaredRoleKeys": ["software-architect"],
+  "specializationKeys": ["game-development", "distributed-systems"]
+}
+```
