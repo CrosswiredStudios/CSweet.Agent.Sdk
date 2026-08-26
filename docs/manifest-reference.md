@@ -15,6 +15,7 @@ machine-readable definition is [`schemas/csweet-plugin.v2.schema.json`](../schem
     "declaredRoleKeys": ["researcher"],
     "specializationKeys": ["market-research"]
   },
+  "workItemTypes": { "requires": [] },
   "id": "com.example.research-agent",
   "name": "Research Agent",
   "version": "0.1.0",
@@ -88,6 +89,7 @@ machine-readable definition is [`schemas/csweet-plugin.v2.schema.json`](../schem
 | `runtime.supportsMultipleInstallations` | Whether separate installations can run independently |
 | `runtime.maximumConcurrentJobs` | At least 1; start at 1 until concurrency safety is proven |
 | `protocol` | `minimumVersion` `2.0`, `maximumVersion` beginning with `2.` |
+| `workItemTypes.requires` | Stable work type keys that must have an available platform/provider definition before installation |
 | `provides` | Capability descriptors implemented by this package |
 | `requires` | Minimum platform/provider authority requested from the installer |
 | `events.subscribes` | Durable event names consumed by the package |

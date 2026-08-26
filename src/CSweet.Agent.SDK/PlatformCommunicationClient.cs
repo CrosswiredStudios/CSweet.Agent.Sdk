@@ -182,12 +182,24 @@ public sealed record StartWorkItemCoordinationRequest(
     string IdempotencyKey,
     AgentCoordinationArtifactSubmission? Artifact = null);
 
+public sealed record StartBoardCoordinationRequest(
+    Guid TargetOrganizationUserId,
+    Guid BoardId,
+    string Subject,
+    string Objective,
+    IReadOnlyList<string> SuccessCriteria,
+    string InitialMessage,
+    string IdempotencyKey,
+    AgentCoordinationArtifactSubmission? Artifact = null);
+
 public sealed record AgentCoordinationWorkSource(
     Guid BoardId,
     Guid ItemId,
     Guid SprintExecutionId,
     Guid StageExecutionId,
     long AssignmentRevision);
+
+public sealed record AgentCoordinationBoardSource(Guid BoardId);
 
 public sealed record RespondToAgentCoordinationRequest(
     Guid SessionId,
@@ -273,6 +285,7 @@ public sealed record AgentCoordinationSession(
 {
     public string SourceKind { get; init; } = "Chat";
     public AgentCoordinationWorkSource? WorkSource { get; init; }
+    public AgentCoordinationBoardSource? BoardSource { get; init; }
     public int? MaximumTurns { get; init; }
 }
 
@@ -290,6 +303,7 @@ public sealed record AgentCoordinationTurnRequest(
 {
     public string SourceKind { get; init; } = "Chat";
     public AgentCoordinationWorkSource? WorkSource { get; init; }
+    public AgentCoordinationBoardSource? BoardSource { get; init; }
     public int? MaximumTurns { get; init; }
 }
 
@@ -429,11 +443,29 @@ public sealed class PlatformCommunicationClient
         _platform.InvokeAsync<StartWorkItemCoordinationRequest, AgentCoordinationSession>(
             CommunicationCapabilities.CoordinationStartWork, request, token);
 
-    public Task<AgentCoordinationSession> RespondToCoordinationAsync(
-        RespondToAgentCoordinationRequest request,
+    public Task<AgentCoordinationSession> StartBoardCoordinationAsync(
+        StartBoardCoordinationRequest request,
         CancellationToken token = default) =>
-        _platform.InvokeAsync<RespondToAgentCoordinationRequest, AgentCoordinationSession>(
-            CommunicationCapabilities.CoordinationRespond, request, token);
+        _platform.InvokeAsync<StartBoardCoordinationRequest, AgentCoordinationSession>(
+            CommunicationCapabilities.CoordinationStartBoard, request, token);
+
+    public async Task<AgentCoordinationSession> RespondToCoordinationAsync(
+        RespondToAgentCoordinationRequest request,
+        CancellationToken token = default)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                return await _platform.InvokeAsync<RespondToAgentCoordinationRequest, AgentCoordinationSession>(
+                    CommunicationCapabilities.CoordinationRespond, request, token);
+            }
+            catch (Exception exception) when (attempt < 2 && IsTransientCoordinationFailure(exception))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(200 * (attempt + 1)), token);
+            }
+        }
+    }
 
     public Task<AgentCoordinationSession> ReadCoordinationAsync(
         Guid sessionId,
@@ -470,4 +502,8 @@ public sealed class PlatformCommunicationClient
 
     private static PlatformCapabilityException Invalid(string capability, string message) =>
         new(capability, PlatformCapabilityErrorCode.ValidationFailed, message);
+
+    private static bool IsTransientCoordinationFailure(Exception exception) =>
+        exception is HttpRequestException or TimeoutException ||
+        exception is PlatformCapabilityException { Retryable: true };
 }

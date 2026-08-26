@@ -54,6 +54,15 @@ public sealed class AgentRuntimeContext
         CancellationToken cancellationToken = default) =>
         Platform.GetModelToolsAsync(cancellationToken);
 
+    /// <summary>
+    /// Resolves exactly the named approved model-visible bindings for a confined harness and fails
+    /// closed when any binding is absent, duplicated, or not model-visible.
+    /// </summary>
+    public Task<IReadOnlyList<Microsoft.Extensions.AI.AITool>> GetModelToolsAsync(
+        IReadOnlyCollection<string> capabilities,
+        CancellationToken cancellationToken = default) =>
+        Platform.GetModelToolsAsync(capabilities, cancellationToken);
+
     /// <summary>Creates a platform-governed model client without exposing provider credentials.</summary>
     public Microsoft.Extensions.AI.IChatClient CreateChatClient(AgentLlmSelection selection) =>
         new PlatformChatClient(Platform, selection);

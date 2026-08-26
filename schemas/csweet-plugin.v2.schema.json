@@ -101,6 +101,19 @@
         }
       }
     },
+    "workItemTypes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requires"],
+      "properties": {
+        "requires": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/identifier" }
+        }
+      }
+    },
     "protocol": {
       "type": "object",
       "additionalProperties": false,

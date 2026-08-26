@@ -148,6 +148,42 @@ public sealed class PlatformCommunicationClientTests
     }
 
     [Fact]
+    public async Task StartBoardCoordinationAsync_PinsTheAuthoritativeBoardSource()
+    {
+        var boardId = Guid.NewGuid();
+        var targetId = Guid.NewGuid();
+        StartBoardCoordinationRequest? captured = null;
+        var now = DateTimeOffset.UtcNow;
+        var runtime = new AgentTestRuntime().RegisterCapability<
+            StartBoardCoordinationRequest, AgentCoordinationSession>(
+            CommunicationCapabilities.CoordinationStartBoard,
+            (request, _) =>
+            {
+                captured = request;
+                return Task.FromResult(new AgentCoordinationSession(
+                    Guid.NewGuid(), Guid.NewGuid(), Guid.Empty, Guid.Empty, Guid.Empty,
+                    new(Guid.NewGuid(), Guid.NewGuid(), "Architect", "Software Architect"),
+                    new(targetId, Guid.NewGuid(), "PM", "Software Product Manager"),
+                    request.Subject, request.Objective, request.SuccessCriteria,
+                    AgentCoordinationStatuses.Active, 1, 1, targetId, false, null, now, now, [])
+                {
+                    SourceKind = "Board",
+                    BoardSource = new AgentCoordinationBoardSource(request.BoardId),
+                    MaximumTurns = 18
+                });
+            });
+
+        var session = await runtime.CreateContext().Platform.Communication.StartBoardCoordinationAsync(
+            new(targetId, boardId, "Board review", "Review exact planning revisions",
+                ["Every recommendation is revision-pinned"], "Please review.", "board-review-1"));
+
+        Assert.Equal(boardId, captured!.BoardId);
+        Assert.Equal("Board", session.SourceKind);
+        Assert.Equal(boardId, session.BoardSource!.BoardId);
+        Assert.Equal(18, session.MaximumTurns);
+    }
+
+    [Fact]
     public async Task BaseAgent_ReturnsSafeUnsupportedCoordinationDisposition()
     {
         var self = new AgentCoordinationParticipant(

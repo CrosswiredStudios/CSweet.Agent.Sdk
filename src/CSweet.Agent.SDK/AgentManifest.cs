@@ -13,6 +13,7 @@ public sealed class AgentManifest
     public required AgentPublisher Publisher { get; init; }
     public required AgentRuntimeManifest Runtime { get; init; }
     public AgentRolePolicyManifest? RolePolicy { get; init; }
+    public AgentWorkItemTypesManifest WorkItemTypes { get; init; } = new();
     public required AgentProtocolManifest Protocol { get; init; }
 
     /// <summary>Compatibility projection of the names declared in <see cref="Provides"/>.</summary>
@@ -37,6 +38,12 @@ public sealed class AgentManifest
     public AgentWebAccessManifest WebAccess { get; init; } = new();
     public IReadOnlyList<AgentUiContribution> Ui { get; init; } = [];
     public AgentCatalogMetadata Catalog { get; init; } = new();
+}
+
+/// <summary>Stable work types that must be supplied by an installed platform provider.</summary>
+public sealed record AgentWorkItemTypesManifest
+{
+    public IReadOnlyList<string> Requires { get; init; } = [];
 }
 
 /// <summary>Declares how an agent operates and which stable organizational roles it can fill.</summary>

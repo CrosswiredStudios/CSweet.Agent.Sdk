@@ -89,6 +89,7 @@ public static class CapabilityNames
         public const string LinkCodeRegister = "communication.link-code.register.v1";
         public const string CoordinationStart = "communication.coordination.start.v1";
         public const string CoordinationStartWork = "communication.coordination.start-work.v1";
+        public const string CoordinationStartBoard = "communication.coordination.start-board.v1";
         public const string CoordinationRespond = "communication.coordination.respond.v1";
         public const string CoordinationRead = "communication.coordination.read.v1";
         public const string CoordinationList = "communication.coordination.list.v1";
@@ -119,6 +120,9 @@ public static class CapabilityNames
         public const string ItemRead = WorkManagementCapabilityNames.ItemRead;
         public const string ItemStart = WorkManagementCapabilityNames.ItemStart;
         public const string ItemCreate = WorkManagementCapabilityNames.ItemCreate;
+        public const string ItemTypesReadV1 = WorkManagementCapabilityNames.ItemTypesReadV1;
+        public const string ItemPlanningReviseV1 = WorkManagementCapabilityNames.ItemPlanningReviseV1;
+        public const string ItemApprovalDecideV1 = WorkManagementCapabilityNames.ItemApprovalDecideV1;
         public const string ItemFinalizeDelivery = WorkManagementCapabilityNames.ItemFinalizeDelivery;
         public const string ItemComment = WorkManagementCapabilityNames.ItemComment;
         public const string ItemCommentsRead = WorkManagementCapabilityNames.ItemCommentsRead;
@@ -273,6 +277,7 @@ public static class CapabilityCatalog
                 CapabilityNames.Communication.LinkCodeRegister,
                 CapabilityNames.Communication.CoordinationStart,
                 CapabilityNames.Communication.CoordinationStartWork,
+                CapabilityNames.Communication.CoordinationStartBoard,
                 CapabilityNames.Communication.CoordinationRespond,
                 CapabilityNames.Communication.CoordinationRead,
                 CapabilityNames.Communication.CoordinationList,
@@ -293,6 +298,9 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.BoardConfigureColumns,
                 CapabilityNames.WorkManagement.ItemRead,
                 CapabilityNames.WorkManagement.ItemCreate,
+                CapabilityNames.WorkManagement.ItemTypesReadV1,
+                CapabilityNames.WorkManagement.ItemPlanningReviseV1,
+                CapabilityNames.WorkManagement.ItemApprovalDecideV1,
                 CapabilityNames.WorkManagement.ItemFinalizeDelivery,
                 CapabilityNames.WorkManagement.ItemComment,
                 CapabilityNames.WorkManagement.ItemCommentsRead,
@@ -390,6 +398,7 @@ public static class CommunicationCapabilities
     public const string LinkCodeRegister = CapabilityNames.Communication.LinkCodeRegister;
     public const string CoordinationStart = CapabilityNames.Communication.CoordinationStart;
     public const string CoordinationStartWork = CapabilityNames.Communication.CoordinationStartWork;
+    public const string CoordinationStartBoard = CapabilityNames.Communication.CoordinationStartBoard;
     public const string CoordinationRespond = CapabilityNames.Communication.CoordinationRespond;
     public const string CoordinationRead = CapabilityNames.Communication.CoordinationRead;
     public const string CoordinationList = CapabilityNames.Communication.CoordinationList;
@@ -427,6 +436,9 @@ public static class WorkItemCapabilities
     public const string Read = CapabilityNames.WorkManagement.ItemRead;
     public const string Start = CapabilityNames.WorkManagement.ItemStart;
     public const string Create = CapabilityNames.WorkManagement.ItemCreate;
+    public const string ReadTypes = CapabilityNames.WorkManagement.ItemTypesReadV1;
+    public const string RevisePlanning = CapabilityNames.WorkManagement.ItemPlanningReviseV1;
+    public const string DecideApproval = CapabilityNames.WorkManagement.ItemApprovalDecideV1;
     public const string FinalizeDelivery = CapabilityNames.WorkManagement.ItemFinalizeDelivery;
     public const string Comment = CapabilityNames.WorkManagement.ItemComment;
     public const string ReadComments = CapabilityNames.WorkManagement.ItemCommentsRead;

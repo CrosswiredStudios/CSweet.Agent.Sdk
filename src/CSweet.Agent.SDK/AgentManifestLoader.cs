@@ -87,6 +87,7 @@ public static class AgentManifestLoader
 
         ValidateRuntime(manifest.Runtime, errors);
         ValidateRolePolicy(manifest, errors);
+        ValidateWorkItemTypes(manifest.WorkItemTypes, errors);
         if (manifest.Protocol is null ||
             manifest.Protocol.MinimumVersion != "2.0" ||
             !manifest.Protocol.MaximumVersion.StartsWith("2.", StringComparison.Ordinal))
@@ -137,6 +138,7 @@ public static class AgentManifestLoader
         Publisher = manifest.Publisher,
         Runtime = manifest.Runtime,
         RolePolicy = manifest.RolePolicy,
+        WorkItemTypes = manifest.WorkItemTypes ?? new AgentWorkItemTypesManifest(),
         Protocol = manifest.Protocol,
         Provides = manifest.Provides ?? [],
         Requires = manifest.Requires ?? [],
@@ -153,6 +155,20 @@ public static class AgentManifestLoader
         RequestedSubscriptions = manifest.Events?.Subscribes ?? [],
         RequestedNetworkAccess = manifest.RequestedNetworkAccess
     };
+
+    private static void ValidateWorkItemTypes(
+        AgentWorkItemTypesManifest? declaration,
+        ICollection<string> errors)
+    {
+        var required = declaration?.Requires ?? [];
+        if (required.Count > 64 || required.Any(value =>
+                string.IsNullOrWhiteSpace(value) || value.Length > 200 ||
+                !IdentifierPattern.IsMatch(value)) ||
+            required.Distinct(StringComparer.Ordinal).Count() != required.Count)
+        {
+            errors.Add("workItemTypes.requires must contain up to 64 unique stable type keys.");
+        }
+    }
 
     private static void ValidateRolePolicy(AgentManifest manifest, ICollection<string> errors)
     {

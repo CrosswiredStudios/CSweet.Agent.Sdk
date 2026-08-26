@@ -93,6 +93,7 @@ memory, or unrelated employees. Team membership does not grant any other authori
 - `CommunicationCapabilities.MessageSend` — `communication.message.send.v1`
 - `CommunicationCapabilities.CoordinationStart` — `communication.coordination.start.v1`
 - `CommunicationCapabilities.CoordinationStartWork` — `communication.coordination.start-work.v1`
+- `CommunicationCapabilities.CoordinationStartBoard` — `communication.coordination.start-board.v1`
 - `CommunicationCapabilities.CoordinationRespond` — `communication.coordination.respond.v1`
 - `CommunicationCapabilities.CoordinationRead` — `communication.coordination.read.v1`
 - `CommunicationCapabilities.CoordinationList` — `communication.coordination.list.v1`
@@ -130,6 +131,9 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `WorkItemCapabilities.Read` — `work.item.read`
 - `WorkItemCapabilities.Start` — `work.item.start`
 - `WorkItemCapabilities.Create` — `work.item.create`
+- `WorkItemCapabilities.ReadTypes` — `work.item.types.read.v1`
+- `WorkItemCapabilities.RevisePlanning` — `work.item.planning.revise.v1`
+- `WorkItemCapabilities.DecideApproval` — `work.item.approval.decide.v1`
 - `WorkItemCapabilities.FinalizeDelivery` — `work.item.delivery.finalize`
 - `WorkItemCapabilities.Comment` — `work.item.comment`
 - `WorkItemCapabilities.ReadComments` — `work.item.comments.read`

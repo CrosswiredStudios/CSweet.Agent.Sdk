@@ -5,6 +5,35 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class AgentManifestLoaderTests
 {
     [Fact]
+    public async Task LoadAsync_ReadsRequiredWorkItemTypes()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllTextAsync(path, """
+            {
+              "manifestVersion": "2.0", "kind": "agent", "id": "com.example.architect",
+              "name": "Example Architect", "version": "1.0.0",
+              "publisher": { "id": "example", "name": "Example" },
+              "rolePolicy": { "profile": "individual-contributor.v1", "declaredRoleKeys": ["software-architect"] },
+              "workItemTypes": { "requires": ["software.story.v1", "software.task.v1"] },
+              "runtime": { "type": "dotnet-project", "projectPath": "src/Example.csproj", "targetFramework": "net10.0", "defaultActivationMode": "OnDemand" },
+              "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" },
+              "provides": [], "requires": [], "events": { "subscribes": [] }
+            }
+            """);
+
+            var manifest = await AgentManifestLoader.LoadAsync(path, CancellationToken.None);
+
+            Assert.Equal(["software.story.v1", "software.task.v1"], manifest.WorkItemTypes.Requires);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task LoadAsync_ReadsRoleCategoriesAndOptionalSpecializations()
     {
         var path = Path.GetTempFileName();

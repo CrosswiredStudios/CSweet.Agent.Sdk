@@ -47,6 +47,24 @@ public sealed class PlatformWorkClient
         InvokeAsync<CreateWorkItemRequest, WorkItem>(
             WorkItemCapabilities.Create, request, cancellationToken);
 
+    public Task<WorkItemTypeCatalog> ReadTypeCatalogAsync(
+        ReadWorkItemTypesRequest? request = null,
+        CancellationToken cancellationToken = default) =>
+        InvokeAsync<ReadWorkItemTypesRequest, WorkItemTypeCatalog>(
+            WorkItemCapabilities.ReadTypes, request ?? new(), cancellationToken);
+
+    public Task<WorkItem> RevisePlanningAsync(
+        ReviseWorkItemPlanningRequest request,
+        CancellationToken cancellationToken = default) =>
+        InvokeAsync<ReviseWorkItemPlanningRequest, WorkItem>(
+            WorkItemCapabilities.RevisePlanning, request, cancellationToken);
+
+    public Task<WorkItemApproval> DecideApprovalAsync(
+        DecideWorkItemApprovalRequest request,
+        CancellationToken cancellationToken = default) =>
+        InvokeAsync<DecideWorkItemApprovalRequest, WorkItemApproval>(
+            WorkItemCapabilities.DecideApproval, request, cancellationToken);
+
     public Task<WorkItem> FinalizeItemDeliveryAsync(
         FinalizeWorkItemDeliveryRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<FinalizeWorkItemDeliveryRequest, WorkItem>(
