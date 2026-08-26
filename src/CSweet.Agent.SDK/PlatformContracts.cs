@@ -642,6 +642,9 @@ public sealed record ManagementStatusReport(
     public IReadOnlyList<string> ImmediateActions { get; init; } = [];
     public IReadOnlyList<string> ConversationTopics { get; init; } = [];
     public string Severity { get; init; } = "Important";
+    public Guid? ReporterOrganizationUserId { get; init; }
+    public string? ReporterDisplayName { get; init; }
+    public string? ReporterRole { get; init; }
 }
 
 public sealed record ResourceNeedReport(

@@ -53,19 +53,34 @@ public sealed class PlatformCommunicationClientTests
     [Fact]
     public void MessageReceivedEvent_ExposesStableWireContractAndAuthoritativeContextKeys()
     {
+        var attachmentId = Guid.NewGuid();
+        var messageId = Guid.NewGuid();
         var payload = new CommunicationMessageReceivedEvent(
-            Guid.NewGuid(), Guid.NewGuid().ToString("D"), Guid.NewGuid().ToString("D"),
+            Guid.NewGuid(), Guid.NewGuid().ToString("D"), messageId.ToString("D"),
             "I am onboarded and ready to begin planning.",
             new Dictionary<string, string>
             {
                 [CommunicationMessageContextKeys.SenderOrganizationUserId] = Guid.NewGuid().ToString("D"),
                 [CommunicationMessageContextKeys.SenderEmployeeType] = "Agent",
                 [CommunicationMessageContextKeys.SenderRole] = "Software Architect"
-            });
+            })
+        {
+            Attachments = [new CommunicationAttachment(
+                attachmentId, messageId, "concept.png", "image/png", 2048, new string('a', 64))]
+        };
 
         Assert.Equal("com.csweet.user.message.received.v1", CommunicationEvents.MessageReceived);
         Assert.Equal("Agent", payload.Context![CommunicationMessageContextKeys.SenderEmployeeType]);
         Assert.Equal("Software Architect", payload.Context[CommunicationMessageContextKeys.SenderRole]);
+        var attachment = Assert.Single(payload.Attachments);
+        Assert.Equal(attachmentId, attachment.Id);
+        Assert.Equal("concept.png", attachment.FileName);
+
+        var mediaReference = new AgentMediaReferenceContent(
+            attachment.Id, attachment.MessageId, Guid.NewGuid(), attachment.FileName,
+            attachment.ContentType, attachment.SizeBytes, attachment.Sha256);
+        Assert.Equal(attachmentId, mediaReference.AttachmentId);
+        Assert.Equal(new string('a', 64), mediaReference.Sha256);
     }
 
     [Fact]

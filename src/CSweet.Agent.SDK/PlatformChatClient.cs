@@ -16,7 +16,47 @@ internal sealed record PlatformChatContent(
     string? CallId = null,
     string? Name = null,
     IReadOnlyDictionary<string, JsonElement>? Arguments = null,
-    JsonElement? Result = null);
+    JsonElement? Result = null,
+    Guid? AttachmentId = null,
+    Guid? MessageId = null,
+    Guid? ConversationId = null,
+    string? FileName = null,
+    string? ContentType = null,
+    long? SizeBytes = null,
+    string? Sha256 = null);
+
+/// <summary>
+/// An opaque broker-resolved reference to a retained communication attachment.
+/// Agent VMs cannot use this type to obtain storage paths or file bytes.
+/// </summary>
+public sealed class AgentMediaReferenceContent : AIContent
+{
+    public AgentMediaReferenceContent(
+        Guid attachmentId,
+        Guid messageId,
+        Guid conversationId,
+        string fileName,
+        string contentType,
+        long sizeBytes,
+        string sha256)
+    {
+        AttachmentId = attachmentId;
+        MessageId = messageId;
+        ConversationId = conversationId;
+        FileName = fileName;
+        ContentType = contentType;
+        SizeBytes = sizeBytes;
+        Sha256 = sha256;
+    }
+
+    public Guid AttachmentId { get; }
+    public Guid MessageId { get; }
+    public Guid ConversationId { get; }
+    public string FileName { get; }
+    public string ContentType { get; }
+    public long SizeBytes { get; }
+    public string Sha256 { get; }
+}
 
 internal sealed record PlatformChatMessage(
     string Role,
@@ -208,6 +248,15 @@ public sealed class PlatformChatClient : IChatClient
             "function_result",
             CallId: result.CallId,
             Result: SerializeElement(result.Result)),
+        AgentMediaReferenceContent media => new PlatformChatContent(
+            "media_reference",
+            AttachmentId: media.AttachmentId,
+            MessageId: media.MessageId,
+            ConversationId: media.ConversationId,
+            FileName: media.FileName,
+            ContentType: media.ContentType,
+            SizeBytes: media.SizeBytes,
+            Sha256: media.Sha256),
         _ => throw new NotSupportedException(
             $"Platform chat messages do not support {content.GetType().Name} content.")
     };

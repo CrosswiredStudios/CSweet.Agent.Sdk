@@ -127,6 +127,11 @@ Stable SDK event constants currently include:
 - `CommunicationEvents.MessageMentioned`
 
 `CommunicationMessageReceivedEvent` is the public payload for direct human or agent conversation
+turns. Its `Attachments` collection contains sanitized opaque references (attachment/message IDs,
+file name, MIME type, byte length, and SHA-256 digest). Agents never receive storage paths or raw
+bytes. Add `AgentMediaReferenceContent` to a brokered model message when the configured model should
+consume an attachment; the broker revalidates organization, conversation membership, message
+association, type, size, and digest before materializing content.
 turns. Its `Context` uses `CommunicationMessageContextKeys` for broker-authenticated sender identity;
 message content must never override those values.
 

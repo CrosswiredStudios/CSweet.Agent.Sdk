@@ -31,7 +31,22 @@ public sealed record CommunicationMessageReceivedEvent(
     IReadOnlyDictionary<string, string>? Context,
     Guid TurnId = default,
     int Attempt = 0,
-    Guid MessageId = default);
+    Guid MessageId = default)
+{
+    public IReadOnlyList<CommunicationAttachment> Attachments { get; init; } = [];
+}
+
+/// <summary>
+/// A sanitized, immutable reference to media attached to retained conversation history.
+/// The reference never contains storage paths or raw file bytes.
+/// </summary>
+public sealed record CommunicationAttachment(
+    Guid Id,
+    Guid MessageId,
+    string FileName,
+    string ContentType,
+    long SizeBytes,
+    string Sha256);
 
 public static class AgentCoordinationDispositions
 {
@@ -81,7 +96,10 @@ public sealed record CommunicationMessage(
     DateTimeOffset CreatedAt,
     Guid? ChatTurnId = null,
     Guid? CoordinationSessionId = null,
-    IReadOnlyList<CommunicationMessageMention>? Mentions = null);
+    IReadOnlyList<CommunicationMessageMention>? Mentions = null)
+{
+    public IReadOnlyList<CommunicationAttachment> Attachments { get; init; } = [];
+}
 
 public sealed record CommunicationMessageMention(
     Guid OrganizationUserId,
@@ -374,6 +392,17 @@ public sealed class PlatformCommunicationClient
         _platform.InvokeAsync<object, CommunicationMessage>(
             CommunicationCapabilities.MessageSend,
             new { chatId, content, idempotencyKey },
+            token);
+
+    public Task<CommunicationMessage> SendMessageAsync(
+        Guid chatId,
+        string content,
+        IReadOnlyList<Guid> attachmentMediaAssetIds,
+        string? idempotencyKey = null,
+        CancellationToken token = default) =>
+        _platform.InvokeAsync<object, CommunicationMessage>(
+            CommunicationCapabilities.MessageSend,
+            new { chatId, content, idempotencyKey, attachmentMediaAssetIds },
             token);
 
     public Task<CommunicationMessage> SendMessageAsync(
