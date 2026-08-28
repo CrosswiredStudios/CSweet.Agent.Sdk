@@ -77,6 +77,26 @@ team roles, relationship, presence, and complete role-coverage counts. It never 
 application-user IDs, installation or package identity, permissions, credentials, costs, prompts,
 memory, or unrelated employees. Team membership does not grant any other authority.
 
+### Documents and design packages
+
+- `PlatformCapabilities.ArtifactCreate` — `platform.artifact.create.v1`
+- `PlatformCapabilities.ArtifactRead` — `platform.artifact.read.v1`
+- `PlatformCapabilities.ArtifactRevise` — `platform.artifact.revise.v1`
+- `PlatformCapabilities.ArtifactSubmit` — `platform.artifact.submit.v1`
+- `PlatformCapabilities.ArtifactDecide` — `platform.artifact.decide.v1`
+- `PlatformCapabilities.ArtifactRequestAccess` — `platform.artifact.request-access.v1`
+- `PlatformCapabilities.ArtifactPackageCreate` — `platform.artifact-package.create.v1`
+- `PlatformCapabilities.ArtifactPackageRead` — `platform.artifact-package.read.v1`
+- `PlatformCapabilities.ArtifactPackageSubmit` — `platform.artifact-package.submit.v1`
+- `PlatformCapabilities.ArtifactPackageDecide` — `platform.artifact-package.decide.v1`
+
+Artifact tool exposure is only the first authorization check. Except for organization-scoped
+creation, every agent operation also requires an active grant for the exact artifact and action;
+folders, chats, assignments, packages, and job titles do not confer access. Package operations
+check every member independently. Agents use `ArtifactRequestAccess` to create a human-reviewed
+request and can resume from `ArtifactEvents.AccessDecision`, whose payload deliberately excludes
+document content.
+
 ## Memory
 
 - `MemoryCapabilities.BusinessRead` — `memory.business.read.v1`

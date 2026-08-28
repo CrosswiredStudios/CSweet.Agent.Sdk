@@ -34,6 +34,16 @@ public static class PlatformCapabilities
     public const string StaffingReplenishmentRead = CapabilityNames.Platform.StaffingReplenishmentRead;
     public const string StaffingReplenishmentDecide = CapabilityNames.Platform.StaffingReplenishmentDecide;
     public const string ManagedActionDecide = CapabilityNames.Platform.ManagedActionDecide;
+    public const string ArtifactCreate = CapabilityNames.Platform.ArtifactCreate;
+    public const string ArtifactRead = CapabilityNames.Platform.ArtifactRead;
+    public const string ArtifactRevise = CapabilityNames.Platform.ArtifactRevise;
+    public const string ArtifactSubmit = CapabilityNames.Platform.ArtifactSubmit;
+    public const string ArtifactDecide = CapabilityNames.Platform.ArtifactDecide;
+    public const string ArtifactRequestAccess = CapabilityNames.Platform.ArtifactRequestAccess;
+    public const string ArtifactPackageCreate = CapabilityNames.Platform.ArtifactPackageCreate;
+    public const string ArtifactPackageRead = CapabilityNames.Platform.ArtifactPackageRead;
+    public const string ArtifactPackageSubmit = CapabilityNames.Platform.ArtifactPackageSubmit;
+    public const string ArtifactPackageDecide = CapabilityNames.Platform.ArtifactPackageDecide;
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -46,8 +56,15 @@ public static class PlatformCapabilities
         ResourceChangeRead, ResourceChangeDecide, HiringWorkflowStage, UserActionSuggest,
         TeamRosterRead, AgentOperatingStateRead, AgentOperatingStateWrite,
         StaffingReplenishmentPropose, StaffingReplenishmentRead, StaffingReplenishmentDecide,
-        ManagedActionDecide
+        ManagedActionDecide, ArtifactCreate, ArtifactRead, ArtifactRevise, ArtifactSubmit,
+        ArtifactDecide, ArtifactRequestAccess, ArtifactPackageCreate, ArtifactPackageRead,
+        ArtifactPackageSubmit, ArtifactPackageDecide
     };
+}
+
+public static class ArtifactEvents
+{
+    public const string AccessDecision = "com.csweet.artifact.access-decision.v1";
 }
 
 public static class HiringEvents

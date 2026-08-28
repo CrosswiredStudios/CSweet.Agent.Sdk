@@ -5,6 +5,30 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class PlatformCapabilityClientTests
 {
     [Fact]
+    public async Task Artifact_client_preserves_exact_revision_concurrency_and_idempotency()
+    {
+        CreateArtifactRevision? captured = null;
+        var artifactId = Guid.NewGuid();
+        var baseRevisionId = Guid.NewGuid();
+        var resultRevisionId = Guid.NewGuid();
+        var runtime = new AgentTestRuntime().RegisterCapability<CreateArtifactRevision, ArtifactRevision>(
+            PlatformCapabilities.ArtifactRevise, (request, _) =>
+            {
+                captured = request;
+                return Task.FromResult(new ArtifactRevision(resultRevisionId, 2, request.ExpectedBaseRevisionId,
+                    request.Content, "digest", "Draft", DateTimeOffset.UtcNow, null, null));
+            });
+
+        var result = await runtime.CreateContext().Platform.Artifacts.ReviseAsync(
+            new CreateArtifactRevision(artifactId, baseRevisionId, "# Revised", "revision-key"));
+
+        Assert.Equal(artifactId, captured!.ArtifactId);
+        Assert.Equal(baseRevisionId, captured.ExpectedBaseRevisionId);
+        Assert.Equal("revision-key", captured.IdempotencyKey);
+        Assert.Equal(resultRevisionId, result.Id);
+    }
+
+    [Fact]
     public async Task TypedOperatingStateHelpers_PreserveAssessmentAndConcurrencyFields()
     {
         AgentOperatingStateWriteRequest? captured = null;

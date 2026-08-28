@@ -17,6 +17,7 @@ public sealed class PlatformCapabilityClient
         Memory = new PlatformMemoryClient(tools);
         Work = new PlatformWorkClient(tools);
         PersonalTodo = new PlatformPersonalTodoClient(tools);
+        Artifacts = new PlatformArtifactClient(tools);
         Git = new PlatformGitWorkspaceClient(tools);
         SourceControl = new PlatformSourceControlClient(tools);
         Communication = new PlatformCommunicationClient(this);
@@ -28,6 +29,7 @@ public sealed class PlatformCapabilityClient
     public PlatformMemoryClient Memory { get; }
     public PlatformWorkClient Work { get; }
     public PlatformPersonalTodoClient PersonalTodo { get; }
+    public PlatformArtifactClient Artifacts { get; }
     public PlatformGitWorkspaceClient Git { get; }
     public PlatformSourceControlClient SourceControl { get; }
     public PlatformCommunicationClient Communication { get; }

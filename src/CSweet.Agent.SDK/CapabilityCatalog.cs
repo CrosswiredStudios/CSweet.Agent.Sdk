@@ -60,6 +60,16 @@ public static class CapabilityNames
         public const string StaffingReplenishmentRead = "platform.management.staffing-replenishment.read.v1";
         public const string StaffingReplenishmentDecide = "platform.management.staffing-replenishment.decide.v1";
         public const string MediaTransfer = "platform.media.transfer.v1";
+        public const string ArtifactCreate = "platform.artifact.create.v1";
+        public const string ArtifactRead = "platform.artifact.read.v1";
+        public const string ArtifactRevise = "platform.artifact.revise.v1";
+        public const string ArtifactSubmit = "platform.artifact.submit.v1";
+        public const string ArtifactDecide = "platform.artifact.decide.v1";
+        public const string ArtifactRequestAccess = "platform.artifact.request-access.v1";
+        public const string ArtifactPackageCreate = "platform.artifact-package.create.v1";
+        public const string ArtifactPackageRead = "platform.artifact-package.read.v1";
+        public const string ArtifactPackageSubmit = "platform.artifact-package.submit.v1";
+        public const string ArtifactPackageDecide = "platform.artifact-package.decide.v1";
     }
 
     public static class AgentCatalog
@@ -258,7 +268,17 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.StaffingReplenishmentPropose,
                 CapabilityNames.Platform.StaffingReplenishmentRead,
                 CapabilityNames.Platform.StaffingReplenishmentDecide,
-                CapabilityNames.Platform.MediaTransfer),
+                CapabilityNames.Platform.MediaTransfer,
+                CapabilityNames.Platform.ArtifactCreate,
+                CapabilityNames.Platform.ArtifactRead,
+                CapabilityNames.Platform.ArtifactRevise,
+                CapabilityNames.Platform.ArtifactSubmit,
+                CapabilityNames.Platform.ArtifactDecide,
+                CapabilityNames.Platform.ArtifactRequestAccess,
+                CapabilityNames.Platform.ArtifactPackageCreate,
+                CapabilityNames.Platform.ArtifactPackageRead,
+                CapabilityNames.Platform.ArtifactPackageSubmit,
+                CapabilityNames.Platform.ArtifactPackageDecide),
             ["memory"] = Set(
                 CapabilityNames.Memory.BusinessRead,
                 CapabilityNames.Memory.BusinessPropose,
