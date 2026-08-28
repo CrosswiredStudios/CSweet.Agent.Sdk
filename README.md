@@ -2,7 +2,7 @@
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 3.21.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 3.22.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -19,7 +19,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.21.0
+  --SdkVersion 3.22.0
 cd ResearchAgent
 dotnet test
 ```
@@ -27,7 +27,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 3.21.0
+dotnet add package CSweet.Agent.SDK --version 3.22.0
 ```
 
 ```csharp

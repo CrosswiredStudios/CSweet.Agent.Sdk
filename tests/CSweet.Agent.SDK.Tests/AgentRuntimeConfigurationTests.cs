@@ -113,6 +113,56 @@ public sealed class AgentRuntimeConfigurationTests
         Assert.Equal(8000, agent.OutputTokens);
     }
 
+    [Fact]
+    public async Task ConditionalRequiredConfiguration_IsRequiredOnlyWhenVisible()
+    {
+        var agent = new ConditionalAgent();
+
+        await agent.ApplyPlatformConfigurationAsync(new AgentRuntimeConfiguration(
+            "1", new Dictionary<string, JsonElement>
+            {
+                ["profile"] = JsonSerializer.SerializeToElement("general")
+            }), ["profile"], CancellationToken.None);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            agent.ApplyPlatformConfigurationAsync(new AgentRuntimeConfiguration(
+                "1", new Dictionary<string, JsonElement>
+                {
+                    ["profile"] = JsonSerializer.SerializeToElement("custom")
+                }), ["profile"], CancellationToken.None));
+        Assert.Contains("description", error.Message, StringComparison.Ordinal);
+
+        await agent.ApplyPlatformConfigurationAsync(new AgentRuntimeConfiguration(
+            "1", new Dictionary<string, JsonElement>
+            {
+                ["profile"] = JsonSerializer.SerializeToElement("custom"),
+                ["description"] = JsonSerializer.SerializeToElement("A specialist studio")
+            }), ["profile", "description"], CancellationToken.None);
+        Assert.Equal("A specialist studio", agent.Description);
+    }
+
+    [Fact]
+    public void ConfigurationBuilder_RejectsInvalidVisibilityRelationships()
+    {
+        Assert.Throws<InvalidOperationException>(() => new AgentConfigurationBuilder()
+            .Text("orphan", "Orphan", visibleWhenFieldKey: "profile")
+            .Build());
+        Assert.Throws<InvalidOperationException>(() => new AgentConfigurationBuilder()
+            .Text("orphan", "Orphan", visibleWhenFieldKey: "missing", visibleWhenValue: "custom")
+            .Build());
+        Assert.Throws<InvalidOperationException>(() => new AgentConfigurationBuilder()
+            .Text("self", "Self", visibleWhenFieldKey: "self", visibleWhenValue: "custom")
+            .Build());
+        Assert.Throws<InvalidOperationException>(() => new AgentConfigurationBuilder()
+            .Select("profile", "Profile", [new("general", "General")])
+            .Text("description", "Description", visibleWhenFieldKey: "profile", visibleWhenValue: "custom")
+            .Build());
+        Assert.Throws<InvalidOperationException>(() => new AgentConfigurationBuilder()
+            .Text("first", "First", visibleWhenFieldKey: "second", visibleWhenValue: "yes")
+            .Text("second", "Second", visibleWhenFieldKey: "first", visibleWhenValue: "yes")
+            .Build());
+    }
+
     private sealed class ConfigurableAgent : CSweetAgentBase
     {
         public override string AgentId => "com.example.configurable";
@@ -148,5 +198,19 @@ public sealed class AgentRuntimeConfigurationTests
                 .Number("maxContextWindowTokens", "Context", true, defaultValue: 32000)
                 .Number("maxOutputTokens", "Output", true, defaultValue: 8000,
                     lessThanFieldKey: "maxContextWindowTokens");
+    }
+
+    private sealed class ConditionalAgent : CSweetAgentBase
+    {
+        public override string AgentId => "com.example.conditional";
+        public override string Version => "1.0.0";
+        public string? Description => Settings.GetString("description");
+
+        protected override AgentConfigurationBuilder Configure(AgentConfigurationBuilder builder) =>
+            builder
+                .Select("profile", "Profile", [new("general", "General"), new("custom", "Custom")],
+                    required: true, defaultValue: "general")
+                .TextArea("description", "Description", required: true,
+                    visibleWhenFieldKey: "profile", visibleWhenValue: "custom");
     }
 }

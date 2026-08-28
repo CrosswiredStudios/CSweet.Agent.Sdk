@@ -21,7 +21,9 @@ public sealed record AgentConfigurationField(
     decimal? Maximum = null,
     decimal? Step = null,
     string? DependsOnFieldKey = null,
-    string? LessThanFieldKey = null);
+    string? LessThanFieldKey = null,
+    string? VisibleWhenFieldKey = null,
+    string? VisibleWhenValue = null);
 
 public sealed record AgentConfigurationOption(string Value, string Label);
 

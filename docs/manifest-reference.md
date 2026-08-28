@@ -158,6 +158,12 @@ Numeric configuration fields may declare `lessThanFieldKey`. Both fields must be
 referenced key must exist, and the dependent value must remain strictly lower. This is useful for
 relationships such as model output tokens being lower than context-window tokens. New signed
 defaults must also satisfy the relationship.
+
+Any configuration field may declare `visibleWhenFieldKey` and `visibleWhenValue` together. C-Sweet
+shows the field only when the referenced field's current string value exactly matches the declared
+value. The referenced key must exist, select values must be declared options, and visibility
+relationships cannot reference themselves or form cycles. A required conditional field is required
+only while it is visible.
 ## Role policy and specialization
 
 Every agent manifest declares a `rolePolicy`. `declaredRoleKeys` contains the stable, high-level role categories the agent can fill, such as `software-architect` or `software-developer`. These keys—not display names or job titles—control role eligibility.

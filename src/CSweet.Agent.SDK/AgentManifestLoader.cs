@@ -263,6 +263,53 @@ public static class AgentManifestLoader
                 value.TryGetDecimal(out var number) && targetValue.TryGetDecimal(out var limit) && number >= limit)
                 errors.Add($"Configuration default '{field.Key}' must be less than '{target.Key}'.");
         }
+
+        foreach (var field in configuration)
+        {
+            var hasVisibilityKey = !string.IsNullOrWhiteSpace(field.VisibleWhenFieldKey);
+            var hasVisibilityValue = !string.IsNullOrWhiteSpace(field.VisibleWhenValue);
+            if (hasVisibilityKey != hasVisibilityValue)
+            {
+                errors.Add($"Configuration field '{field.Key}' must declare visibleWhenFieldKey and visibleWhenValue together.");
+                continue;
+            }
+            if (!hasVisibilityKey)
+                continue;
+            if (!configurationByKey.TryGetValue(field.VisibleWhenFieldKey!, out var controller))
+            {
+                errors.Add($"Configuration field '{field.Key}' references unknown visibility field '{field.VisibleWhenFieldKey}'.");
+                continue;
+            }
+            if (string.Equals(field.Key, controller.Key, StringComparison.Ordinal))
+            {
+                errors.Add($"Configuration field '{field.Key}' cannot control its own visibility.");
+                continue;
+            }
+            var controllerType = controller.Type.Trim().ToLowerInvariant();
+            if (controllerType is not ("string" or "text" or "textarea" or "select" or
+                "provider" or "llmprovider" or "model" or "llmmodel"))
+                errors.Add($"Configuration field '{field.Key}' visibility controller '{controller.Key}' must contain text.");
+            else if (controllerType == "select" && controller.Options is { Count: > 0 } &&
+                     !controller.Options.Any(option => string.Equals(
+                         option.Value, field.VisibleWhenValue, StringComparison.Ordinal)))
+                errors.Add($"Configuration field '{field.Key}' visibility value is not declared by '{controller.Key}'.");
+        }
+
+        foreach (var field in configuration.Where(x => !string.IsNullOrWhiteSpace(x.Key)))
+        {
+            var visited = new HashSet<string>(StringComparer.Ordinal) { field.Key };
+            var current = field;
+            while (!string.IsNullOrWhiteSpace(current.VisibleWhenFieldKey) &&
+                   configurationByKey.TryGetValue(current.VisibleWhenFieldKey, out var controller))
+            {
+                if (!visited.Add(current.VisibleWhenFieldKey))
+                {
+                    errors.Add($"Configuration visibility cycle includes field '{field.Key}'.");
+                    break;
+                }
+                current = controller;
+            }
+        }
     }
 
     private static void ValidateConnectionsAndSetup(AgentManifest manifest, ICollection<string> errors)

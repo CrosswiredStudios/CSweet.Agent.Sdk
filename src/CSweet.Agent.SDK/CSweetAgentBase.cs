@@ -229,9 +229,11 @@ public abstract class CSweetAgentBase : ICSweetAgent
             {
                 return validationError;
             }
-
-
         }
+
+        foreach (var field in configuration.Fields.Where(x => x.Required && IsVisible(x, merged)))
+            if (!merged.TryGetValue(field.Key, out var value) || IsEmpty(value))
+                return $"Setting '{field.Key}' is required.";
 
         foreach (var field in configuration.Fields.Where(x => !string.IsNullOrWhiteSpace(x.LessThanFieldKey)))
             if (merged.TryGetValue(field.Key, out var value) &&
@@ -246,11 +248,6 @@ public abstract class CSweetAgentBase : ICSweetAgent
 
     private static string? ValidateField(AgentConfigurationField field, JsonElement value)
     {
-        if (field.Required && IsEmpty(value))
-        {
-            return $"Setting '{field.Key}' is required.";
-        }
-
         switch (field.Type)
         {
             case AgentConfigurationFieldTypes.Select:
@@ -317,6 +314,17 @@ public abstract class CSweetAgentBase : ICSweetAgent
     private static bool IsEmpty(JsonElement value) =>
         value.ValueKind == JsonValueKind.Null ||
         (value.ValueKind == JsonValueKind.String && string.IsNullOrWhiteSpace(value.GetString()));
+
+    private static bool IsVisible(
+        AgentConfigurationField field,
+        IReadOnlyDictionary<string, JsonElement> settings)
+    {
+        if (string.IsNullOrWhiteSpace(field.VisibleWhenFieldKey))
+            return true;
+        return settings.TryGetValue(field.VisibleWhenFieldKey, out var controller) &&
+               controller.ValueKind == JsonValueKind.String &&
+               string.Equals(controller.GetString(), field.VisibleWhenValue, StringComparison.Ordinal);
+    }
 
     private static Dictionary<string, JsonElement> MergeSettings(
         IReadOnlyDictionary<string, JsonElement> current,
