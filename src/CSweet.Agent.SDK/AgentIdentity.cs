@@ -1,3 +1,5 @@
+using CSweet.WorkManagement.Contracts;
+
 namespace CSweet.Agent.SDK;
 
 /// <summary>
@@ -16,6 +18,7 @@ public sealed record AgentIdentity(
     string? ManagerDisplayName)
 {
     public AgentTeamContext? TeamContext { get; init; }
+    public IReadOnlyList<PortfolioSupervisionAssignment> ManagedWorkstreams { get; init; } = [];
 }
 
 public sealed record AgentTeamContext(
@@ -54,3 +57,5 @@ public sealed record TeamRoleCoverage(string Role, int Count);
 public sealed record TeamRosterRequest(int Page = 1, int PageSize = 50);
 
 public sealed record TeamRosterResponse(AgentTeamContext? Team);
+
+public sealed record TeamRosterV2Response(AgentTeamContext? Team, Guid? WorkstreamId);

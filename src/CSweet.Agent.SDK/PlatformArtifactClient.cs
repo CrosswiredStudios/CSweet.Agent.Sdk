@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CSweet.WorkManagement.Contracts;
 
 namespace CSweet.Agent.SDK;
 
@@ -21,6 +22,8 @@ public sealed class PlatformArtifactClient
         InvokeAsync<SubmitArtifactRevision, ArtifactDocument>(PlatformCapabilities.ArtifactSubmit, request, token);
     public Task<ArtifactDocument> DecideAsync(DecideArtifactRevision request, CancellationToken token = default) =>
         InvokeAsync<DecideArtifactRevision, ArtifactDocument>(PlatformCapabilities.ArtifactDecide, request, token);
+    public Task<ArtifactDocument> DecideStructuredAsync(StructuredArtifactDecisionRequest request, CancellationToken token = default) =>
+        InvokeAsync<StructuredArtifactDecisionRequest, ArtifactDocument>(PlatformCapabilities.ArtifactDecideV2, request, token);
     public Task<ArtifactAccessRequest> RequestAccessAsync(RequestArtifactAccess request, CancellationToken token = default) =>
         InvokeAsync<RequestArtifactAccess, ArtifactAccessRequest>(PlatformCapabilities.ArtifactRequestAccess, request, token);
     public Task<ArtifactPackage> CreatePackageAsync(CreateArtifactPackage request, CancellationToken token = default) =>
@@ -43,14 +46,26 @@ public sealed class PlatformArtifactClient
 public sealed record CreateArtifactDocument(
     string Title, string Content, string DocumentType, string IdempotencyKey,
     Guid? FolderId = null, Guid? PackageId = null, Guid? OriginConversationId = null,
-    Guid? OriginWorkItemId = null, Guid? StewardOrganizationUserId = null);
+    Guid? OriginWorkItemId = null, Guid? StewardOrganizationUserId = null)
+{
+    public Guid? WorkstreamId { get; init; }
+    public Guid? TeamId { get; init; }
+}
 public sealed record ArtifactDocumentSummary(
     Guid Id, string Title, string DocumentType, string Status,
-    Guid? LatestRevisionId, Guid? AcceptedRevisionId, DateTimeOffset UpdatedAt);
+    Guid? LatestRevisionId, Guid? AcceptedRevisionId, DateTimeOffset UpdatedAt)
+{
+    public Guid? WorkstreamId { get; init; }
+    public Guid? TeamId { get; init; }
+}
 public sealed record ArtifactDocument(
     Guid Id, string Title, string DocumentType, string Status,
     Guid? LatestRevisionId, Guid? SubmittedRevisionId, Guid? AcceptedRevisionId,
-    Guid? OriginConversationId, Guid? OriginWorkItemId, IReadOnlyList<ArtifactRevision> Revisions);
+    Guid? OriginConversationId, Guid? OriginWorkItemId, IReadOnlyList<ArtifactRevision> Revisions)
+{
+    public Guid? WorkstreamId { get; init; }
+    public Guid? TeamId { get; init; }
+}
 public sealed record ArtifactRevision(
     Guid Id, int Number, Guid? BaseRevisionId, string Content, string ContentSha256,
     string Status, DateTimeOffset CreatedAt, DateTimeOffset? SubmittedAt, DateTimeOffset? DecidedAt);
@@ -75,4 +90,8 @@ public sealed record ArtifactAccessDecision(
 public sealed record ArtifactPackageMember(Guid ArtifactId, int Position, string RequiredDocumentType, Guid? AcceptedRevisionId = null);
 public sealed record CreateArtifactPackage(string Name, string PackageType, IReadOnlyList<ArtifactPackageMember> Members, string IdempotencyKey);
 public sealed record ArtifactPackage(Guid Id, string Name, string PackageType, int Version, string Status,
-    IReadOnlyList<ArtifactPackageMember> Members, DateTimeOffset? AcceptedAt);
+    IReadOnlyList<ArtifactPackageMember> Members, DateTimeOffset? AcceptedAt)
+{
+    public Guid? WorkstreamId { get; init; }
+    public Guid? TeamId { get; init; }
+}

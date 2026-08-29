@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CSweet.WorkManagement.Contracts;
 
 namespace CSweet.Agent.SDK;
 
@@ -34,6 +35,7 @@ public sealed record CommunicationMessageReceivedEvent(
     Guid MessageId = default)
 {
     public IReadOnlyList<CommunicationAttachment> Attachments { get; init; } = [];
+    public AgentWorkContext? WorkContext { get; init; }
 }
 
 /// <summary>
@@ -83,7 +85,12 @@ public sealed record CommunicationChat(
     IReadOnlyList<CommunicationParticipant> Participants,
     string? LastMessage,
     DateTimeOffset? LastMessageAt,
-    int UnreadCount);
+    int UnreadCount)
+{
+    public AgentWorkContext? WorkContext { get; init; }
+    public Guid? WorkstreamId { get; init; }
+    public Guid? TeamId { get; init; }
+}
 
 public sealed record CommunicationMessage(
     Guid Id,
@@ -99,6 +106,7 @@ public sealed record CommunicationMessage(
     IReadOnlyList<CommunicationMessageMention>? Mentions = null)
 {
     public IReadOnlyList<CommunicationAttachment> Attachments { get; init; } = [];
+    public AgentWorkContext? WorkContext { get; init; }
 }
 
 public sealed record CommunicationMessageMention(
@@ -140,7 +148,11 @@ public sealed record CreateCommunicationChat(
     bool IsPrivate,
     IReadOnlyList<Guid> ParticipantOrganizationUserIds,
     IReadOnlyList<Guid>? AudienceRoleIds = null,
-    IReadOnlyList<Guid>? AudienceWorkstreamIds = null);
+    IReadOnlyList<Guid>? AudienceWorkstreamIds = null)
+{
+    public Guid? WorkstreamId { get; init; }
+    public Guid? TeamId { get; init; }
+}
 
 public sealed record ModifyCommunicationChat(
     Guid ChatId,
@@ -184,7 +196,10 @@ public sealed record StartAgentCoordinationRequest(
     Guid SourceChatTurnId,
     Guid SourceMessageId,
     string IdempotencyKey,
-    AgentCoordinationArtifactSubmission? Artifact = null);
+    AgentCoordinationArtifactSubmission? Artifact = null)
+{
+    public AgentWorkContext? WorkContext { get; init; }
+}
 
 public sealed record StartWorkItemCoordinationRequest(
     Guid TargetOrganizationUserId,
@@ -305,6 +320,7 @@ public sealed record AgentCoordinationSession(
     public AgentCoordinationWorkSource? WorkSource { get; init; }
     public AgentCoordinationBoardSource? BoardSource { get; init; }
     public int? MaximumTurns { get; init; }
+    public AgentWorkContext? WorkContext { get; init; }
 }
 
 public sealed record AgentCoordinationTurnRequest(
@@ -323,6 +339,7 @@ public sealed record AgentCoordinationTurnRequest(
     public AgentCoordinationWorkSource? WorkSource { get; init; }
     public AgentCoordinationBoardSource? BoardSource { get; init; }
     public int? MaximumTurns { get; init; }
+    public AgentWorkContext? WorkContext { get; init; }
 }
 
 public sealed record AgentCoordinationTurnResult(
@@ -421,13 +438,26 @@ public sealed class PlatformCommunicationClient
         string content,
         string idempotencyKey,
         CancellationToken token = default)
+        => await SendDirectMessageAsync(recipientOrganizationUserId, content, idempotencyKey, null, token);
+
+    public async Task<DirectMessageDispatchReceipt> SendDirectMessageAsync(
+        Guid recipientOrganizationUserId,
+        string content,
+        string idempotencyKey,
+        AgentWorkContext? workContext,
+        CancellationToken token = default)
     {
         var chat = await CreateChatAsync(new CreateCommunicationChat(
             null,
             "Private direct conversation.",
             true,
             true,
-            [recipientOrganizationUserId]), token);
+            [recipientOrganizationUserId],
+            AudienceWorkstreamIds: workContext?.WorkstreamId is { } workstreamId ? [workstreamId] : null)
+        {
+            WorkstreamId = workContext?.WorkstreamId,
+            TeamId = workContext?.TeamId
+        }, token);
         var recipient = chat.Participants.SingleOrDefault(x =>
             x.OrganizationUserId == recipientOrganizationUserId);
         if (recipient is null)

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CSweet.WorkManagement.Contracts;
 using CSweet.Agent.Contracts.Packaging;
 using Microsoft.Extensions.AI;
 
@@ -32,6 +33,10 @@ public sealed record AgentEventEnvelope(
     string? CorrelationId = null)
 {
     public JsonElement Payload => Data;
+    /// <summary>Broker-authenticated project context for routing, isolation, and audit correlation.</summary>
+    public AgentWorkContext? WorkContext { get; init; }
+    /// <summary>The event or operation that directly caused this event, when known.</summary>
+    public string? CausationId { get; init; }
 }
 
 public sealed record AgentWorkResult(

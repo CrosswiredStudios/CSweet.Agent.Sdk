@@ -1,5 +1,6 @@
 using System.Text.Json;
 using CSweet.Agent.SDK.WorkManagement;
+using CSweet.WorkManagement.Contracts;
 using Microsoft.Extensions.AI;
 
 namespace CSweet.Agent.SDK;
@@ -55,6 +56,75 @@ public sealed class PlatformCapabilityClient
     public Task<MutationResponse> ProposeWorkstreamAsync(WorkstreamPlanProposalRequest request, CancellationToken token = default) =>
         InvokeAsync<WorkstreamPlanProposalRequest, MutationResponse>(PlatformCapabilities.WorkstreamPlanPropose, request, token);
 
+    public Task<WorkstreamDetail> ReadWorkstreamAsync(ReadWorkstreamRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReadWorkstreamRequest, WorkstreamDetail>(PlatformCapabilities.WorkstreamRead, request, token);
+
+    public Task<MutationResponse> ProposeWorkstreamAsync(WorkstreamPlanProposalV2Request request, CancellationToken token = default) =>
+        InvokeAsync<WorkstreamPlanProposalV2Request, MutationResponse>(PlatformCapabilities.WorkstreamPlanProposeV2, request, token);
+
+    public Task<MutationResponse> ProposeWorkstreamChangeAsync(WorkstreamChangeProposalRequest request, CancellationToken token = default) =>
+        InvokeAsync<WorkstreamChangeProposalRequest, MutationResponse>(PlatformCapabilities.WorkstreamChangePropose, request, token);
+
+    public Task<IReadOnlyList<WorkstreamGateSummary>> ReadWorkstreamGatesAsync(ReadWorkstreamGatesRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReadWorkstreamGatesRequest, IReadOnlyList<WorkstreamGateSummary>>(PlatformCapabilities.WorkstreamGateRead, request, token);
+
+    public Task<WorkstreamGateSummary> SubmitWorkstreamGateAsync(SubmitWorkstreamGateRequest request, CancellationToken token = default) =>
+        InvokeAsync<SubmitWorkstreamGateRequest, WorkstreamGateSummary>(PlatformCapabilities.WorkstreamGateSubmit, request, token);
+
+    public Task<WorkstreamGateSummary> DecideWorkstreamGateAsync(DecideWorkstreamGateRequest request, CancellationToken token = default) =>
+        InvokeAsync<DecideWorkstreamGateRequest, WorkstreamGateSummary>(PlatformCapabilities.WorkstreamGateDecide, request, token);
+
+    public Task<PortfolioResponse> ReadPortfolioAsync(ReadPortfolioRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReadPortfolioRequest, PortfolioResponse>(PlatformCapabilities.PortfolioRead, request, token);
+
+    public Task<DecisionRecord> RequestDecisionAsync(DecisionRequest request, CancellationToken token = default) =>
+        InvokeAsync<DecisionRequest, DecisionRecord>(PlatformCapabilities.DecisionRequest, request, token);
+
+    public Task<IReadOnlyList<DecisionRecord>> ReadDecisionsAsync(ReadDecisionRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReadDecisionRequest, IReadOnlyList<DecisionRecord>>(PlatformCapabilities.DecisionRead, request, token);
+
+    public Task<DecisionRecord> DecideDecisionAsync(DecideDecisionRequest request, CancellationToken token = default) =>
+        InvokeAsync<DecideDecisionRequest, DecisionRecord>(PlatformCapabilities.DecisionDecide, request, token);
+
+    public Task<IReadOnlyList<ToolchainAdapterSummary>> ReadEligibleToolchainsAsync(ReadToolchainCatalogRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReadToolchainCatalogRequest, IReadOnlyList<ToolchainAdapterSummary>>(PlatformCapabilities.ToolchainCatalogRead, request, token);
+
+    public Task<DeliveryBuild> RequestBuildAsync(RequestBuildRequest request, CancellationToken token = default) =>
+        InvokeAsync<RequestBuildRequest, DeliveryBuild>(PlatformCapabilities.BuildRequest, request, token);
+
+    public Task<IReadOnlyList<DeliveryBuild>> ReadBuildsAsync(ReadBuildRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReadBuildRequest, IReadOnlyList<DeliveryBuild>>(PlatformCapabilities.BuildRead, request, token);
+
+    public Task<DeliveryBuild> ReportBuildAsync(ReportBuildRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReportBuildRequest, DeliveryBuild>(PlatformCapabilities.BuildReport, request, token);
+
+    public Task<IReadOnlyList<DeliveryValidation>> ReadValidationsAsync(ReadValidationRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReadValidationRequest, IReadOnlyList<DeliveryValidation>>(PlatformCapabilities.ValidationRead, request, token);
+
+    public Task<DeliveryPreview> CreatePreviewAsync(CreatePreviewRequest request, CancellationToken token = default) =>
+        InvokeAsync<CreatePreviewRequest, DeliveryPreview>(PlatformCapabilities.PreviewCreate, request, token);
+
+    public Task<IReadOnlyList<DeliveryPreview>> ReadPreviewsAsync(ReadPreviewRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReadPreviewRequest, IReadOnlyList<DeliveryPreview>>(PlatformCapabilities.PreviewRead, request, token);
+
+    public Task<EvaluationSession> PlanEvaluationSessionAsync(PlanEvaluationSessionRequest request, CancellationToken token = default) =>
+        InvokeAsync<PlanEvaluationSessionRequest, EvaluationSession>(PlatformCapabilities.EvaluationPlan, request, token);
+
+    public Task<IReadOnlyList<EvaluationSession>> ReadEvaluationSessionsAsync(ReadEvaluationSessionRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReadEvaluationSessionRequest, IReadOnlyList<EvaluationSession>>(PlatformCapabilities.EvaluationRead, request, token);
+
+    public Task<EvaluationSession> ReportEvaluationSessionAsync(ReportEvaluationSessionRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReportEvaluationSessionRequest, EvaluationSession>(PlatformCapabilities.EvaluationReport, request, token);
+
+    public Task<IReadOnlyList<ReleaseReadiness>> ReadReleaseReadinessAsync(ReadReleaseReadinessRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReadReleaseReadinessRequest, IReadOnlyList<ReleaseReadiness>>(PlatformCapabilities.ReleaseReadinessRead, request, token);
+
+    public Task<ReleaseReadiness> SubmitReleaseReadinessAsync(SubmitReleaseReadinessRequest request, CancellationToken token = default) =>
+        InvokeAsync<SubmitReleaseReadinessRequest, ReleaseReadiness>(PlatformCapabilities.ReleaseReadinessSubmit, request, token);
+
+    public Task<MutationResponse> ProposePublicationAsync(PublicationProposalRequest request, CancellationToken token = default) =>
+        InvokeAsync<PublicationProposalRequest, MutationResponse>(PlatformCapabilities.PublicationPropose, request, token);
+
     public Task<MutationResponse> ProposeWorkforcePlanAsync(WorkforcePlanProposalRequest request, CancellationToken token = default) =>
         InvokeAsync<WorkforcePlanProposalRequest, MutationResponse>(PlatformCapabilities.WorkforcePlanPropose, request, token);
 
@@ -109,6 +179,14 @@ public sealed class PlatformCapabilityClient
         InvokeAsync<TeamRosterRequest, TeamRosterResponse>(
             PlatformCapabilities.TeamRosterRead,
             request ?? new TeamRosterRequest(),
+            token);
+
+    public Task<TeamRosterV2Response> ReadTeamRosterAsync(
+        TeamRosterV2Request request,
+        CancellationToken token = default) =>
+        InvokeAsync<TeamRosterV2Request, TeamRosterV2Response>(
+            PlatformCapabilities.TeamRosterReadV2,
+            request,
             token);
 
     /// <summary>Reads a stable, complete roster and retries the full paging pass once on revision drift.</summary>

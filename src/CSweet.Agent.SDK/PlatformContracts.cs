@@ -638,6 +638,7 @@ public sealed record ManagementStatusReport(
     decimal Confidence,
     DateTimeOffset ReportedAt)
 {
+    public Guid? WorkstreamId { get; init; }
     public Guid? RequestId { get; init; }
     public string? Markdown { get; init; }
     public IReadOnlyList<string> ImmediateActions { get; init; } = [];

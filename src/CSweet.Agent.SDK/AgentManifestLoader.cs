@@ -88,6 +88,7 @@ public static class AgentManifestLoader
         ValidateRuntime(manifest.Runtime, errors);
         ValidateRolePolicy(manifest, errors);
         ValidateWorkItemTypes(manifest.WorkItemTypes, errors);
+        ValidateWorkstreamProfiles(manifest.WorkstreamProfiles, errors);
         if (manifest.Protocol is null ||
             manifest.Protocol.MinimumVersion != "2.0" ||
             !manifest.Protocol.MaximumVersion.StartsWith("2.", StringComparison.Ordinal))
@@ -139,6 +140,7 @@ public static class AgentManifestLoader
         Runtime = manifest.Runtime,
         RolePolicy = manifest.RolePolicy,
         WorkItemTypes = manifest.WorkItemTypes ?? new AgentWorkItemTypesManifest(),
+        WorkstreamProfiles = manifest.WorkstreamProfiles ?? new([], []),
         Protocol = manifest.Protocol,
         Provides = manifest.Provides ?? [],
         Requires = manifest.Requires ?? [],
@@ -168,6 +170,41 @@ public static class AgentManifestLoader
         {
             errors.Add("workItemTypes.requires must contain up to 64 unique stable type keys.");
         }
+    }
+
+    private static void ValidateWorkstreamProfiles(
+        CSweet.WorkManagement.Contracts.WorkstreamProfileManifest? declaration,
+        ICollection<string> errors)
+    {
+        var provides = declaration?.Provides ?? [];
+        var requires = declaration?.Requires ?? [];
+        if (provides.Count > 16 || requires.Count > 32 ||
+            provides.Select(x => $"{x.Key}@{x.Version}").Distinct(StringComparer.Ordinal).Count() != provides.Count ||
+            requires.Distinct(StringComparer.Ordinal).Count() != requires.Count)
+        {
+            errors.Add("workstreamProfiles must contain up to 16 unique providers and 32 unique requirements.");
+            return;
+        }
+
+        foreach (var contribution in provides)
+        {
+            var segments = (contribution.DefinitionResource ?? string.Empty)
+                .Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries);
+            if (string.IsNullOrWhiteSpace(contribution.Key) || contribution.Key.Length > 200 ||
+                !IdentifierPattern.IsMatch(contribution.Key) || contribution.Version < 1 ||
+                string.IsNullOrWhiteSpace(contribution.DefinitionResource) ||
+                Path.IsPathRooted(contribution.DefinitionResource) ||
+                contribution.DefinitionResource.StartsWith('/') || contribution.DefinitionResource.StartsWith('\\') ||
+                segments.Contains("..", StringComparer.Ordinal) ||
+                !contribution.DefinitionResource.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                errors.Add("workstreamProfiles.provides entries require a stable key, positive version, and relative JSON definitionResource without parent traversal.");
+            }
+        }
+
+        if (requires.Any(value => string.IsNullOrWhiteSpace(value) || value.Length > 200 ||
+                                  !IdentifierPattern.IsMatch(value)))
+            errors.Add("workstreamProfiles.requires entries must be stable profile keys.");
     }
 
     private static void ValidateRolePolicy(AgentManifest manifest, ICollection<string> errors)

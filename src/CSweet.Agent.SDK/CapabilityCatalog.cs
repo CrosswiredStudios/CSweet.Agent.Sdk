@@ -31,6 +31,31 @@ public static class CapabilityNames
         public const string OrganizationSnapshotRead = "platform.organization.snapshot.read.v1";
         public const string BusinessPatternSearch = "platform.business-pattern.search.v1";
         public const string WorkstreamPlanPropose = "platform.workstream.plan.propose.v1";
+        public const string WorkstreamRead = WorkstreamCapabilityNames.ReadV1;
+        public const string WorkstreamPlanProposeV2 = WorkstreamCapabilityNames.PlanProposeV2;
+        public const string WorkstreamChangePropose = WorkstreamCapabilityNames.ChangeProposeV1;
+        public const string WorkstreamGateRead = WorkstreamCapabilityNames.GateReadV1;
+        public const string WorkstreamGateSubmit = WorkstreamCapabilityNames.GateSubmitV1;
+        public const string WorkstreamGateDecide = WorkstreamCapabilityNames.GateDecideV1;
+        public const string PortfolioRead = WorkstreamCapabilityNames.PortfolioReadV1;
+        public const string TeamRosterReadV2 = WorkstreamCapabilityNames.TeamRosterReadV2;
+        public const string DecisionRequest = DecisionCapabilityNames.RequestV1;
+        public const string DecisionRead = DecisionCapabilityNames.ReadV1;
+        public const string DecisionDecide = DecisionCapabilityNames.DecideV1;
+        public const string ArtifactDecideV2 = "platform.artifact.decide.v2";
+        public const string ToolchainCatalogRead = DeliveryEvidenceCapabilityNames.ToolchainCatalogReadV1;
+        public const string BuildRequest = DeliveryEvidenceCapabilityNames.BuildRequestV1;
+        public const string BuildRead = DeliveryEvidenceCapabilityNames.BuildReadV1;
+        public const string BuildReport = DeliveryEvidenceCapabilityNames.BuildReportV1;
+        public const string ValidationRead = DeliveryEvidenceCapabilityNames.ValidationReadV1;
+        public const string PreviewCreate = DeliveryEvidenceCapabilityNames.PreviewCreateV1;
+        public const string PreviewRead = DeliveryEvidenceCapabilityNames.PreviewReadV1;
+        public const string EvaluationPlan = DeliveryEvidenceCapabilityNames.EvaluationPlanV1;
+        public const string EvaluationRead = DeliveryEvidenceCapabilityNames.EvaluationReadV1;
+        public const string EvaluationReport = DeliveryEvidenceCapabilityNames.EvaluationReportV1;
+        public const string ReleaseReadinessRead = DeliveryEvidenceCapabilityNames.ReleaseReadinessReadV1;
+        public const string ReleaseReadinessSubmit = DeliveryEvidenceCapabilityNames.ReleaseReadinessSubmitV1;
+        public const string PublicationPropose = DeliveryEvidenceCapabilityNames.PublicationProposeV1;
         public const string WorkforceSearch = "platform.workforce.search.v1";
         public const string WorkforcePlanPropose = "platform.workforce-plan.propose.v1";
         public const string FinanceProfileRead = "platform.finance-profile.read.v1";
@@ -240,6 +265,17 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.OrganizationSnapshotRead,
                 CapabilityNames.Platform.BusinessPatternSearch,
                 CapabilityNames.Platform.WorkstreamPlanPropose,
+                CapabilityNames.Platform.WorkstreamRead,
+                CapabilityNames.Platform.WorkstreamPlanProposeV2,
+                CapabilityNames.Platform.WorkstreamChangePropose,
+                CapabilityNames.Platform.WorkstreamGateRead,
+                CapabilityNames.Platform.WorkstreamGateSubmit,
+                CapabilityNames.Platform.WorkstreamGateDecide,
+                CapabilityNames.Platform.PortfolioRead,
+                CapabilityNames.Platform.TeamRosterReadV2,
+                CapabilityNames.Platform.DecisionRequest,
+                CapabilityNames.Platform.DecisionRead,
+                CapabilityNames.Platform.DecisionDecide,
                 CapabilityNames.Platform.WorkforceSearch,
                 CapabilityNames.Platform.WorkforcePlanPropose,
                 CapabilityNames.Platform.FinanceProfileRead,
@@ -274,11 +310,25 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.ArtifactRevise,
                 CapabilityNames.Platform.ArtifactSubmit,
                 CapabilityNames.Platform.ArtifactDecide,
+                CapabilityNames.Platform.ArtifactDecideV2,
                 CapabilityNames.Platform.ArtifactRequestAccess,
                 CapabilityNames.Platform.ArtifactPackageCreate,
                 CapabilityNames.Platform.ArtifactPackageRead,
                 CapabilityNames.Platform.ArtifactPackageSubmit,
-                CapabilityNames.Platform.ArtifactPackageDecide),
+                CapabilityNames.Platform.ArtifactPackageDecide,
+                CapabilityNames.Platform.ToolchainCatalogRead,
+                CapabilityNames.Platform.BuildRequest,
+                CapabilityNames.Platform.BuildRead,
+                CapabilityNames.Platform.BuildReport,
+                CapabilityNames.Platform.ValidationRead,
+                CapabilityNames.Platform.PreviewCreate,
+                CapabilityNames.Platform.PreviewRead,
+                CapabilityNames.Platform.EvaluationPlan,
+                CapabilityNames.Platform.EvaluationRead,
+                CapabilityNames.Platform.EvaluationReport,
+                CapabilityNames.Platform.ReleaseReadinessRead,
+                CapabilityNames.Platform.ReleaseReadinessSubmit,
+                CapabilityNames.Platform.PublicationPropose),
             ["memory"] = Set(
                 CapabilityNames.Memory.BusinessRead,
                 CapabilityNames.Memory.BusinessPropose,

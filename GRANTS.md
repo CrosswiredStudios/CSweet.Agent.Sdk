@@ -51,6 +51,17 @@ installation, grant changes, hiring, assignment, or spending.
 - `PlatformCapabilities.OrganizationSnapshotRead` — `platform.organization.snapshot.read.v1`
 - `PlatformCapabilities.BusinessPatternSearch` — `platform.business-pattern.search.v1`
 - `PlatformCapabilities.WorkstreamPlanPropose` — `platform.workstream.plan.propose.v1`
+- `PlatformCapabilities.WorkstreamRead` — `platform.workstream.read.v1`
+- `PlatformCapabilities.WorkstreamPlanProposeV2` — `platform.workstream.plan.propose.v2`
+- `PlatformCapabilities.WorkstreamChangePropose` — `platform.workstream.change.propose.v1`
+- `PlatformCapabilities.WorkstreamGateRead` — `platform.workstream.gate.read.v1`
+- `PlatformCapabilities.WorkstreamGateSubmit` — `platform.workstream.gate.submit.v1`
+- `PlatformCapabilities.WorkstreamGateDecide` — `platform.workstream.gate.decide.v1`
+- `PlatformCapabilities.PortfolioRead` — `platform.management.portfolio.read.v1`
+- `PlatformCapabilities.TeamRosterReadV2` — `platform.team-roster.read.v2`
+- `PlatformCapabilities.DecisionRequest` — `platform.decision.request.v1`
+- `PlatformCapabilities.DecisionRead` — `platform.decision.read.v1`
+- `PlatformCapabilities.DecisionDecide` — `platform.decision.decide.v1`
 - `PlatformCapabilities.WorkforceSearch` — `platform.workforce.search.v1`
 - `PlatformCapabilities.WorkforcePlanPropose` — `platform.workforce-plan.propose.v1`
 - `PlatformCapabilities.FinanceProfileRead` — `platform.finance-profile.read.v1`
@@ -78,6 +89,27 @@ application-user IDs, installation or package identity, permissions, credentials
 memory, or unrelated employees. Team membership does not grant any other authority.
 
 ### Documents and design packages
+
+- `PlatformCapabilities.ArtifactDecideV2` — `platform.artifact.decide.v2`
+
+### Generic delivery evidence
+
+- `PlatformCapabilities.ToolchainCatalogRead` — `platform.toolchain.catalog.read.v1`
+- `PlatformCapabilities.BuildRequest` — `platform.build.request.v1`
+- `PlatformCapabilities.BuildRead` — `platform.build.read.v1`
+- `PlatformCapabilities.BuildReport` — `platform.build.report.v1`
+- `PlatformCapabilities.ValidationRead` — `platform.validation.read.v1`
+- `PlatformCapabilities.PreviewCreate` — `platform.preview.create.v1`
+- `PlatformCapabilities.PreviewRead` — `platform.preview.read.v1`
+- `PlatformCapabilities.EvaluationPlan` — `platform.evaluation-session.plan.v1`
+- `PlatformCapabilities.EvaluationRead` — `platform.evaluation-session.read.v1`
+- `PlatformCapabilities.EvaluationReport` — `platform.evaluation-session.report.v1`
+- `PlatformCapabilities.ReleaseReadinessRead` — `platform.release-readiness.read.v1`
+- `PlatformCapabilities.ReleaseReadinessSubmit` — `platform.release-readiness.submit.v1`
+- `PlatformCapabilities.PublicationPropose` — `platform.publication.propose.v1`
+
+These grants operate on generic Workstream-scoped resources. Profile and type keys carry domain
+meaning; capability names must not be specialized for individual industries.
 
 - `PlatformCapabilities.ArtifactCreate` — `platform.artifact.create.v1`
 - `PlatformCapabilities.ArtifactRead` — `platform.artifact.read.v1`

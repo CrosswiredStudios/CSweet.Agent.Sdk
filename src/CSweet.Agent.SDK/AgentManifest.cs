@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CSweet.WorkManagement.Contracts;
 
 namespace CSweet.Agent.Contracts.Packaging;
 
@@ -14,6 +15,7 @@ public sealed class AgentManifest
     public required AgentRuntimeManifest Runtime { get; init; }
     public AgentRolePolicyManifest? RolePolicy { get; init; }
     public AgentWorkItemTypesManifest WorkItemTypes { get; init; } = new();
+    public WorkstreamProfileManifest WorkstreamProfiles { get; init; } = new([], []);
     public required AgentProtocolManifest Protocol { get; init; }
 
     /// <summary>Compatibility projection of the names declared in <see cref="Provides"/>.</summary>

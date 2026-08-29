@@ -114,6 +114,37 @@
         }
       }
     },
+    "workstreamProfiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provides", "requires"],
+      "properties": {
+        "provides": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "version", "definitionResource"],
+            "properties": {
+              "key": { "$ref": "#/$defs/identifier" },
+              "version": { "type": "integer", "minimum": 1 },
+              "definitionResource": {
+                "type": "string",
+                "pattern": "^(?![\\\\/])(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+\\.json$"
+              }
+            }
+          }
+        },
+        "requires": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/identifier" }
+        }
+      }
+    },
     "protocol": {
       "type": "object",
       "additionalProperties": false,

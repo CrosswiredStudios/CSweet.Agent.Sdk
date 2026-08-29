@@ -10,6 +10,17 @@ public static class PlatformCapabilities
     public const string OrganizationSnapshotRead = CapabilityNames.Platform.OrganizationSnapshotRead;
     public const string BusinessPatternSearch = CapabilityNames.Platform.BusinessPatternSearch;
     public const string WorkstreamPlanPropose = CapabilityNames.Platform.WorkstreamPlanPropose;
+    public const string WorkstreamRead = CapabilityNames.Platform.WorkstreamRead;
+    public const string WorkstreamPlanProposeV2 = CapabilityNames.Platform.WorkstreamPlanProposeV2;
+    public const string WorkstreamChangePropose = CapabilityNames.Platform.WorkstreamChangePropose;
+    public const string WorkstreamGateRead = CapabilityNames.Platform.WorkstreamGateRead;
+    public const string WorkstreamGateSubmit = CapabilityNames.Platform.WorkstreamGateSubmit;
+    public const string WorkstreamGateDecide = CapabilityNames.Platform.WorkstreamGateDecide;
+    public const string PortfolioRead = CapabilityNames.Platform.PortfolioRead;
+    public const string TeamRosterReadV2 = CapabilityNames.Platform.TeamRosterReadV2;
+    public const string DecisionRequest = CapabilityNames.Platform.DecisionRequest;
+    public const string DecisionRead = CapabilityNames.Platform.DecisionRead;
+    public const string DecisionDecide = CapabilityNames.Platform.DecisionDecide;
     public const string WorkforceSearch = CapabilityNames.Platform.WorkforceSearch;
     public const string WorkforcePlanPropose = CapabilityNames.Platform.WorkforcePlanPropose;
     public const string FinanceProfileRead = CapabilityNames.Platform.FinanceProfileRead;
@@ -39,16 +50,32 @@ public static class PlatformCapabilities
     public const string ArtifactRevise = CapabilityNames.Platform.ArtifactRevise;
     public const string ArtifactSubmit = CapabilityNames.Platform.ArtifactSubmit;
     public const string ArtifactDecide = CapabilityNames.Platform.ArtifactDecide;
+    public const string ArtifactDecideV2 = CapabilityNames.Platform.ArtifactDecideV2;
     public const string ArtifactRequestAccess = CapabilityNames.Platform.ArtifactRequestAccess;
     public const string ArtifactPackageCreate = CapabilityNames.Platform.ArtifactPackageCreate;
     public const string ArtifactPackageRead = CapabilityNames.Platform.ArtifactPackageRead;
     public const string ArtifactPackageSubmit = CapabilityNames.Platform.ArtifactPackageSubmit;
     public const string ArtifactPackageDecide = CapabilityNames.Platform.ArtifactPackageDecide;
+    public const string ToolchainCatalogRead = CapabilityNames.Platform.ToolchainCatalogRead;
+    public const string BuildRequest = CapabilityNames.Platform.BuildRequest;
+    public const string BuildRead = CapabilityNames.Platform.BuildRead;
+    public const string BuildReport = CapabilityNames.Platform.BuildReport;
+    public const string ValidationRead = CapabilityNames.Platform.ValidationRead;
+    public const string PreviewCreate = CapabilityNames.Platform.PreviewCreate;
+    public const string PreviewRead = CapabilityNames.Platform.PreviewRead;
+    public const string EvaluationPlan = CapabilityNames.Platform.EvaluationPlan;
+    public const string EvaluationRead = CapabilityNames.Platform.EvaluationRead;
+    public const string EvaluationReport = CapabilityNames.Platform.EvaluationReport;
+    public const string ReleaseReadinessRead = CapabilityNames.Platform.ReleaseReadinessRead;
+    public const string ReleaseReadinessSubmit = CapabilityNames.Platform.ReleaseReadinessSubmit;
+    public const string PublicationPropose = CapabilityNames.Platform.PublicationPropose;
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
         BusinessProfileRead, BusinessProfileUpdateExplicit, BusinessProfileProposeUpdate,
-        OrganizationSnapshotRead, BusinessPatternSearch, WorkstreamPlanPropose,
+        OrganizationSnapshotRead, BusinessPatternSearch, WorkstreamPlanPropose, WorkstreamRead,
+        WorkstreamPlanProposeV2, WorkstreamChangePropose, WorkstreamGateRead, WorkstreamGateSubmit,
+        WorkstreamGateDecide, PortfolioRead, TeamRosterReadV2, DecisionRequest, DecisionRead, DecisionDecide,
         WorkforceSearch, AgentCatalogCapabilities.Search, WorkforcePlanPropose, FinanceProfileRead,
         FinanceProfileProposeUpdate, BudgetEvaluate, ApprovalPropose, ManagementCycleRead,
         UserInputRequest, HiringRecommendationList, HiringRecommendationUpsert,
@@ -57,8 +84,10 @@ public static class PlatformCapabilities
         TeamRosterRead, AgentOperatingStateRead, AgentOperatingStateWrite,
         StaffingReplenishmentPropose, StaffingReplenishmentRead, StaffingReplenishmentDecide,
         ManagedActionDecide, ArtifactCreate, ArtifactRead, ArtifactRevise, ArtifactSubmit,
-        ArtifactDecide, ArtifactRequestAccess, ArtifactPackageCreate, ArtifactPackageRead,
-        ArtifactPackageSubmit, ArtifactPackageDecide
+        ArtifactDecide, ArtifactDecideV2, ArtifactRequestAccess, ArtifactPackageCreate, ArtifactPackageRead,
+        ArtifactPackageSubmit, ArtifactPackageDecide, ToolchainCatalogRead, BuildRequest, BuildRead, BuildReport,
+        ValidationRead, PreviewCreate, PreviewRead, EvaluationPlan, EvaluationRead, EvaluationReport,
+        ReleaseReadinessRead, ReleaseReadinessSubmit, PublicationPropose
     };
 }
 
