@@ -275,11 +275,12 @@ public sealed record AskUserOption(string Id, string Label, string? Description 
 
 public sealed record AskUserRequest(
     Guid ConversationId,
-    Guid ChatTurnId,
+    Guid? ChatTurnId,
     string Prompt,
     IReadOnlyList<AskUserOption> Options,
     string RecommendedOptionId,
-    string IdempotencyKey);
+    string IdempotencyKey,
+    Guid? ConversationMessageId = null);
 
 public sealed record UserQuestionOptionResponse(
     string Id, string Label, string? Description, bool Recommended);
