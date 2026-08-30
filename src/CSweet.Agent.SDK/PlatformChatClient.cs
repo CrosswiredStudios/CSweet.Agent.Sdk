@@ -23,7 +23,12 @@ internal sealed record PlatformChatContent(
     string? FileName = null,
     string? ContentType = null,
     long? SizeBytes = null,
-    string? Sha256 = null);
+    string? Sha256 = null,
+    Guid? AssetId = null,
+    Guid? WorkstreamId = null,
+    string? TypeKey = null,
+    string? OpaqueReference = null,
+    DateTimeOffset? ExpiresAt = null);
 
 /// <summary>
 /// An opaque broker-resolved reference to a retained communication attachment.
@@ -56,6 +61,42 @@ public sealed class AgentMediaReferenceContent : AIContent
     public string ContentType { get; }
     public long SizeBytes { get; }
     public string Sha256 { get; }
+}
+
+/// <summary>
+/// An opaque, short-lived reference to project-scoped media or build evidence. The broker resolves
+/// it only after rechecking the caller's Workstream authorization and never exposes storage paths.
+/// </summary>
+public sealed class AgentMediaAssetReferenceContent : AIContent
+{
+    public AgentMediaAssetReferenceContent(
+        Guid assetId,
+        Guid workstreamId,
+        string typeKey,
+        string contentType,
+        long sizeBytes,
+        string sha256,
+        string opaqueReference,
+        DateTimeOffset expiresAt)
+    {
+        AssetId = assetId;
+        WorkstreamId = workstreamId;
+        TypeKey = typeKey;
+        ContentType = contentType;
+        SizeBytes = sizeBytes;
+        Sha256 = sha256;
+        OpaqueReference = opaqueReference;
+        ExpiresAt = expiresAt;
+    }
+
+    public Guid AssetId { get; }
+    public Guid WorkstreamId { get; }
+    public string TypeKey { get; }
+    public string ContentType { get; }
+    public long SizeBytes { get; }
+    public string Sha256 { get; }
+    public string OpaqueReference { get; }
+    public DateTimeOffset ExpiresAt { get; }
 }
 
 internal sealed record PlatformChatMessage(
@@ -257,6 +298,16 @@ public sealed class PlatformChatClient : IChatClient
             ContentType: media.ContentType,
             SizeBytes: media.SizeBytes,
             Sha256: media.Sha256),
+        AgentMediaAssetReferenceContent media => new PlatformChatContent(
+            "media_asset_reference",
+            ContentType: media.ContentType,
+            SizeBytes: media.SizeBytes,
+            Sha256: media.Sha256,
+            AssetId: media.AssetId,
+            WorkstreamId: media.WorkstreamId,
+            TypeKey: media.TypeKey,
+            OpaqueReference: media.OpaqueReference,
+            ExpiresAt: media.ExpiresAt),
         _ => throw new NotSupportedException(
             $"Platform chat messages do not support {content.GetType().Name} content.")
     };

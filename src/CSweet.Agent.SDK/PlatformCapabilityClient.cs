@@ -86,26 +86,50 @@ public sealed class PlatformCapabilityClient
     public Task<DecisionRecord> DecideDecisionAsync(DecideDecisionRequest request, CancellationToken token = default) =>
         InvokeAsync<DecideDecisionRequest, DecisionRecord>(PlatformCapabilities.DecisionDecide, request, token);
 
-    public Task<IReadOnlyList<ToolchainAdapterSummary>> ReadEligibleToolchainsAsync(ReadToolchainCatalogRequest request, CancellationToken token = default) =>
-        InvokeAsync<ReadToolchainCatalogRequest, IReadOnlyList<ToolchainAdapterSummary>>(PlatformCapabilities.ToolchainCatalogRead, request, token);
+    public Task<IReadOnlyList<EligibleToolchainAdapter>> ReadEligibleToolchainsAsync(ReadToolchainCatalogV2Request request, CancellationToken token = default) =>
+        InvokeAsync<ReadToolchainCatalogV2Request, IReadOnlyList<EligibleToolchainAdapter>>(PlatformCapabilities.ToolchainCatalogRead, request, token);
 
-    public Task<DeliveryBuild> RequestBuildAsync(RequestBuildRequest request, CancellationToken token = default) =>
-        InvokeAsync<RequestBuildRequest, DeliveryBuild>(PlatformCapabilities.BuildRequest, request, token);
+    public Task<DeliveryBuildV2> RequestBuildAsync(RequestBuildV2Request request, CancellationToken token = default) =>
+        InvokeAsync<RequestBuildV2Request, DeliveryBuildV2>(PlatformCapabilities.BuildRequest, request, token);
 
-    public Task<IReadOnlyList<DeliveryBuild>> ReadBuildsAsync(ReadBuildRequest request, CancellationToken token = default) =>
-        InvokeAsync<ReadBuildRequest, IReadOnlyList<DeliveryBuild>>(PlatformCapabilities.BuildRead, request, token);
+    public Task<IReadOnlyList<DeliveryBuildV2>> ReadBuildsAsync(ReadBuildV2Request request, CancellationToken token = default) =>
+        InvokeAsync<ReadBuildV2Request, IReadOnlyList<DeliveryBuildV2>>(PlatformCapabilities.BuildRead, request, token);
 
-    public Task<DeliveryBuild> ReportBuildAsync(ReportBuildRequest request, CancellationToken token = default) =>
-        InvokeAsync<ReportBuildRequest, DeliveryBuild>(PlatformCapabilities.BuildReport, request, token);
+    public Task<DeliveryBuildV2> ClaimBuildAsync(ClaimBuildRequest request, CancellationToken token = default) =>
+        InvokeAsync<ClaimBuildRequest, DeliveryBuildV2>(PlatformCapabilities.BuildClaim, request, token);
+
+    public Task<DeliveryBuildV2> HeartbeatBuildAsync(HeartbeatBuildRequest request, CancellationToken token = default) =>
+        InvokeAsync<HeartbeatBuildRequest, DeliveryBuildV2>(PlatformCapabilities.BuildHeartbeat, request, token);
+
+    public Task<DeliveryBuildV2> ReportBuildAsync(ReportBuildV2Request request, CancellationToken token = default) =>
+        InvokeAsync<ReportBuildV2Request, DeliveryBuildV2>(PlatformCapabilities.BuildReport, request, token);
+
+    public Task<DeliveryBuildV2> CancelBuildAsync(CancelBuildRequest request, CancellationToken token = default) =>
+        InvokeAsync<CancelBuildRequest, DeliveryBuildV2>(PlatformCapabilities.BuildCancel, request, token);
 
     public Task<IReadOnlyList<DeliveryValidation>> ReadValidationsAsync(ReadValidationRequest request, CancellationToken token = default) =>
         InvokeAsync<ReadValidationRequest, IReadOnlyList<DeliveryValidation>>(PlatformCapabilities.ValidationRead, request, token);
 
-    public Task<DeliveryPreview> CreatePreviewAsync(CreatePreviewRequest request, CancellationToken token = default) =>
-        InvokeAsync<CreatePreviewRequest, DeliveryPreview>(PlatformCapabilities.PreviewCreate, request, token);
+    public Task<DeliveryPreviewV2> CreatePreviewAsync(CreatePreviewV2Request request, CancellationToken token = default) =>
+        InvokeAsync<CreatePreviewV2Request, DeliveryPreviewV2>(PlatformCapabilities.PreviewCreate, request, token);
 
-    public Task<IReadOnlyList<DeliveryPreview>> ReadPreviewsAsync(ReadPreviewRequest request, CancellationToken token = default) =>
-        InvokeAsync<ReadPreviewRequest, IReadOnlyList<DeliveryPreview>>(PlatformCapabilities.PreviewRead, request, token);
+    public Task<IReadOnlyList<DeliveryPreviewV2>> ReadPreviewsAsync(ReadPreviewV2Request request, CancellationToken token = default) =>
+        InvokeAsync<ReadPreviewV2Request, IReadOnlyList<DeliveryPreviewV2>>(PlatformCapabilities.PreviewRead, request, token);
+
+    public Task<IReadOnlyList<MediaProviderSummary>> ReadMediaProvidersAsync(ReadMediaProviderCatalogRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReadMediaProviderCatalogRequest, IReadOnlyList<MediaProviderSummary>>(PlatformCapabilities.MediaProviderCatalogRead, request, token);
+
+    public Task<JsonElement> RequestMediaJobAsync(RequestMediaJobRequest request, CancellationToken token = default) =>
+        InvokeAsync<RequestMediaJobRequest, JsonElement>(PlatformCapabilities.MediaJobRequest, request, token);
+
+    public Task<JsonElement> ReadMediaJobsAsync(ReadMediaJobRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReadMediaJobRequest, JsonElement>(PlatformCapabilities.MediaJobRead, request, token);
+
+    public Task<JsonElement> CancelMediaJobAsync(CancelMediaJobRequest request, CancellationToken token = default) =>
+        InvokeAsync<CancelMediaJobRequest, JsonElement>(PlatformCapabilities.MediaJobCancel, request, token);
+
+    public Task<MediaAssetReference> ReferenceMediaAssetAsync(ReferenceMediaAssetRequest request, CancellationToken token = default) =>
+        InvokeAsync<ReferenceMediaAssetRequest, MediaAssetReference>(PlatformCapabilities.MediaAssetReference, request, token);
 
     public Task<EvaluationSession> PlanEvaluationSessionAsync(PlanEvaluationSessionRequest request, CancellationToken token = default) =>
         InvokeAsync<PlanEvaluationSessionRequest, EvaluationSession>(PlatformCapabilities.EvaluationPlan, request, token);

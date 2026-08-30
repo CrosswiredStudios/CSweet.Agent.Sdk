@@ -89,6 +89,7 @@ public static class AgentManifestLoader
         ValidateRolePolicy(manifest, errors);
         ValidateWorkItemTypes(manifest.WorkItemTypes, errors);
         ValidateWorkstreamProfiles(manifest.WorkstreamProfiles, errors);
+        ValidateToolchainAdapters(manifest.ToolchainAdapters, errors);
         if (manifest.Protocol is null ||
             manifest.Protocol.MinimumVersion != "2.0" ||
             !manifest.Protocol.MaximumVersion.StartsWith("2.", StringComparison.Ordinal))
@@ -141,6 +142,7 @@ public static class AgentManifestLoader
         RolePolicy = manifest.RolePolicy,
         WorkItemTypes = manifest.WorkItemTypes ?? new AgentWorkItemTypesManifest(),
         WorkstreamProfiles = manifest.WorkstreamProfiles ?? new([], []),
+        ToolchainAdapters = manifest.ToolchainAdapters ?? new([], []),
         Protocol = manifest.Protocol,
         Provides = manifest.Provides ?? [],
         Requires = manifest.Requires ?? [],
@@ -205,6 +207,31 @@ public static class AgentManifestLoader
         if (requires.Any(value => string.IsNullOrWhiteSpace(value) || value.Length > 200 ||
                                   !IdentifierPattern.IsMatch(value)))
             errors.Add("workstreamProfiles.requires entries must be stable profile keys.");
+    }
+
+    private static void ValidateToolchainAdapters(
+        CSweet.WorkManagement.Contracts.ToolchainAdapterManifest? declaration,
+        ICollection<string> errors)
+    {
+        var provides = declaration?.Provides ?? [];
+        var requires = declaration?.Requires ?? [];
+        if (provides.Count > 16 || requires.Count > 32 ||
+            provides.Select(x => $"{x.Key}@{x.Version}").Distinct(StringComparer.Ordinal).Count() != provides.Count ||
+            requires.Distinct(StringComparer.Ordinal).Count() != requires.Count)
+        {
+            errors.Add("toolchainAdapters must contain up to 16 unique providers and 32 unique requirements.");
+            return;
+        }
+        foreach (var contribution in provides)
+        {
+            var path = contribution.DefinitionResource ?? string.Empty;
+            var segments = path.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries);
+            if (string.IsNullOrWhiteSpace(contribution.Key) || contribution.Key.Length > 200 ||
+                contribution.Version < 1 || string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) ||
+                path.StartsWith('/') || path.StartsWith('\\') || segments.Contains("..", StringComparer.Ordinal) ||
+                !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                errors.Add("toolchainAdapters.provides entries require a stable key, positive version, and relative JSON definitionResource.");
+        }
     }
 
     private static void ValidateRolePolicy(AgentManifest manifest, ICollection<string> errors)

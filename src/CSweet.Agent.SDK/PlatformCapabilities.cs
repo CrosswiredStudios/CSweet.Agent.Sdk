@@ -59,10 +59,18 @@ public static class PlatformCapabilities
     public const string ToolchainCatalogRead = CapabilityNames.Platform.ToolchainCatalogRead;
     public const string BuildRequest = CapabilityNames.Platform.BuildRequest;
     public const string BuildRead = CapabilityNames.Platform.BuildRead;
+    public const string BuildClaim = CapabilityNames.Platform.BuildClaim;
+    public const string BuildHeartbeat = CapabilityNames.Platform.BuildHeartbeat;
     public const string BuildReport = CapabilityNames.Platform.BuildReport;
+    public const string BuildCancel = CapabilityNames.Platform.BuildCancel;
     public const string ValidationRead = CapabilityNames.Platform.ValidationRead;
     public const string PreviewCreate = CapabilityNames.Platform.PreviewCreate;
     public const string PreviewRead = CapabilityNames.Platform.PreviewRead;
+    public const string MediaProviderCatalogRead = CapabilityNames.Platform.MediaProviderCatalogRead;
+    public const string MediaJobRequest = CapabilityNames.Platform.MediaJobRequest;
+    public const string MediaJobRead = CapabilityNames.Platform.MediaJobRead;
+    public const string MediaJobCancel = CapabilityNames.Platform.MediaJobCancel;
+    public const string MediaAssetReference = CapabilityNames.Platform.MediaAssetReference;
     public const string EvaluationPlan = CapabilityNames.Platform.EvaluationPlan;
     public const string EvaluationRead = CapabilityNames.Platform.EvaluationRead;
     public const string EvaluationReport = CapabilityNames.Platform.EvaluationReport;
@@ -85,8 +93,10 @@ public static class PlatformCapabilities
         StaffingReplenishmentPropose, StaffingReplenishmentRead, StaffingReplenishmentDecide,
         ManagedActionDecide, ArtifactCreate, ArtifactRead, ArtifactRevise, ArtifactSubmit,
         ArtifactDecide, ArtifactDecideV2, ArtifactRequestAccess, ArtifactPackageCreate, ArtifactPackageRead,
-        ArtifactPackageSubmit, ArtifactPackageDecide, ToolchainCatalogRead, BuildRequest, BuildRead, BuildReport,
-        ValidationRead, PreviewCreate, PreviewRead, EvaluationPlan, EvaluationRead, EvaluationReport,
+        ArtifactPackageSubmit, ArtifactPackageDecide, ToolchainCatalogRead, BuildRequest, BuildRead, BuildClaim,
+        BuildHeartbeat, BuildReport, BuildCancel, ValidationRead, PreviewCreate, PreviewRead,
+        MediaProviderCatalogRead, MediaJobRequest, MediaJobRead, MediaJobCancel, MediaAssetReference,
+        EvaluationPlan, EvaluationRead, EvaluationReport,
         ReleaseReadinessRead, ReleaseReadinessSubmit, PublicationPropose
     };
 }

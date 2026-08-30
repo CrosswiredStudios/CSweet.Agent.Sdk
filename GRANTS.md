@@ -94,13 +94,16 @@ memory, or unrelated employees. Team membership does not grant any other authori
 
 ### Generic delivery evidence
 
-- `PlatformCapabilities.ToolchainCatalogRead` — `platform.toolchain.catalog.read.v1`
-- `PlatformCapabilities.BuildRequest` — `platform.build.request.v1`
-- `PlatformCapabilities.BuildRead` — `platform.build.read.v1`
-- `PlatformCapabilities.BuildReport` — `platform.build.report.v1`
-- `PlatformCapabilities.ValidationRead` — `platform.validation.read.v1`
-- `PlatformCapabilities.PreviewCreate` — `platform.preview.create.v1`
-- `PlatformCapabilities.PreviewRead` — `platform.preview.read.v1`
+- `PlatformCapabilities.ToolchainCatalogRead` — `platform.toolchain.catalog.read.v2`
+- `PlatformCapabilities.BuildRequest` — `platform.build.request.v2`
+- `PlatformCapabilities.BuildRead` — `platform.build.read.v2`
+- `PlatformCapabilities.BuildClaim` — `platform.build.claim.v1`
+- `PlatformCapabilities.BuildHeartbeat` — `platform.build.heartbeat.v1`
+- `PlatformCapabilities.BuildReport` — `platform.build.report.v2`
+- `PlatformCapabilities.BuildCancel` — `platform.build.cancel.v1`
+- `PlatformCapabilities.ValidationRead` — `platform.validation.read.v2`
+- `PlatformCapabilities.PreviewCreate` — `platform.preview.create.v2`
+- `PlatformCapabilities.PreviewRead` — `platform.preview.read.v2`
 - `PlatformCapabilities.EvaluationPlan` — `platform.evaluation-session.plan.v1`
 - `PlatformCapabilities.EvaluationRead` — `platform.evaluation-session.read.v1`
 - `PlatformCapabilities.EvaluationReport` — `platform.evaluation-session.report.v1`

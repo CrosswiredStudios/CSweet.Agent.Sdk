@@ -90,6 +90,21 @@ public sealed class PlatformWorkClient
         InvokeAsync<MoveWorkItemRequest, WorkItem>(
             WorkItemCapabilities.Move, request, cancellationToken);
 
+    public Task<WorkItem> StartItemAsync(
+        TransitionWorkItemRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<TransitionWorkItemRequest, WorkItem>(
+            WorkItemCapabilities.Start, request, cancellationToken);
+
+    public Task<WorkItem> CompleteItemAsync(
+        TransitionWorkItemRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<TransitionWorkItemRequest, WorkItem>(
+            WorkItemCapabilities.Complete, request, cancellationToken);
+
+    public Task<WorkItem> ReopenItemAsync(
+        TransitionWorkItemRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<TransitionWorkItemRequest, WorkItem>(
+            WorkItemCapabilities.Reopen, request, cancellationToken);
+
     public Task<WorkOrchestrationPolicyRevision> ConfigureSoftwareTemplateAsync(
         ConfigureSoftwareOrchestrationTemplateRequest request,
         CancellationToken cancellationToken = default) =>

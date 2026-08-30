@@ -16,6 +16,7 @@ public sealed class AgentManifest
     public AgentRolePolicyManifest? RolePolicy { get; init; }
     public AgentWorkItemTypesManifest WorkItemTypes { get; init; } = new();
     public WorkstreamProfileManifest WorkstreamProfiles { get; init; } = new([], []);
+    public ToolchainAdapterManifest ToolchainAdapters { get; init; } = new([], []);
     public required AgentProtocolManifest Protocol { get; init; }
 
     /// <summary>Compatibility projection of the names declared in <see cref="Provides"/>.</summary>

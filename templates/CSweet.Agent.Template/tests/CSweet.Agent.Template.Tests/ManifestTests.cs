@@ -24,7 +24,9 @@ public sealed class ManifestTests
     private static string RepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "csweet-plugin.json")))
+        while (directory is not null &&
+               (!File.Exists(Path.Combine(directory.FullName, "csweet-plugin.json")) ||
+                !Directory.Exists(Path.Combine(directory.FullName, "src"))))
             directory = directory.Parent;
         return directory?.FullName ?? throw new InvalidOperationException("Repository root was not found.");
     }
