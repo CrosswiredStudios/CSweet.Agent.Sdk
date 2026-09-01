@@ -1,9 +1,43 @@
 using System.Text.Json;
+using Microsoft.Extensions.AI;
 
 namespace CSweet.Agent.SDK.Tests;
 
 public sealed class PlatformCapabilityClientTests
 {
+    [Fact]
+    public async Task Chat_client_forwards_generation_bounds_to_the_platform()
+    {
+        JsonElement captured = default;
+        var providerProfileId = Guid.NewGuid();
+        var runtime = new AgentTestRuntime().RegisterCapability<JsonElement, JsonElement>(
+            PlatformCapabilities.LlmChatStream,
+            (request, _) =>
+            {
+                captured = request.Clone();
+                return Task.FromResult(JsonSerializer.SerializeToElement(new
+                {
+                    text = "bounded response",
+                    role = "assistant"
+                }));
+            });
+        var client = runtime.CreateContext().CreateChatClient(
+            new AgentLlmSelection(providerProfileId, "test-model"));
+
+        var response = await client.GetResponseAsync(
+            [new ChatMessage(ChatRole.User, "Create a concise pitch.")],
+            new ChatOptions
+            {
+                Temperature = 0.2f,
+                MaxOutputTokens = 640
+            });
+
+        Assert.Equal("bounded response", response.Text);
+        Assert.Equal(providerProfileId, captured.GetProperty("providerProfileId").GetGuid());
+        Assert.Equal(0.2f, captured.GetProperty("temperature").GetSingle());
+        Assert.Equal(640, captured.GetProperty("maxOutputTokens").GetInt32());
+    }
+
     [Fact]
     public async Task Artifact_client_preserves_exact_revision_concurrency_and_idempotency()
     {

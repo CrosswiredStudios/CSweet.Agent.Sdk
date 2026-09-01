@@ -117,7 +117,9 @@ internal sealed record PlatformChatRequest(
     IReadOnlyList<PlatformChatTool>? Tools = null,
     PlatformChatTelemetry? Telemetry = null,
     ReasoningOutput? ReasoningOutput = null,
-    ReasoningEffort? ReasoningEffort = null);
+    ReasoningEffort? ReasoningEffort = null,
+    float? Temperature = null,
+    int? MaxOutputTokens = null);
 
 internal sealed record PlatformChatTelemetry(
     Guid? ConversationId,
@@ -193,7 +195,9 @@ public sealed class PlatformChatClient : IChatClient
                 invocationSequence,
                 CountMemoryCharacters(messageList)),
             options?.Reasoning?.Output,
-            options?.Reasoning?.Effort);
+            options?.Reasoning?.Effort,
+            options?.Temperature,
+            options?.MaxOutputTokens);
         await foreach (var result in _tools.InvokeStreamingAsync(
             PlatformChatCapabilities.ChatStream,
             JsonSerializer.SerializeToElement(payload, JsonOptions),
