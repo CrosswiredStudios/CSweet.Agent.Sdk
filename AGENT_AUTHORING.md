@@ -94,6 +94,14 @@ be used with granted communication actions such as
 Create deferred sequences with `AddPersonalTodoItemRequest.StartInBacklog`; activate only the next
 authorized item through `PlatformPersonalTodoClient.ActivateAsync`.
 
+Before implementing continuous personal work or mixed human/agent chat, follow
+[`docs/durable-agendas-and-interactions.md`](docs/durable-agendas-and-interactions.md). In particular,
+`PersonalTodoResult.InProgress(...)` does not schedule another callback: persist the exact external
+event correlation that will requeue the card, or use `WaitingUntil(...)`. Route incoming chat before
+phase-specific behavior so informational questions and acknowledgements do not create phantom work.
+Human `ask_user` widgets are answered through the UI and return as a new chat turn; agent choices use
+typed coordination artifacts or the durable decision system rather than UI automation.
+
 ## Manifest decisions
 
 - `provides` describes work this agent performs. Custom names are allowed and become provider

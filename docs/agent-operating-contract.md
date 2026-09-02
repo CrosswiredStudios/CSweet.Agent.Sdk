@@ -21,6 +21,13 @@ Use `requires[].modelVisible: false` when agent code needs a granted capability 
 
 Continuous agents should send startup, recovery, periodic, and `StateChanged` attention through one reconciler. Read authoritative systems on every cycle, then store the resulting previous assessment with `ReadOperatingStateAsync` and `WriteOperatingStateAsync`. Writes use an expected revision and idempotency key; on conflict, reread and reassess.
 
+For executable personal agendas, chat intake, waiting semantics, event correlation, human widgets,
+and agent-to-agent structured choices, follow
+[Durable agendas, chat intake, and structured interactions](durable-agendas-and-interactions.md).
+An agent may stop running while its obligations remain durable. `PersonalTodoResult.InProgress` is
+valid only when a known external event will requeue the exact card; otherwise use a scheduled wait
+or an immediately Ready successor.
+
 Memory is supporting narrative context only. Assignments, approvals, staffing viability, workflow state, grants, and replay safety remain platform-owned.
 
 ## Interaction-policy prompts

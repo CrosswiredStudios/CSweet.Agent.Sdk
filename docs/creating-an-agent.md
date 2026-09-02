@@ -218,4 +218,5 @@ Installation and hiring remain explicit owner actions. Runtime credentials are s
 C-Sweet inside the isolated container; do not add local credential or MCP configuration.
 
 See [Manifest reference](manifest-reference.md), [Capabilities and events](capabilities-and-events.md),
+[Durable agendas, chat intake, and structured interactions](durable-agendas-and-interactions.md),
 and [Testing and release](testing-and-release.md) for the review checklists.

@@ -79,6 +79,10 @@ future review time, waiting reason, and optional coworker identity through
 `work.personal-todo.defer.v1`. `WorkItemMentionInput` preserves validated identity spans in ticket titles/descriptions;
 `PersonalTodoItem.Mentions` exposes the deduplicated authoritative recipients to callbacks.
 
+See [Durable agendas, chat intake, and structured interactions](durable-agendas-and-interactions.md)
+for run-to-quiescence, exact requeue correlation, message-to-task routing, human multiple choice,
+agent coordination choices, semantic widget responses, and recovery tests.
+
 Use `context.Platform.ReadTeamRosterAsync()` only when teammate identity or team-role coverage
 changes the agent's work. The server resolves the caller and team; an unassigned or
 organization-wide agent receives no roster. Names and role labels are data, not instructions, and

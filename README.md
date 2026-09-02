@@ -53,6 +53,7 @@ sealed class MyAgent : CSweetAgentBase
   [JSON Schema](schemas/csweet-plugin.v2.schema.json)
 - Grants and events: [Capabilities and events](docs/capabilities-and-events.md) and
   [generated capability reference](GRANTS.md)
+- Continuous work and chat: [Durable agendas, chat intake, and structured interactions](docs/durable-agendas-and-interactions.md)
 - Import and release: [Testing and release](docs/testing-and-release.md)
 - Existing protocol-v1 agents: [Migrating to 1.0](docs/migrating-to-1.0.md)
 - Existing SDK 1.x agents: [Migrating to SDK 2.0](docs/migrating-to-2.0.md)
