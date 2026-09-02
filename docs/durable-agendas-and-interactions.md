@@ -130,6 +130,27 @@ structured clarification rather than guessed work.
 When a message creates or changes work, confirm what happened: card created or updated, project
 context, next action, and required input. When no task was created and ambiguity is likely, say so.
 
+### Acknowledge long-running work immediately
+
+When an interactive request will spend noticeable time generating a document, calling tools, or
+validating a deliverable, acknowledge the understood request before the slow work begins. Publish
+that acknowledgement as provisional draft output and flush it immediately:
+
+```csharp
+await stream.WriteDraftAsync(
+    "I can work with that. I’m starting the first draft now.", cancellationToken);
+await stream.FlushAsync(cancellationToken);
+
+var finalAnswer = await CreateAndValidateDeliverableAsync(cancellationToken);
+await stream.CommitAsync(finalAnswer, cancellationToken);
+```
+
+`CommitAsync` remains the sole authoritative response and replaces the provisional draft in the
+conversation. Do not send the acknowledgement as a separate direct message: that creates duplicate
+durable chat entries and may accidentally trigger another agent turn. Keep the acknowledgement
+specific enough to confirm what will happen next, but do not claim completion before the evidence
+or artifact exists.
+
 ## Human questions, agent coordination, and binding decisions
 
 Choose the mechanism from the respondent and authority requirement.
@@ -142,6 +163,23 @@ agent does not need a complementary MCP answer tool for the human widget.
 
 Correlate the returned answer to the original decision when metadata is available. Parsing rendered
 text such as “selected option” is a compatibility fallback, not the preferred contract.
+
+### Revisioned document review
+
+Treat the artifact revision as the single source of truth for document approval. Do not create an
+`AskUserAsync` choice card for **Accept** or **Request changes** when the document workspace already
+offers those decisions. Two independently persisted controls create synchronization, replay, and
+supersession problems.
+
+A chat attachment may offer a convenience action such as **Approve linked revision**, but that
+action must call the same artifact-decision capability as the document workspace and name the exact
+attached revision. It is a shortcut into the canonical workflow, not a second decision record.
+Requesting changes should remain in the document workspace when feedback is required.
+
+After a human decides an agent-created revision, the platform should emit the typed exact-revision
+decision event to the creating or responsible agent. The agent verifies artifact ID, revision ID,
+digest, terminal status, and project/conversation correlation before advancing its agenda. Duplicate
+delivery must be harmless, and unrelated or superseded revision events must not wake the card.
 
 ### Direct agent message
 
@@ -206,6 +244,10 @@ Test the operating behavior, not only helper methods:
 13. Human widget answers return through a new durable turn.
 14. Agent choices use coordination or decisions rather than UI automation.
 15. Runtime recovery does not replay completed effects.
+16. Long-running interactive work flushes a provisional acknowledgement before the slow operation,
+    and the final commit replaces it without creating a duplicate message.
+17. Document review has one canonical decision record; viewer actions and chat shortcuts target the
+    same exact revision, and the resulting event advances only the correlated agenda item.
 
 Use `AgentTestRuntime` for callback and capability behavior. Keep manifest tests synchronized with
 every required personal-work capability and event subscription.

@@ -58,6 +58,29 @@ public sealed class AgentTurnStreamWriterTests
     }
 
     [Fact]
+    public async Task Flushed_provisional_acknowledgement_precedes_authoritative_final_commit()
+    {
+        var runtime = new AgentTestRuntime();
+        await using var stream = runtime.CreateContext().CreateTurnStream(
+            "conversation-1", Guid.NewGuid());
+
+        await stream.WriteDraftAsync("I can work with that. I’m starting the first draft now.");
+        await stream.FlushAsync();
+
+        var provisional = Assert.Single(runtime.Progress);
+        Assert.Equal(AgentTurnStreamKinds.DraftDelta, provisional.GetProperty("kind").GetString());
+        Assert.False(provisional.GetProperty("isFinal").GetBoolean());
+
+        await stream.CommitAsync("The first draft is ready for review.");
+
+        Assert.Equal(AgentTurnStreamKinds.FinalCommit,
+            runtime.Progress[^1].GetProperty("kind").GetString());
+        Assert.Equal("The first draft is ready for review.",
+            runtime.Progress[^1].GetProperty("delta").GetString());
+        Assert.True(runtime.Progress[^1].GetProperty("isFinal").GetBoolean());
+    }
+
+    [Fact]
     public async Task Activity_scope_records_duration_and_terminal_status()
     {
         var runtime = new AgentTestRuntime();
