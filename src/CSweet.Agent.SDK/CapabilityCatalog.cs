@@ -70,6 +70,14 @@ public static class CapabilityNames
         public const string FinanceProfileProposeUpdate = "platform.finance-profile.propose-update.v1";
         public const string BudgetEvaluate = "platform.budget.evaluate.v1";
         public const string ApprovalPropose = "platform.approval.propose.v1";
+        public const string InfrastructureEnvironmentRead = InfrastructureCapabilityNames.EnvironmentRead;
+        public const string InfrastructureStateWrite = InfrastructureCapabilityNames.StateWrite;
+        public const string InfrastructureChangePropose = InfrastructureCapabilityNames.ChangePropose;
+        public const string InfrastructureChangeRead = InfrastructureCapabilityNames.ChangeRead;
+        public const string InfrastructureOperationExecute = InfrastructureCapabilityNames.OperationExecute;
+        public const string InfrastructureReconcile = InfrastructureCapabilityNames.Reconcile;
+        public const string InfrastructureDeploymentContractPublish = InfrastructureCapabilityNames.DeploymentContractPublish;
+        public const string InfrastructureFileTransfer = InfrastructureCapabilityNames.FileTransfer;
         public const string ManagementCycleRead = "platform.management-cycle.read.v1";
         public const string UserInputRequest = "platform.user-input.request.v1";
         public const string HiringRecommendationList = "platform.hiring-recommendation.list.v1";
@@ -197,6 +205,9 @@ public static class CapabilityNames
         public const string OrchestrationRetry = WorkManagementCapabilityNames.OrchestrationRetry;
         public const string OrchestrationConfigureSoftwareTemplate =
             WorkManagementCapabilityNames.OrchestrationConfigureSoftwareTemplate;
+        public const string OrchestrationConfigureProfileV1 =
+            WorkManagementCapabilityNames.OrchestrationConfigureProfileV1;
+        public const string FlowMetricsReadV1 = WorkManagementCapabilityNames.FlowMetricsReadV1;
         public const string PersonalTodoRead = WorkManagementCapabilityNames.PersonalTodoRead;
         public const string PersonalTodoAdd = WorkManagementCapabilityNames.PersonalTodoAdd;
         public const string PersonalTodoReorder = WorkManagementCapabilityNames.PersonalTodoReorder;
@@ -290,6 +301,14 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.FinanceProfileProposeUpdate,
                 CapabilityNames.Platform.BudgetEvaluate,
                 CapabilityNames.Platform.ApprovalPropose,
+                CapabilityNames.Platform.InfrastructureEnvironmentRead,
+                CapabilityNames.Platform.InfrastructureStateWrite,
+                CapabilityNames.Platform.InfrastructureChangePropose,
+                CapabilityNames.Platform.InfrastructureChangeRead,
+                CapabilityNames.Platform.InfrastructureOperationExecute,
+                CapabilityNames.Platform.InfrastructureReconcile,
+                CapabilityNames.Platform.InfrastructureDeploymentContractPublish,
+                CapabilityNames.Platform.InfrastructureFileTransfer,
                 CapabilityNames.Platform.ManagementCycleRead,
                 CapabilityNames.Platform.UserInputRequest,
                 CapabilityNames.Platform.HiringRecommendationList,
@@ -399,6 +418,8 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.OrchestrationCancel,
                 CapabilityNames.WorkManagement.OrchestrationRetry,
                 CapabilityNames.WorkManagement.OrchestrationConfigureSoftwareTemplate,
+                CapabilityNames.WorkManagement.OrchestrationConfigureProfileV1,
+                CapabilityNames.WorkManagement.FlowMetricsReadV1,
                 CapabilityNames.WorkManagement.ExecutionRunV1,
                 CapabilityNames.WorkManagement.PersonalTodoRead,
                 CapabilityNames.WorkManagement.PersonalTodoAdd,
@@ -569,7 +590,13 @@ public static class WorkOrchestrationCapabilities
     public const string Retry = CapabilityNames.WorkManagement.OrchestrationRetry;
     public const string ConfigureSoftwareTemplate =
         CapabilityNames.WorkManagement.OrchestrationConfigureSoftwareTemplate;
+    public const string ConfigureProfile = CapabilityNames.WorkManagement.OrchestrationConfigureProfileV1;
     public const string Execute = CapabilityNames.WorkManagement.ExecutionRunV1;
+}
+
+public static class WorkFlowMetricCapabilities
+{
+    public const string Read = CapabilityNames.WorkManagement.FlowMetricsReadV1;
 }
 
 public static class GitMergeCapabilities

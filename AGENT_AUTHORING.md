@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 3.24.1
+     --SdkVersion 3.27.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed
@@ -73,6 +73,33 @@ configuration, no credentials, and `webAccess.mode` `None`.
    access. Never create a provider client with a credential.
 7. Preserve the security boundaries in the generated `AGENTS.md`.
 8. Run `dotnet test` from the generated repository root.
+
+## Choose C-Sweet primitives before writing orchestration
+
+Design each callback as one transition in a durable state machine. Select the platform primitive
+that owns each kind of state or effect instead of recreating it inside the agent:
+
+- typed capability callbacks for bounded work another C-Sweet component requests;
+- personal-todo cards for agent-owned obligations that must survive turns or restarts;
+- work boards and items for shared, assignable business work;
+- artifacts and revision decisions for reviewable deliverables and approvals;
+- `platform.user-input.request.v1` for bounded human questions;
+- typed coordination artifacts for multi-turn agent collaboration;
+- operating state for durable agent assessments and memory only for supporting narrative context;
+- `AgentTurnStreamWriter` for one interactive response and progress reporting for non-chat work.
+
+Assume at-least-once delivery and termination between any two awaits. Persist accepted input before
+expensive work, give every external mutation a stable domain idempotency key, and checkpoint stage
+outputs that would be expensive or unsafe to recreate in an appropriate platform-owned durable
+record. A retry after artifact, message, or work-item persistence fails must resume that failed stage
+rather than repeat a completed model call whenever the generated output is still available or was
+durably checkpointed. Never use process memory or local disk as a cross-callback checkpoint.
+
+For model-backed work, set `ChatOptions` deliberately. Choose reasoning output, reasoning effort,
+temperature, and `MaxOutputTokens` for the task; do not rely on provider defaults. Some providers
+consume the output budget with reasoning before final text. Validate non-empty final content and any
+required structure before mutating platform state. Bound validation retries and keep them before the
+first external effect.
 
 For agent-to-agent conversations, compose the stable role prompt with a bounded
 `AgentInteractionPolicy`. Select `lead.v1`, `supporting-specialist.v1`, `peer.v1`,
@@ -99,6 +126,10 @@ Before implementing continuous personal work or mixed human/agent chat, follow
 `PersonalTodoResult.InProgress(...)` does not schedule another callback: persist the exact external
 event correlation that will requeue the card, or use `WaitingUntil(...)`. Route incoming chat before
 phase-specific behavior so informational questions and acknowledgements do not create phantom work.
+Treat onboarding answers, collaboration preferences, approvals, and facts that complete an existing
+brief as state transitions, not automatically as instructions to generate the next deliverable.
+Persist the accepted state, acknowledge exactly what changed, and start work only when the routed
+disposition or an existing durable obligation calls for it.
 Human `ask_user` widgets are answered through the UI and return as a new chat turn; agent choices use
 typed coordination artifacts or the durable decision system rather than UI automation.
 
@@ -125,6 +156,9 @@ typed coordination artifacts or the durable decision system rather than UI autom
 - Every provided capability has description, input/output schemas, timeout, and idempotency.
 - Every requested grant/event/network rule is necessary and tested.
 - Callback cancellation is honored; malformed and unsupported work fails safely.
+- Model calls have intentional options, bounded retries, and empty/truncated-output handling.
+- Completed model work is not repeated when a later idempotent platform mutation is retried.
+- State-only chat turns do not accidentally create work or generate deliverables.
 - No raw transport, token, credential, database, Docker, or unrestricted networking code exists.
 - `dotnet test` succeeds without C-Sweet credentials or a running C-Sweet instance.
 

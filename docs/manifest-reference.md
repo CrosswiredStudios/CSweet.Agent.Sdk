@@ -96,6 +96,9 @@ machine-readable definition is [`schemas/csweet-plugin.v2.schema.json`](../schem
 | `configuration` | Control-plane validated settings schema; no running agent is required |
 | `credentials` | Named brokered credential bindings, never secret values |
 | `connections` | OAuth provider declarations with approved HTTPS origins and named progressive scope sets |
+| `mcpServers` | Optional exact remote MCP endpoints and per-tool capability allowlists |
+| `providerOperations` | Optional typed provider commands with fixed endpoints, credential binding, effect, and schemas |
+| `fileTransferTargets` | Optional brokered file-transfer targets constrained by protocol, host suffix, port, root, and operation |
 | `setup` | Optional required, resumable setup flow made only from platform-owned safe step kinds |
 | `webAccess` | `None`, `Allowlist`, or `AllPublic` brokered network policy |
 | `ui` | Optional forms or views backed by capabilities in `provides` |
@@ -136,6 +139,17 @@ DNS host, path prefix, methods, purpose, and optional credential binding. The cr
 
 Generic `events.publishes` is invalid in protocol v2. Use work progress or an explicit platform
 capability for business effects.
+
+Remote provider declarations are authority ceilings, not grants. `mcpServers` binds a declared
+OAuth connection to one HTTPS endpoint and names every callable remote tool. `providerOperations`
+binds one stable capability to a fixed command and endpoint; it does not expose generic HTTP.
+Effects are `read`, `write`, `fiscal-write`, or `security-sensitive-write`. Runtime platforms must
+require an exact, unexpired, payload-hash-bound approval for every non-read effect.
+
+`fileTransferTargets` supports restricted brokered transfer only. SFTP declarations require port
+1–65535, a non-root relative path, at least one approved hostname suffix, and operations from
+`probe`, `list`, `stat`, and `upload`. The declaration cannot authorize SSH, arbitrary commands,
+path traversal, reusable credentials, or broader filesystem access.
 
 ## Connections and safe setup
 

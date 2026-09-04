@@ -111,6 +111,22 @@ public sealed class PlatformWorkClient
         InvokeAsync<ConfigureSoftwareOrchestrationTemplateRequest, WorkOrchestrationPolicyRevision>(
             WorkOrchestrationCapabilities.ConfigureSoftwareTemplate, request, cancellationToken);
 
+    public Task<ConfigureProfileOrchestrationResponse> ConfigureProfileOrchestrationAsync(
+        ConfigureProfileOrchestrationRequest request,
+        CancellationToken cancellationToken = default) =>
+        InvokeAsync<ConfigureProfileOrchestrationRequest, ConfigureProfileOrchestrationResponse>(
+            WorkOrchestrationCapabilities.ConfigureProfile, request, cancellationToken);
+
+    public Task<WorkSprintPreflightResult> PreflightSprintAsync(
+        StartWorkSprintExecutionRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<StartWorkSprintExecutionRequest, WorkSprintPreflightResult>(
+            WorkOrchestrationCapabilities.Preflight, request, cancellationToken);
+
+    public Task<WorkSprintExecutionResponse> StartSprintExecutionAsync(
+        StartWorkSprintExecutionRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<StartWorkSprintExecutionRequest, WorkSprintExecutionResponse>(
+            WorkOrchestrationCapabilities.Start, request, cancellationToken);
+
     public Task<IReadOnlyList<TeamRepositoryOption>> ListTeamRepositoryOptionsAsync(
         TeamRepositoryOptionsRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<TeamRepositoryOptionsRequest, IReadOnlyList<TeamRepositoryOption>>(
@@ -150,6 +166,11 @@ public sealed class PlatformWorkClient
         Guid boardId, CancellationToken cancellationToken = default) =>
         InvokeAsync<WorkBoardReference, WorkSprintReport>(
             WorkSprintCapabilities.ReadReports, new(boardId), cancellationToken);
+
+    public Task<WorkFlowMetricsReport> ReadFlowMetricsAsync(
+        ReadWorkFlowMetricsRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<ReadWorkFlowMetricsRequest, WorkFlowMetricsReport>(
+            WorkFlowMetricCapabilities.Read, request, cancellationToken);
 
     public Task<WorkSprintExecutionResponse?> ReadOrchestrationAsync(
         ReadWorkOrchestrationRequest request, CancellationToken cancellationToken = default) =>

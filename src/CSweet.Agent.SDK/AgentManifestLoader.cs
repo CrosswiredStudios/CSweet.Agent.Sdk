@@ -124,6 +124,7 @@ public static class AgentManifestLoader
 
         ValidateConfiguration(manifest, errors);
         ValidateConnectionsAndSetup(manifest, errors);
+        ValidateExternalProviders(manifest, errors);
         ValidateWebAccess(manifest, errors);
 
         if (errors.Count > 0)
@@ -150,6 +151,9 @@ public static class AgentManifestLoader
         Configuration = manifest.Configuration ?? [],
         Credentials = manifest.Credentials ?? [],
         Connections = manifest.Connections ?? [],
+        McpServers = manifest.McpServers ?? [],
+        ProviderOperations = manifest.ProviderOperations ?? [],
+        FileTransferTargets = manifest.FileTransferTargets ?? [],
         Setup = manifest.Setup,
         WebAccess = manifest.WebAccess ?? new AgentWebAccessManifest(),
         Ui = manifest.Ui ?? [],
@@ -159,6 +163,109 @@ public static class AgentManifestLoader
         RequestedSubscriptions = manifest.Events?.Subscribes ?? [],
         RequestedNetworkAccess = manifest.RequestedNetworkAccess
     };
+
+    private static void ValidateExternalProviders(AgentManifest manifest, ICollection<string> errors)
+    {
+        var connections = (manifest.Connections ?? []).Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
+        var credentials = (manifest.Credentials ?? []).Select(x => x.Name).ToHashSet(StringComparer.Ordinal);
+        var capabilities = new List<string>();
+
+        ValidateUniqueIds((manifest.McpServers ?? []).Select(x => x.Id), "mcpServers.id", errors);
+        foreach (var server in manifest.McpServers ?? [])
+        {
+            if (!TryPublicHttpsEndpoint(server.Endpoint, out _))
+                errors.Add($"MCP server '{server.Id}' endpoint must be a public HTTPS URL without query or fragment.");
+            if (server.Transport != "streamable-http")
+                errors.Add($"MCP server '{server.Id}' transport must be 'streamable-http'.");
+            if (!connections.Contains(server.Connection))
+                errors.Add($"MCP server '{server.Id}' references unknown OAuth connection '{server.Connection}'.");
+            if (server.ProtocolVersions.Count == 0 || server.ProtocolVersions.Any(string.IsNullOrWhiteSpace) ||
+                server.ProtocolVersions.Distinct(StringComparer.Ordinal).Count() != server.ProtocolVersions.Count)
+                errors.Add($"MCP server '{server.Id}' must declare unique supported protocolVersions.");
+            ValidateUniqueIds(server.Tools.Select(x => x.RemoteName), $"mcpServers.{server.Id}.tools.remoteName", errors);
+            foreach (var tool in server.Tools)
+            {
+                capabilities.Add(tool.Capability);
+                ValidateExternalOperation(tool.Capability, tool.Description, tool.InputSchema, tool.OutputSchema,
+                    tool.DescriptorHash, tool.Effect, errors);
+            }
+        }
+
+        foreach (var operation in manifest.ProviderOperations ?? [])
+        {
+            capabilities.Add(operation.Capability);
+            if (string.IsNullOrWhiteSpace(operation.ProviderProfile) || !IdentifierPattern.IsMatch(operation.ProviderProfile))
+                errors.Add($"Provider operation '{operation.Capability}' providerProfile is invalid.");
+            if (string.IsNullOrWhiteSpace(operation.Command) || operation.Command.Length > 200)
+                errors.Add($"Provider operation '{operation.Capability}' command is required and must be bounded.");
+            if (!TryPublicHttpsEndpoint(operation.ProductionEndpoint, out _))
+                errors.Add($"Provider operation '{operation.Capability}' productionEndpoint must be a public HTTPS URL without query or fragment.");
+            if (operation.SandboxEndpoint is not null && !TryPublicHttpsEndpoint(operation.SandboxEndpoint, out _))
+                errors.Add($"Provider operation '{operation.Capability}' sandboxEndpoint must be a public HTTPS URL without query or fragment.");
+            if (!credentials.Contains(operation.Credential))
+                errors.Add($"Provider operation '{operation.Capability}' references unknown credential '{operation.Credential}'.");
+            if (operation.Idempotency is not ("caller-key" or "none"))
+                errors.Add($"Provider operation '{operation.Capability}' idempotency must be caller-key or none.");
+            ValidateExternalOperation(operation.Capability, operation.Command, operation.InputSchema,
+                operation.OutputSchema, null, operation.Effect, errors);
+        }
+
+        ValidateUniqueIds(capabilities, "external provider capabilities", errors);
+        ValidateUniqueIds((manifest.FileTransferTargets ?? []).Select(x => x.Id), "fileTransferTargets.id", errors);
+        foreach (var target in manifest.FileTransferTargets ?? [])
+        {
+            if (target.Protocol != "sftp")
+                errors.Add($"File-transfer target '{target.Id}' protocol must be 'sftp'.");
+            if (!credentials.Contains(target.Credential))
+                errors.Add($"File-transfer target '{target.Id}' references unknown credential '{target.Credential}'.");
+            if (target.Port is < 1 or > 65535)
+                errors.Add($"File-transfer target '{target.Id}' port is invalid.");
+            if (target.AllowedHostSuffixes.Count == 0 || target.AllowedHostSuffixes.Any(x =>
+                    string.IsNullOrWhiteSpace(x) || !x.StartsWith('.') || x.Contains('/') || x.Contains('\\')))
+                errors.Add($"File-transfer target '{target.Id}' must declare DNS suffix allowlists beginning with '.'.");
+            if (string.IsNullOrWhiteSpace(target.RootPath) || target.RootPath.StartsWith('/') ||
+                target.RootPath.StartsWith('\\') || target.RootPath.Split(['/', '\\']).Contains("..", StringComparer.Ordinal))
+                errors.Add($"File-transfer target '{target.Id}' rootPath must be a confined relative path.");
+            if (target.Operations.Count == 0 || target.Operations.Any(x => x is not ("probe" or "list" or "stat" or "upload")) ||
+                target.Operations.Distinct(StringComparer.Ordinal).Count() != target.Operations.Count)
+                errors.Add($"File-transfer target '{target.Id}' operations may contain only probe, list, stat, and upload.");
+        }
+    }
+
+    private static void ValidateExternalOperation(string capability, string description, JsonElement input,
+        JsonElement output, string? descriptorHash, string effect, ICollection<string> errors)
+    {
+        if (string.IsNullOrWhiteSpace(capability) || capability.Length > 200 || !IdentifierPattern.IsMatch(capability))
+            errors.Add("External provider capability names must be stable identifiers of at most 200 characters.");
+        if (string.IsNullOrWhiteSpace(description))
+            errors.Add($"External provider capability '{capability}' requires a description or command.");
+        if (input.ValueKind != JsonValueKind.Object || output.ValueKind != JsonValueKind.Object)
+            errors.Add($"External provider capability '{capability}' requires object inputSchema and outputSchema values.");
+        if (effect is not ("read" or "write" or "fiscal-write" or "security-sensitive-write"))
+            errors.Add($"External provider capability '{capability}' effect is unsupported.");
+        if (descriptorHash is not null &&
+            (descriptorHash.Length != 64 || descriptorHash.Any(x => !Uri.IsHexDigit(x))))
+            errors.Add($"External MCP capability '{capability}' descriptorHash must be a SHA-256 hexadecimal digest.");
+    }
+
+    private static bool TryPublicHttpsEndpoint(string? value, out Uri? uri)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out uri) || uri.Scheme != Uri.UriSchemeHttps ||
+            !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Query) ||
+            !string.IsNullOrEmpty(uri.Fragment) || uri.IsLoopback ||
+            uri.Host.EndsWith(".local", StringComparison.OrdinalIgnoreCase) ||
+            uri.Host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase))
+            return false;
+        return true;
+    }
+
+    private static void ValidateUniqueIds(IEnumerable<string> values, string field, ICollection<string> errors)
+    {
+        var items = values.ToArray();
+        if (items.Any(x => string.IsNullOrWhiteSpace(x) || x.Length > 200 || !IdentifierPattern.IsMatch(x)) ||
+            items.Distinct(StringComparer.Ordinal).Count() != items.Length)
+            errors.Add($"{field} must contain unique stable identifiers.");
+    }
 
     private static void ValidateWorkItemTypes(
         AgentWorkItemTypesManifest? declaration,

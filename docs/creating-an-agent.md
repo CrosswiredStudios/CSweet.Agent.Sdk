@@ -4,6 +4,29 @@ This guide takes a .NET developer from an empty directory to an agent that can b
 imported by C-Sweet. C-Sweet agents are ordinary hosted .NET applications with a small callback
 surface. The SDK owns runtime transport, authentication, work leasing, retries, and shutdown.
 
+## Choose the platform architecture first
+
+A high-quality agent is usually small orchestration code over C-Sweet's durable systems. Choose the
+primitive that owns each responsibility before implementing handlers:
+
+| Need | Use |
+|---|---|
+| Perform bounded typed work for another component | A versioned capability in `provides` |
+| Retain an agent-owned obligation across turns or restarts | Personal-todo cards and their wake events |
+| Track shared, assignable business work | Work boards, items, sprints, and automations |
+| Produce a reviewable deliverable | A revisioned artifact and its canonical decision record |
+| Ask a person a bounded question | `platform.user-input.request.v1` |
+| Collaborate with another agent across turns | A typed coordination session and artifacts |
+| Generate or interpret content | The platform chat client with current model-visible tools |
+| Retain an operating assessment | Agent operating state |
+| Recall supporting narrative context | Granted memory reads/proposals; never workflow authority |
+| Stream one interactive answer | One `AgentTurnStreamWriter` with a single final commit |
+| Report non-chat execution status | Bounded `ReportProgressAsync` updates |
+
+Do not replace these systems with an in-memory queue, retained chat transcript, polling loop, direct
+database access, or provider credentials. A callback may be delivered again and the process may stop
+between any two awaits, so the durable platform record—not the process—is the source of truth.
+
 ## 1. Scaffold the repository
 
 Install the template from an SDK checkout and supply stable identities:
@@ -17,7 +40,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.24.1
+  --SdkVersion 3.27.0
 cd ResearchAgent
 dotnet test
 ```
@@ -105,6 +128,13 @@ unavailable capability throws `PlatformCapabilityException`; handle expected den
 unavailability, validation, conflict, approval, and budget outcomes without exposing sensitive
 details.
 
+Manifest declaration is requested authority, not proof that every invocation will succeed. The
+reviewed manifest, installation approval, current organization/resource scope, and any required
+provider binding are all evaluated at runtime. A capability can therefore be approved for the
+installation while a particular target or action is still denied. Do not self-grant, select another
+installation, or retry an authorization failure as if it were a temporary outage. Preserve completed
+work and report the exact owner action or scope required.
+
 Provider capabilities can be called through `Platform.InvokeAsync<TRequest,TResponse>`. C-Sweet
 resolves the approved same-organization provider binding; agent code never selects an installation.
 
@@ -136,6 +166,42 @@ Request `platform.llm.chat-stream.v1`, obtain model/provider choices from approv
 and pass only the tools returned for the current live grant. Do not cache model tools across grant
 revisions and do not create provider SDK clients with API keys.
 
+Set model behavior explicitly for the operation:
+
+```csharp
+var options = new ChatOptions
+{
+    Temperature = 0.2f,
+    MaxOutputTokens = 2_048,
+    Reasoning = new ReasoningOptions
+    {
+        Effort = ReasoningEffort.Low,
+        Output = ReasoningOutput.None
+    }
+};
+
+var response = await chatClient.GetResponseAsync(messages, options, cancellationToken);
+```
+
+Those values are examples, not global defaults. Use lower temperature for extraction and typed
+decisions, and choose a larger creative budget only when the requested deliverable needs it. Request
+reasoning output only when the agent genuinely consumes or displays provider-emitted reasoning.
+Provider token accounting varies; reasoning can consume the available output budget before final
+text. A detailed multi-section deliverable therefore needs both an adequate limit and a bounded
+scope.
+
+After every model call, validate the result before creating messages, artifacts, or work items:
+
+- require non-empty final content;
+- validate required sections or deserialize into the intended typed schema;
+- reject obvious truncation or incomplete tool-call cycles when that signal is available;
+- use a small, explicit validation-retry budget;
+- finish all model retries before the first external mutation.
+
+An empty or structurally invalid response is a model outcome, not permission to continue with an
+empty artifact. Return a safe actionable failure or preserve the accepted request for a later retry.
+Do not ask the user to re-enter direction that the agent has already stored.
+
 For interactive chat, create one durable turn stream and forward model updates as they arrive:
 
 ```csharp
@@ -152,6 +218,21 @@ Only `CommitAsync` contains the authoritative answer. Forward all human-readable
 provider emits, but never forward protected or encrypted reasoning blobs.
 Pass the optional `sensitivity` value to `CreateTurnStream` when the whole trace requires a level
 other than `Internal`; the server still applies chat authorization and sensitivity policy.
+
+### Separate generation from persistence
+
+Treat a model-backed workflow as explicit stages: accept input, generate, validate, persist, then
+announce completion. Store accepted preferences or brief changes before generation. For work that
+cannot safely finish in the current turn, create a correlated personal-todo card and let that card
+own generation and persistence.
+
+Once generation has produced valid output, a later artifact, message, or work-item failure must not
+cause the whole turn to regenerate while that output remains available. When cross-callback recovery
+must avoid regeneration, checkpoint the validated output in an appropriate platform-owned durable
+record; never rely on process memory or local disk. Retry only the failed idempotent mutation. If
+persistence is optional, return the useful output and clearly say it was not saved. If required
+persistence cannot accept the first durable checkpoint, block with the precise missing authority or
+dependency and do not automatically loop through generation again.
 
 ## 6. Add configuration
 
@@ -187,6 +268,20 @@ The SDK assigns monotonic sequence numbers. Always honor the callback cancellati
 `AgentWorkResult.Failure` for expected invalid or unsupported work. Let cancellation propagate.
 Avoid returning stack traces, prompts, credentials, or private model/provider data.
 
+Classify failures by what the workflow should do, not only by the concrete CLR exception type:
+
+| Outcome | Agent behavior |
+|---|---|
+| Cancellation | Stop promptly and propagate cancellation |
+| Transient provider or transport failure | Retry within a small budget or defer durable work |
+| Empty, truncated, or invalid model result | Retry validation/generation only; do not mutate state |
+| Authorization or approval required | Do not retry; block or explain the required owner action |
+| Validation or conflict | Re-read authoritative state, correct the request, or block actionably |
+| Lost mutation response | Reconcile by stable idempotency key before creating anything again |
+
+User-facing errors should say what was preserved, what did not happen, and what can unblock the next
+attempt. Keep full diagnostic exceptions in runtime logs rather than the conversation.
+
 ## 8. Test without C-Sweet
 
 `AgentTestRuntime` provides in-memory capabilities and progress:
@@ -206,6 +301,11 @@ var result = await runtime.ExecuteCapabilityAsync(
 Test successful and malformed inputs, unsupported work, cancellation, progress, every requested
 platform capability, and denial when a capability is not registered. Keep manifest identity and
 version assertions in the test suite.
+
+For interactive and model-backed agents, also test that preference-only turns update state without
+starting generation, accepted input survives a model failure, empty model output cannot create an
+artifact, and retrying a downstream failure does not repeat a completed model call or external
+effect.
 
 ## 9. Import and run
 

@@ -27,6 +27,14 @@ public static class PlatformCapabilities
     public const string FinanceProfileProposeUpdate = CapabilityNames.Platform.FinanceProfileProposeUpdate;
     public const string BudgetEvaluate = CapabilityNames.Platform.BudgetEvaluate;
     public const string ApprovalPropose = CapabilityNames.Platform.ApprovalPropose;
+    public const string InfrastructureEnvironmentRead = CapabilityNames.Platform.InfrastructureEnvironmentRead;
+    public const string InfrastructureStateWrite = CapabilityNames.Platform.InfrastructureStateWrite;
+    public const string InfrastructureChangePropose = CapabilityNames.Platform.InfrastructureChangePropose;
+    public const string InfrastructureChangeRead = CapabilityNames.Platform.InfrastructureChangeRead;
+    public const string InfrastructureOperationExecute = CapabilityNames.Platform.InfrastructureOperationExecute;
+    public const string InfrastructureReconcile = CapabilityNames.Platform.InfrastructureReconcile;
+    public const string InfrastructureDeploymentContractPublish = CapabilityNames.Platform.InfrastructureDeploymentContractPublish;
+    public const string InfrastructureFileTransfer = CapabilityNames.Platform.InfrastructureFileTransfer;
     public const string ManagementCycleRead = CapabilityNames.Platform.ManagementCycleRead;
     public const string UserInputRequest = CapabilityNames.Platform.UserInputRequest;
     public const string HiringRecommendationList = CapabilityNames.Platform.HiringRecommendationList;
@@ -86,6 +94,9 @@ public static class PlatformCapabilities
         WorkstreamGateDecide, PortfolioRead, TeamRosterReadV2, DecisionRequest, DecisionRead, DecisionDecide,
         WorkforceSearch, AgentCatalogCapabilities.Search, WorkforcePlanPropose, FinanceProfileRead,
         FinanceProfileProposeUpdate, BudgetEvaluate, ApprovalPropose, ManagementCycleRead,
+        InfrastructureEnvironmentRead, InfrastructureStateWrite, InfrastructureChangePropose,
+        InfrastructureChangeRead, InfrastructureOperationExecute, InfrastructureReconcile,
+        InfrastructureDeploymentContractPublish, InfrastructureFileTransfer,
         UserInputRequest, HiringRecommendationList, HiringRecommendationUpsert,
         HiringRecommendationResolve, HiringRecommendationWithdraw, ResourceChangePropose,
         ResourceChangeRead, ResourceChangeDecide, HiringWorkflowStage, UserActionSuggest,

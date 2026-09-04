@@ -1,5 +1,11 @@
 # Capabilities, grants, and events
 
+Infrastructure agents use the typed `Platform.Infrastructure` client for revisioned desired and
+observed state, hash-bound change proposals, receipts, reconciliation, confined file transfer, and
+deployment contracts. `InfrastructureStateSerializer.Export` produces stable JSON plus an
+equivalent YAML 1.2 document; both derive from lexically ordered canonical JSON and carry a SHA-256
+content hash.
+
 ## Provides and requires
 
 `provides` is the typed work an agent or service implements. Names should be stable, namespaced,
@@ -9,6 +15,21 @@ provider capabilities.
 `requires` is requested authority. It never grants access by itself. At runtime, an active tool is
 the intersection of the reviewed manifest revision, current installation grant, and any required
 same-organization provider binding.
+
+### Effective authorization
+
+Authorization has distinct layers:
+
+1. The manifest requests the capability and explains its purpose.
+2. The owner approves that request for the installed revision.
+3. The runtime authorizes the concrete organization, resource, action, and provider binding.
+
+Passing an earlier layer does not guarantee a later one. For example, an installation may have an
+approved artifact-create requirement while a specific organization or workstream target remains
+outside its effective action scope. Treat runtime denial as an expected, non-retryable workflow
+outcome. Never broaden the target, select a different installation, or manufacture a scoped grant.
+Preserve prior stage output and tell the owner which capability, scope, approval, or binding is
+needed.
 
 Use the constants and typed clients in `CSweet.Agent.SDK` for C-Sweet-owned capabilities. The
 generated list is [GRANTS.md](../GRANTS.md). Prefer a typed `context.Platform` method; use
@@ -23,6 +44,7 @@ specialized helper.
 - Do not request model access merely because the agent might use a model later.
 - Do not request user, business, memory, communication, finance, or hiring authority speculatively.
 - Treat approval and budget results as workflow outcomes, not errors to bypass.
+- Exercise both effective authorization and scoped denial in installed-runtime tests.
 - Remove unused grants when code changes.
 
 ## Common platform choices
@@ -39,6 +61,13 @@ specialized helper.
 | Read or propose user memory | `memory.user.read.v1` / `memory.user.propose.v1` |
 | Read a conversation or send a message | `communication.chat.read.v1` / `communication.message.send.v1` |
 | Coordinate two eligible agents durably | `communication.coordination.start.v1` / `communication.coordination.start-work.v1` / `communication.coordination.respond.v1` / `communication.coordination.read.v1` / `communication.coordination.list.v1` / `communication.coordination.resume.v1` / `communication.coordination.cancel.v1` |
+| Search available agents | `platform.agent-catalog.search.v1` |
+| Read/create/configure work boards | `work.board.read` / `work.board.create` / `work.board.configure` |
+| Read/create/update work items | `work.item.read`, `work.item.create`, `work.item.start`, and the specific transition capability |
+| Prepare, inspect, publish, or clean an assigned repository workspace | the matching `git.workspace.*.v1` capability |
+| Read/manage sprints | the matching `work.sprint.*` capability |
+| Read/manage board automations | `work.automation.read` / `work.automation.manage` |
+| Read/create/update/reorder/transition/archive personal work | the matching `work.personal-todo.*.v1` capability |
 
 Coordination turns may attach one `AgentCoordinationArtifactSubmission`. The artifact has a stable
 type, schema version, key, zero-based page ordinal, final-page flag, and JSON payload. The platform
@@ -49,13 +78,6 @@ bounded durable checkpoints; do not put an entire project plan or transcript in 
 Expected provider failures can use `AgentWorkResult.Failure(message, code, retryable)`. Provider
 capability consumers receive the safe code and retryability through `PlatformCapabilityException`;
 full exceptions remain in runtime logs.
-| Search available agents | `platform.agent-catalog.search.v1` |
-| Read/create/configure work boards | `work.board.read` / `work.board.create` / `work.board.configure` |
-| Read/create/update work items | `work.item.read`, `work.item.create`, `work.item.start`, and the specific transition capability |
-| Prepare, inspect, publish, or clean an assigned repository workspace | the matching `git.workspace.*.v1` capability |
-| Read/manage sprints | the matching `work.sprint.*` capability |
-| Read/manage board automations | `work.automation.read` / `work.automation.manage` |
-| Read/create/update/reorder/transition/archive personal work | the matching `work.personal-todo.*.v1` capability |
 
 The full, generated reference is authoritative for capability spelling. C-Sweet's runtime registry
 is authoritative for schemas, risk, approval, quota, and scope.
@@ -136,7 +158,7 @@ file name, MIME type, byte length, and SHA-256 digest). Agents never receive sto
 bytes. Add `AgentMediaReferenceContent` to a brokered model message when the configured model should
 consume an attachment; the broker revalidates organization, conversation membership, message
 association, type, size, and digest before materializing content.
-turns. Its `Context` uses `CommunicationMessageContextKeys` for broker-authenticated sender identity;
+Its `Context` uses `CommunicationMessageContextKeys` for broker-authenticated sender identity;
 message content must never override those values.
 
 `HiringRecommendationFulfilledEvent` is emitted exactly once after every unique seat requested by

@@ -18,6 +18,9 @@ The suite must cover:
 - denial for unregistered test capabilities;
 - every subscribed event;
 - stable idempotency behavior for external effects;
+- state-only interaction routing separately from action requests;
+- empty, invalid, and budget-exhausted model responses;
+- stage-local retries that do not repeat completed model calls or mutations;
 - manifest loading, root location, runtime project path, and identity/version parity.
 
 `AgentTestRuntime` intentionally has no network, credentials, MCP, sessions, or lease state. Do not
@@ -34,6 +37,32 @@ dotnet run --project src/<AgentName> -- --self-test
 
 It does not prove installation grants, provider bindings, or container operation. Those are tested
 after C-Sweet previews and installs the package.
+
+## Installed-runtime acceptance
+
+Before treating an agent as production-ready, run one acceptance pass through the same installation
+path users will run. This is the boundary where source-only tests cannot prove effective grants,
+resource scope, model/provider behavior, packaging, or deployed version selection.
+
+Record evidence that:
+
+1. C-Sweet imported the intended immutable revision and the active installation reports the expected
+   agent and SDK versions.
+2. Required configuration selects an approved provider and model without exposing credentials.
+3. Each requested capability is both approved and effective for one representative authorized
+   target; a representative out-of-scope target is denied safely.
+4. A state-only onboarding or preference turn persists its choice without starting unrelated work.
+5. A representative model call produces non-empty, structurally complete final content within the
+   configured timeout and token budget.
+6. One real downstream artifact, work, communication, or provider mutation succeeds and a replay
+   with the same domain idempotency key does not duplicate it.
+7. Injecting or simulating a downstream denial/failure preserves completed earlier stages and does
+   not repeat model generation.
+8. User-visible progress, completion, and blocked messages accurately match durable platform state.
+
+Automate this pass where the deployment environment supports isolated fixtures. Otherwise keep a
+short, repeatable manual smoke script with the release evidence. A successful local model request is
+useful diagnostics but is not a substitute for the brokered installed path.
 
 ## Local catalog
 
@@ -56,7 +85,11 @@ reviewed revision.
 - JSON Schemas match the typed contracts and reject unexpected fields where practical.
 - Requested grants, events, credentials, network rules, and activation mode are still necessary.
 - Timeouts and concurrency match tested behavior.
+- Model reasoning, temperature, output limits, validation, and retry budgets are intentional for
+  each operation.
+- The installed-runtime acceptance pass used the exact revision and configured provider/model.
 - Logs, progress, results, and errors contain no secrets or sensitive prompts.
 - External mutations use stable domain idempotency keys.
+- Retried downstream failures resume their stage without repeating completed model generation.
 - README explains purpose, configuration, provided work, required authority, side effects, and
   limitations.

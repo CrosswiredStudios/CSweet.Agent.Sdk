@@ -373,6 +373,63 @@ public sealed class AgentManifestLoaderTests
         }
     }
 
+    [Fact]
+    public async Task LoadAsync_PreservesBrokeredProviderDeclarations()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllTextAsync(path, """
+            {
+              "manifestVersion":"2.0","kind":"agent","id":"com.example.infrastructure","name":"Infrastructure","version":"1.0.0",
+              "publisher":{"id":"example","name":"Example"},
+              "runtime":{"type":"dotnet-project","projectPath":"src/Agent.csproj","targetFramework":"net10.0","defaultActivationMode":"OnDemand","supportsMultipleInstallations":true,"maximumConcurrentJobs":1},
+              "rolePolicy":{"profile":"individual-contributor.v1","declaredRoleKeys":["infrastructure-engineer"],"specializationKeys":["namecheap"]},
+              "protocol":{"minimumVersion":"2.0","maximumVersion":"2.x"},"provides":[],"requires":[],"events":{"subscribes":[]},"configuration":[],
+              "credentials":[{"name":"namecheap-api","type":"structured","allowedOrigins":["https://api.namecheap.com"]},{"name":"hosting-sftp","type":"username-password","allowedOrigins":[]}],
+              "connections":[{"id":"namecheap-oauth","type":"oauth2","providerProfile":"namecheap","allowedOrigins":["https://mcp.namecheap.com"],"scopeSets":[{"id":"all","label":"All","purpose":"Manage Namecheap resources.","required":true,"scopes":["domains"]}]}],
+              "mcpServers":[{"id":"namecheap","endpoint":"https://mcp.namecheap.com/mcp","transport":"streamable-http","connection":"namecheap-oauth","protocolVersions":["2026-07-28"],"tools":[{"capability":"provider.namecheap.domains.list.v1","remoteName":"domains_list","description":"List domains.","inputSchema":{"type":"object"},"outputSchema":{"type":"object"},"descriptorHash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","effect":"read"}]}],
+              "providerOperations":[{"capability":"provider.namecheap.domains.renew.v1","providerProfile":"namecheap-api-v1","command":"namecheap.domains.renew","productionEndpoint":"https://api.namecheap.com/xml.response","sandboxEndpoint":"https://api.sandbox.namecheap.com/xml.response","credential":"namecheap-api","inputSchema":{"type":"object"},"outputSchema":{"type":"object"},"effect":"fiscal-write","idempotency":"caller-key"}],
+              "fileTransferTargets":[{"id":"shared-hosting","protocol":"sftp","credential":"hosting-sftp","allowedHostSuffixes":[".web-hosting.com"],"port":21098,"rootPath":"public_html","operations":["probe","list","stat","upload"]}],
+              "webAccess":{"mode":"None","rules":[]},"ui":[]
+            }
+            """);
+
+            var manifest = await AgentManifestLoader.LoadAsync(path, CancellationToken.None);
+
+            Assert.Equal("domains_list", Assert.Single(Assert.Single(manifest.McpServers).Tools).RemoteName);
+            Assert.Equal("namecheap.domains.renew", Assert.Single(manifest.ProviderOperations).Command);
+            Assert.Equal(21098, Assert.Single(manifest.FileTransferTargets).Port);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public async Task LoadAsync_RejectsUnconfinedFileTransferTarget()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllTextAsync(path, """
+            {
+              "manifestVersion":"2.0","kind":"agent","id":"com.example.infrastructure","name":"Infrastructure","version":"1.0.0",
+              "publisher":{"id":"example","name":"Example"},
+              "runtime":{"type":"dotnet-project","projectPath":"src/Agent.csproj","targetFramework":"net10.0","defaultActivationMode":"OnDemand","supportsMultipleInstallations":true,"maximumConcurrentJobs":1},
+              "rolePolicy":{"profile":"individual-contributor.v1","declaredRoleKeys":["infrastructure-engineer"]},
+              "protocol":{"minimumVersion":"2.0","maximumVersion":"2.x"},"provides":[],"requires":[],"events":{"subscribes":[]},"configuration":[],
+              "credentials":[{"name":"hosting-sftp","type":"username-password","allowedOrigins":[]}],"connections":[],
+              "fileTransferTargets":[{"id":"hosting","protocol":"sftp","credential":"hosting-sftp","allowedHostSuffixes":[".web-hosting.com"],"port":21098,"rootPath":"../","operations":["upload"]}],
+              "webAccess":{"mode":"None","rules":[]},"ui":[]
+            }
+            """);
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                AgentManifestLoader.LoadAsync(path, CancellationToken.None));
+            Assert.Contains("confined relative path", exception.Message);
+        }
+        finally { File.Delete(path); }
+    }
+
     private static async Task<string> WriteManifestAsync(
         int timeout = 30,
         string idempotency = "work-item",

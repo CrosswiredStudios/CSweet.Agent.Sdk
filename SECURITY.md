@@ -41,6 +41,21 @@ flow references. It intentionally has no extension point for HTML, JavaScript, R
 remote UI, arbitrary redirects, or executable expressions. Runtime hosts must independently
 enforce bootstrap capability isolation and treat every manifest value as untrusted input.
 
+## Infrastructure provider boundary
+
+Manifest-v2 infrastructure declarations are optional authority ceilings. A runtime may invoke only
+the exact MCP tool, typed provider command, or confined file-transfer operation declared by the
+installed package. Agents never receive raw MCP sessions, OAuth tokens, API credentials, SFTP
+passwords, or generic HTTP/SSH access. Every provider write must be represented by a canonical
+change set and an unexpired approval bound to the exact serialized payload hash.
+
+Provider responses must be size bounded and sanitized before reaching model context, artifacts,
+logs, traces, or errors. Hosted checkout URLs containing consent tokens remain in platform-owned
+encrypted storage and are exposed to an authorized human only through an opaque, expiring action.
+Ambiguous write failures require state reconciliation before retry, preventing duplicate purchases
+or renewals. File-transfer brokers must enforce the declared host, port, root path, operation,
+content digest, and an administrator-approved SSH host-key fingerprint.
+
 ## Configuration ownership boundary
 
 The signed manifest is the authoritative settings schema. Defaults and employee overrides belong

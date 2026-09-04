@@ -80,6 +80,25 @@ installation, grant changes, hiring, assignment, or spending.
 - `PlatformCapabilities.HiringWorkflowStage` — `platform.hiring-workflow.stage.v1`
 - `PlatformCapabilities.UserActionSuggest` — `platform.user-action.suggest.v1`
 
+### Infrastructure delivery
+
+- `PlatformCapabilities.InfrastructureEnvironmentRead` — `platform.infrastructure.environment.read.v1`
+- `PlatformCapabilities.InfrastructureStateWrite` — `platform.infrastructure.state.write.v1`
+- `PlatformCapabilities.InfrastructureChangePropose` — `platform.infrastructure.change.propose.v1`
+- `PlatformCapabilities.InfrastructureChangeRead` — `platform.infrastructure.change.read.v1`
+- `PlatformCapabilities.InfrastructureOperationExecute` — `platform.infrastructure.operation.execute.v1`
+- `PlatformCapabilities.InfrastructureReconcile` — `platform.infrastructure.reconcile.v1`
+- `PlatformCapabilities.InfrastructureDeploymentContractPublish` — `platform.infrastructure.deployment-contract.publish.v1`
+- `PlatformCapabilities.InfrastructureFileTransfer` — `platform.infrastructure.file-transfer.v1`
+- `InfrastructureCapabilityNames.EnvironmentRead` — `platform.infrastructure.environment.read.v1`
+- `InfrastructureCapabilityNames.StateWrite` — `platform.infrastructure.state.write.v1`
+- `InfrastructureCapabilityNames.ChangePropose` — `platform.infrastructure.change.propose.v1`
+- `InfrastructureCapabilityNames.ChangeRead` — `platform.infrastructure.change.read.v1`
+- `InfrastructureCapabilityNames.OperationExecute` — `platform.infrastructure.operation.execute.v1`
+- `InfrastructureCapabilityNames.Reconcile` — `platform.infrastructure.reconcile.v1`
+- `InfrastructureCapabilityNames.DeploymentContractPublish` — `platform.infrastructure.deployment-contract.publish.v1`
+- `InfrastructureCapabilityNames.FileTransfer` — `platform.infrastructure.file-transfer.v1`
+
 - `PlatformCapabilities.TeamRosterRead` — `platform.team-roster.read.v1`
 
 `TeamRosterRead` is resolved from the authenticated installation to its active agent employee and
@@ -176,6 +195,8 @@ New governed software-board mutations:
 - `WorkBoardCapabilities.Configure` — `work.board.configure`
 - `WorkBoardCapabilities.ConfigureColumns` — `work.board.columns.configure`
 - `WorkOrchestrationCapabilities.ConfigureSoftwareTemplate` — `work.orchestration.software-template.configure`
+- `WorkOrchestrationCapabilities.ConfigureProfile` — `work.orchestration.profile.configure.v1`
+- `WorkFlowMetricCapabilities.Read` — `work.flow-metrics.read.v1`
 
 Work-management capabilities require both an approved package capability and a live scoped grant
 on the organization or board. SDK calls never bypass the board grant model. Mutation requests

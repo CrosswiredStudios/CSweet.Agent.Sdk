@@ -39,6 +39,50 @@ A personal card should be a bounded unit of work, not an entire project phase. A
 exhausts its execution budget must checkpoint progress and expose a deterministic successor; it
 must not depend on its process staying alive.
 
+### Separate accepted direction, generation, and effects
+
+Do not make one replayable chat callback implicitly own every stage of a creative or analytical
+workflow. Persist the stages that have different retry semantics:
+
+1. Route the message and persist accepted preferences, approvals, brief facts, and correlations.
+2. Create or update the durable obligation that owns any slow work.
+3. Generate and validate the model result within a bounded call and retry budget.
+4. Checkpoint validated output in an appropriate platform-owned durable record when recreating it
+   would be expensive or nondeterministic.
+5. Persist each artifact, message, or work mutation with a stable idempotency key.
+6. Announce completion only after required effects and returned aggregate IDs are durable.
+
+A failure at step 5 resumes step 5 whenever the generated output is still available or was durably
+checkpointed; it must not silently rerun step 3. Never use process memory or local disk as a
+cross-callback checkpoint. If an optional persistence effect is denied, the agent may return the
+useful generated result while explicitly saying it was not saved. If required persistence cannot
+accept the first durable checkpoint, block with the precise missing authority and suppress automatic
+generation retries until that dependency changes. Never discard the already accepted direction or
+ask the user to enter it again.
+
+### Persist promised follow-up before confirming it
+
+When a terminal event unlocks a slow or multi-step follow-up, create the successor personal card
+before telling the user that work is underway. The event callback should validate and store the
+authoritative fact, add one idempotent correlated card, and then send a concise confirmation that
+names the new work. The claimed card—not the event callback—should own the external proposal,
+document generation, research, or coordination effect.
+
+This ordering prevents a particularly confusing failure mode: chat says “I’m moving on to X,” but
+an exception occurs before X has either a board card or a durable result. It also gives retries one
+clear owner. Complete the successor card only after its external effect and returned aggregate ID
+are persisted; defer transient failures and block missing authority with an actionable reason.
+
+Contract-test every deterministic capability payload against the same schema enforced by the MCP
+tool boundary. In-memory capability mocks prove orchestration but may not enforce string lengths,
+formats, paired fields, or array limits. At minimum, fixture tests should cover every constrained
+field and a platform integration test should submit the representative payload. Treat schema and
+validation rejection as actionable blocked work, not a temporary dependency outage.
+
+When a personal card is scheduled internally rather than caused by a chat message, omit both source
+IDs. If it is caused by chat, provide both the authenticated conversation ID and source message ID;
+never provide only one member of the pair.
+
 ## Personal-work dispositions
 
 Override `HandlePersonalTodoAsync` and return exactly one `PersonalTodoResult`:
@@ -126,6 +170,13 @@ For unstructured text, a model may return a constrained classification such as `
 `Question`, `ActionRequest`, `DecisionRequest`, or `EvidenceSubmission`. The model must not select
 authority, accept evidence, or mutate workflow. Low-confidence material requests should produce
 structured clarification rather than guessed work.
+
+Onboarding answers and collaboration preferences deserve an explicit state-only route. Record the
+choice, acknowledge it, and stop unless the same message contains a separate action request or a
+previously persisted obligation is now eligible. Likewise, a genre, constraint, reference, or
+approval that completes an existing brief should update that correlated obligation instead of
+creating unrelated work. This prevents a phase handler from mistaking control-plane conversation
+for permission to generate a deliverable.
 
 When a message creates or changes work, confirm what happened: card created or updated, project
 context, next action, and required input. When no task was created and ambiguity is likely, say so.
@@ -220,6 +271,7 @@ Assume at-least-once delivery and termination between any two awaits.
 - On a lost response, reconcile whether the resource already exists before creating another.
 - Recover expired personal claims and stranded Ready work through the platform queue.
 - Preserve accepted inputs across model retries; never make a manager re-enter durable direction.
+- Resume the failed stage; do not repeat completed model generation because a later mutation failed.
 - Bind approvals and evidence to exact revisions and digests.
 - Never advance a lifecycle from prose, an acknowledgement, or model self-report alone.
 - Suppress unchanged notifications with durable fingerprints.
@@ -248,6 +300,12 @@ Test the operating behavior, not only helper methods:
     and the final commit replaces it without creating a duplicate message.
 17. Document review has one canonical decision record; viewer actions and chat shortcuts target the
     same exact revision, and the resulting event advances only the correlated agenda item.
+18. A terminal decision that unlocks slow follow-up creates its successor card before confirmation;
+    the claimed card owns the effect, and injected failure cannot leave a promise without visible work.
+19. A preference-only onboarding turn persists the choice and does not start deliverable generation.
+20. Empty or incomplete model output cannot create an artifact or advance the lifecycle.
+21. An injected artifact failure retries persistence without repeating completed model generation.
+22. A scoped authorization denial retains prior stage output and produces an actionable blocked result.
 
 Use `AgentTestRuntime` for callback and capability behavior. Keep manifest tests synchronized with
 every required personal-work capability and event subscription.

@@ -21,6 +21,7 @@ public sealed class PlatformCapabilityClient
         Artifacts = new PlatformArtifactClient(tools);
         Git = new PlatformGitWorkspaceClient(tools);
         SourceControl = new PlatformSourceControlClient(tools);
+        Infrastructure = new PlatformInfrastructureClient(tools);
         Communication = new PlatformCommunicationClient(this);
     }
 
@@ -33,6 +34,7 @@ public sealed class PlatformCapabilityClient
     public PlatformArtifactClient Artifacts { get; }
     public PlatformGitWorkspaceClient Git { get; }
     public PlatformSourceControlClient SourceControl { get; }
+    public PlatformInfrastructureClient Infrastructure { get; }
     public PlatformCommunicationClient Communication { get; }
 
     public Task<BusinessProfileResponse> ReadBusinessProfileAsync(CancellationToken token = default) =>

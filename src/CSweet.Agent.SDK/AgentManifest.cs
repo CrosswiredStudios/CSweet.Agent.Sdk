@@ -37,6 +37,9 @@ public sealed class AgentManifest
     public IReadOnlyList<AgentManifestConfigurationField> Configuration { get; init; } = [];
     public IReadOnlyList<AgentCredentialBinding> Credentials { get; init; } = [];
     public IReadOnlyList<AgentConnectionDeclaration> Connections { get; init; } = [];
+    public IReadOnlyList<AgentMcpServerDeclaration> McpServers { get; init; } = [];
+    public IReadOnlyList<AgentProviderOperationDeclaration> ProviderOperations { get; init; } = [];
+    public IReadOnlyList<AgentFileTransferTargetDeclaration> FileTransferTargets { get; init; } = [];
     public AgentSetupManifest? Setup { get; init; }
     public AgentWebAccessManifest WebAccess { get; init; } = new();
     public IReadOnlyList<AgentUiContribution> Ui { get; init; } = [];
@@ -157,6 +160,56 @@ public sealed record AgentConnectionScopeSet
     public string Purpose { get; init; } = string.Empty;
     public bool Required { get; init; }
     public IReadOnlyList<string> Scopes { get; init; } = [];
+}
+
+/// <summary>A remote MCP server reached only through the C-Sweet credential and transport broker.</summary>
+public sealed record AgentMcpServerDeclaration
+{
+    public string Id { get; init; } = string.Empty;
+    public string Endpoint { get; init; } = string.Empty;
+    public string Transport { get; init; } = "streamable-http";
+    public string Connection { get; init; } = string.Empty;
+    public IReadOnlyList<string> ProtocolVersions { get; init; } = [];
+    public IReadOnlyList<AgentMcpToolDeclaration> Tools { get; init; } = [];
+}
+
+/// <summary>An exact remote MCP tool projected as one local, grant-governed capability.</summary>
+public sealed record AgentMcpToolDeclaration
+{
+    public string Capability { get; init; } = string.Empty;
+    public string RemoteName { get; init; } = string.Empty;
+    public string Description { get; init; } = string.Empty;
+    public JsonElement InputSchema { get; init; }
+    public JsonElement OutputSchema { get; init; }
+    public string DescriptorHash { get; init; } = string.Empty;
+    public string Effect { get; init; } = "read";
+}
+
+/// <summary>An exact legacy provider command materialized and invoked only by C-Sweet.</summary>
+public sealed record AgentProviderOperationDeclaration
+{
+    public string Capability { get; init; } = string.Empty;
+    public string ProviderProfile { get; init; } = string.Empty;
+    public string Command { get; init; } = string.Empty;
+    public string ProductionEndpoint { get; init; } = string.Empty;
+    public string? SandboxEndpoint { get; init; }
+    public string Credential { get; init; } = string.Empty;
+    public JsonElement InputSchema { get; init; }
+    public JsonElement OutputSchema { get; init; }
+    public string Effect { get; init; } = "read";
+    public string Idempotency { get; init; } = "none";
+}
+
+/// <summary>A path-confined file-transfer target; it never grants shell or arbitrary filesystem access.</summary>
+public sealed record AgentFileTransferTargetDeclaration
+{
+    public string Id { get; init; } = string.Empty;
+    public string Protocol { get; init; } = "sftp";
+    public string Credential { get; init; } = string.Empty;
+    public IReadOnlyList<string> AllowedHostSuffixes { get; init; } = [];
+    public int Port { get; init; } = 22;
+    public string RootPath { get; init; } = string.Empty;
+    public IReadOnlyList<string> Operations { get; init; } = [];
 }
 
 /// <summary>A declarative, resumable setup graph rendered entirely by C-Sweet.</summary>

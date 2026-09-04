@@ -365,6 +365,15 @@ public sealed record ResourceChangeRole(
     public IReadOnlyList<string> PreferredSpecializationKeys { get; init; } = [];
 }
 
+public sealed record ResourceChangeEvidence(
+    string Kind,
+    string SourceRevision,
+    string Summary,
+    decimal? Value = null,
+    string? Unit = null,
+    DateTimeOffset? WindowStart = null,
+    DateTimeOffset? WindowEnd = null);
+
 public sealed record ResourceChangeProposalRequest(
     Guid ConversationId,
     Guid ChatTurnId,
@@ -380,6 +389,12 @@ public sealed record ResourceChangeProposalRequest(
     public string? TeamKey { get; init; }
     public string? TeamName { get; init; }
     public string? TeamDescription { get; init; }
+    public Guid? TeamId { get; init; }
+    public Guid? WorkstreamId { get; init; }
+    public long? ExpectedTeamRevision { get; init; }
+    public IReadOnlyList<ResourceChangeEvidence> Evidence { get; init; } = [];
+    public IReadOnlyList<string> AlternativesConsidered { get; init; } = [];
+    public string? ExpectedEffect { get; init; }
 }
 
 public sealed record ResourceChangeRoleDelta(
@@ -413,6 +428,12 @@ public sealed record ResourceChangeRequestResponse(
     public string? TeamKey { get; init; }
     public string? TeamName { get; init; }
     public string? TeamDescription { get; init; }
+    public Guid? WorkstreamId { get; init; }
+    public long? ExpectedTeamRevision { get; init; }
+    public IReadOnlyList<ResourceChangeEvidence> Evidence { get; init; } = [];
+    public IReadOnlyList<string> AlternativesConsidered { get; init; } = [];
+    public string? ExpectedEffect { get; init; }
+    public Guid? DecidedByOrganizationUserId { get; init; }
 }
 
 public sealed record ResourceChangeReadRequest(
@@ -441,7 +462,12 @@ public sealed record ResourceChangeDecisionEvent(
     Guid RequesterOrganizationUserId,
     Guid ManagerOrganizationUserId,
     string Status,
-    DateTimeOffset OccurredAt);
+    DateTimeOffset OccurredAt)
+{
+    public Guid? TeamId { get; init; }
+    public Guid? WorkstreamId { get; init; }
+    public Guid? DecidedByOrganizationUserId { get; init; }
+}
 
 public sealed record EmployeeHiredEvent(
     Guid OrganizationId,

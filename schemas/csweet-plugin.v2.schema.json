@@ -202,6 +202,9 @@
     "configuration": { "type": "array", "items": { "$ref": "#/$defs/configurationField" } },
     "credentials": { "type": "array", "items": { "$ref": "#/$defs/credential" } },
     "connections": { "type": "array", "items": { "$ref": "#/$defs/connection" } },
+    "mcpServers": { "type": "array", "items": { "$ref": "#/$defs/mcpServer" } },
+    "providerOperations": { "type": "array", "items": { "$ref": "#/$defs/providerOperation" } },
+    "fileTransferTargets": { "type": "array", "items": { "$ref": "#/$defs/fileTransferTarget" } },
     "setup": { "$ref": "#/$defs/setup" },
     "webAccess": { "$ref": "#/$defs/webAccess" },
     "ui": { "type": "array", "items": { "$ref": "#/$defs/uiContribution" } },
@@ -320,6 +323,67 @@
           "uniqueItems": true,
           "items": { "$ref": "#/$defs/nonEmptyString" }
         }
+      }
+    },
+    "mcpServer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "endpoint", "transport", "connection", "protocolVersions", "tools"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "endpoint": { "type": "string", "pattern": "^https://[^?#]+$" },
+        "transport": { "const": "streamable-http" },
+        "connection": { "$ref": "#/$defs/identifier" },
+        "protocolVersions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "tools": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/mcpTool" } }
+      }
+    },
+    "mcpTool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability", "remoteName", "description", "inputSchema", "outputSchema", "descriptorHash", "effect"],
+      "properties": {
+        "capability": { "$ref": "#/$defs/identifier" },
+        "remoteName": { "$ref": "#/$defs/identifier" },
+        "description": { "$ref": "#/$defs/nonEmptyString" },
+        "inputSchema": { "$ref": "#/$defs/objectSchema" },
+        "outputSchema": { "$ref": "#/$defs/objectSchema" },
+        "descriptorHash": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
+        "effect": { "$ref": "#/$defs/providerEffect" }
+      }
+    },
+    "providerOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability", "providerProfile", "command", "productionEndpoint", "credential", "inputSchema", "outputSchema", "effect", "idempotency"],
+      "properties": {
+        "capability": { "$ref": "#/$defs/identifier" },
+        "providerProfile": { "$ref": "#/$defs/identifier" },
+        "command": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "productionEndpoint": { "type": "string", "pattern": "^https://[^?#]+$" },
+        "sandboxEndpoint": { "type": "string", "pattern": "^https://[^?#]+$" },
+        "credential": { "$ref": "#/$defs/nonEmptyString" },
+        "inputSchema": { "$ref": "#/$defs/objectSchema" },
+        "outputSchema": { "$ref": "#/$defs/objectSchema" },
+        "effect": { "$ref": "#/$defs/providerEffect" },
+        "idempotency": { "enum": ["caller-key", "none"] }
+      }
+    },
+    "providerEffect": {
+      "enum": ["read", "write", "fiscal-write", "security-sensitive-write"]
+    },
+    "fileTransferTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "protocol", "credential", "allowedHostSuffixes", "port", "rootPath", "operations"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "protocol": { "const": "sftp" },
+        "credential": { "$ref": "#/$defs/nonEmptyString" },
+        "allowedHostSuffixes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^\\.[A-Za-z0-9.-]+$" } },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "rootPath": { "type": "string", "pattern": "^(?![\\\\/])(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+$" },
+        "operations": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["probe", "list", "stat", "upload"] } }
       }
     },
     "setup": {

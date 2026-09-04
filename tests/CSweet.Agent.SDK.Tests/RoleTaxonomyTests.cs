@@ -23,4 +23,30 @@ public sealed class RoleTaxonomyTests
         Assert.True(RoleTaxonomy.CanFill(role, teammate));
         Assert.Equal(0, RoleTaxonomy.PreferredSpecializationScore(role, teammate));
     }
+
+    [Fact]
+    public void SelectAssignment_RequiresExactRoleAndSkills_ThenUsesPreferredWipAndStableId()
+    {
+        var firstId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var secondId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+        var requirements = new CSweet.WorkManagement.Contracts.WorkAssignmentRequirements(
+            "game-engineer", ["gameplay-programming"], ["engine-integration"], ["work.execution.run.v1"]);
+        AgentTeammate Candidate(Guid id, params string[] skills) => new(
+            id.ToString("D"), "Engineer", "Agent", null, null, "DirectReport", "Active")
+        {
+            AgentInstallationId = id,
+            RuntimeEligibility = "Eligible",
+            DeclaredRoleKeys = ["game-engineer"],
+            SpecializationKeys = skills,
+            EffectiveCapabilities = ["work.execution.run.v1"]
+        };
+
+        var selected = RoleTaxonomy.SelectAssignment(
+            [Candidate(firstId, "gameplay-programming"), Candidate(secondId, "gameplay-programming", "engine-integration")],
+            requirements,
+            new Dictionary<Guid, int> { [firstId] = 0, [secondId] = 4 });
+
+        Assert.Equal(secondId, selected!.Teammate.AgentInstallationId);
+        Assert.Equal(1, selected.PreferredSpecializationCount);
+    }
 }
