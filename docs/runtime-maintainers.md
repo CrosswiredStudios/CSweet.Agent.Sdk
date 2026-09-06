@@ -43,3 +43,5 @@ known native components, and restrict setup callbacks to a bootstrap grant conta
 declared setup capabilities. The normal agent runtime, model access, memory, chat, organization
 data, filesystem, and ordinary network grants remain unavailable until platform activation gates
 transition the installation to ready.
+
+For progressive staffing, ReviseWorkItemPlanningRequest accepts optional StageAssignments and AccountableOrganizationUserId. Null assignments preserve existing ownership; explicit replacements are validated by the host against stage policy, ticket requirements, roster and profile evidence. The agent cannot use a planning revision to bypass execution immutability or eligibility checks.

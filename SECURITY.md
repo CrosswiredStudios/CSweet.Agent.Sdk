@@ -70,3 +70,5 @@ The private authenticated broker transport bounds every HTTP exchange. Control r
 after 30 seconds and capability calls fail after three minutes, allowing the runtime worker to
 cancel affected work and reconnect instead of retaining an expired session indefinitely. Agent
 code cannot disable these limits or access the underlying transport.
+
+Planning revisions may now bind stage assignments under the existing scoped planning grant. The host validates stage policy, delegation requirements, active eligible ownership, team/profile evidence and optimistic revisions; executing planning remains immutable. Omitting assignments preserves existing ownership.
