@@ -40,7 +40,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.30.0
+  --SdkVersion 3.31.0
 cd ResearchAgent
 dotnet test
 ```
@@ -320,3 +320,7 @@ C-Sweet inside the isolated container; do not add local credential or MCP config
 See [Manifest reference](manifest-reference.md), [Capabilities and events](capabilities-and-events.md),
 [Durable agendas, chat intake, and structured interactions](durable-agendas-and-interactions.md),
 and [Testing and release](testing-and-release.md) for the review checklists.
+
+## Reusable collaboration
+
+See [agent collaboration](collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.31.0.

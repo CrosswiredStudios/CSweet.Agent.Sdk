@@ -16,6 +16,19 @@ public sealed class PlatformArtifactClient
         InvokeAsync<object, IReadOnlyList<ArtifactDocumentSummary>>(PlatformCapabilities.ArtifactRead, new { artifactId = (Guid?)null, includeArchived }, token);
     public Task<ArtifactDocument> GetAsync(Guid artifactId, CancellationToken token = default) =>
         InvokeAsync<object, ArtifactDocument>(PlatformCapabilities.ArtifactRead, new { artifactId, includeArchived = false }, token);
+    /// <summary>Reads and verifies the exact accepted revision, even if a newer revision exists.</summary>
+    public async Task<(ArtifactDocument Document, ArtifactRevision Revision)> ReadAcceptedAsync(
+        CollaborationDocumentReference reference, CancellationToken token = default)
+    {
+        CollaborationActions.ValidateDocument(reference);
+        var document = await GetAsync(reference.DocumentId, token);
+        var revision = document.Revisions.SingleOrDefault(x => x.Id == reference.RevisionId);
+        if (revision is null || revision.Status != "Accepted" ||
+            !string.Equals(revision.ContentSha256, reference.ContentSha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("The exact accepted document revision is unavailable or changed.");
+        return (document, revision);
+    }
+
     public Task<ArtifactRevision> ReviseAsync(CreateArtifactRevision request, CancellationToken token = default) =>
         InvokeAsync<CreateArtifactRevision, ArtifactRevision>(PlatformCapabilities.ArtifactRevise, request, token);
     public Task<ArtifactDocument> SubmitAsync(SubmitArtifactRevision request, CancellationToken token = default) =>

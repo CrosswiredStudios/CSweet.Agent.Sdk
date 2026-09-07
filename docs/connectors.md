@@ -1,4 +1,4 @@
-# Protocol 2.1 connector contracts (SDK 3.30.0)
+# Protocol 2.1 connector contracts (SDK 3.31.0)
 
 Connector packages are deterministic integration providers, not employees. Declare
 `kind: connector`, one organization account connection, protocol minimum `2.1`,

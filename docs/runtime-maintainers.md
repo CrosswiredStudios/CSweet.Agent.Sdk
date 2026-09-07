@@ -48,7 +48,7 @@ For progressive staffing, ReviseWorkItemPlanningRequest accepts optional StageAs
 
 ## Connector protocol minimum
 
-SDK 3.30.0 adds protocol 2.1 [connector contracts](connectors.md). The private MCP
+SDK 3.31.0 adds protocol 2.1 [connector contracts](connectors.md). The private MCP
 wire version is independent. Reject enhanced manifests on older hosts. Connectors
 may not use ordinary provider dispatch, raw HTTP, model tools or credential values.
 Explicit dependency selection pins a package digest; refresh/reconciliation cannot
@@ -68,4 +68,15 @@ creation. Deliver the durable introduction and one 24-hour reminder with distinc
 stable event identities, and keep the ordinary onboarding event behind activation.
 
 
-SDK 3.30.0 adds assignment-scoped internal Git LFS locks through `context.Platform.Git.ListLocksAsync`, `LockFileAsync`, and `UnlockFileAsync`. Declare `git.workspace.locks.read.v2`, `git.workspace.locks.create.v2`, and `git.workspace.locks.release.v2` as needed (the separate `git-file-locks` capability group does not expand existing workspace grants). Core derives repository and employee ownership from the current assignment and team grant. Agents cannot choose owner identities, force another owner's unlock, or access provider credentials. Repeat acquisition of the same owned path returns the existing lock; repeat release is harmless. Own locks permit work-branch publication; release them before a governed merge. Managers can release orphaned locks. GitHub agent-owned locks are not supported by this API.
+SDK 3.31.0 adds assignment-scoped internal Git LFS locks through `context.Platform.Git.ListLocksAsync`, `LockFileAsync`, and `UnlockFileAsync`. Declare `git.workspace.locks.read.v2`, `git.workspace.locks.create.v2`, and `git.workspace.locks.release.v2` as needed (the separate `git-file-locks` capability group does not expand existing workspace grants). Core derives repository and employee ownership from the current assignment and team grant. Agents cannot choose owner identities, force another owner's unlock, or access provider credentials. Repeat acquisition of the same owned path returns the existing lock; repeat release is harmless. Own locks permit work-branch publication; release them before a governed merge. Managers can release orphaned locks. GitHub agent-owned locks are not supported by this API.
+
+## Coordination document sharing (SDK 3.31.0)
+
+Typed collaboration actions use existing coordination authority. At chat, board, and work-item
+starts and participant replies, Core verifies creator/steward ownership, current document read
+authority, organization, and exact revision/hash before granting the other authenticated
+participant document-level read. This includes other revisions; it is not revision-only access.
+No revise/decide/submit permission is granted by sharing. All references are validated before
+grant mutation; session persistence and grants commit together. Review/handoff declarations
+are not formal artifact approval. Runtime scheduling for dependency waits uses personal-to-do
+deferral; no new event subscription mechanism is introduced.

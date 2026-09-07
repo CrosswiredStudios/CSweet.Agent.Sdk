@@ -1,6 +1,6 @@
 # Manifest v2 reference
 
-SDK 3.30.0 adds protocol 2.1 [connector and dependency contracts](connectors.md).
+SDK 3.31.0 adds protocol 2.1 [connector and dependency contracts](connectors.md).
 These require explicit host enforcement; declarations are not authority.
 
 Every executable agent repository has exactly one `csweet-plugin.json` at its root. The

@@ -170,3 +170,7 @@ source request identity rather than matching the generic employee-hired event by
 Lifecycle and user-message event names used by a product integration should be documented alongside
 their owning C-Sweet feature. Unknown events must be ignored safely. Never infer generic
 publication authority from a subscription.
+
+## Reusable collaboration
+
+See [agent collaboration](collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.31.0.

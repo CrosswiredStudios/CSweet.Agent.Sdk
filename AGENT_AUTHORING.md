@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 3.30.0
+     --SdkVersion 3.31.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed
@@ -164,3 +164,7 @@ typed coordination artifacts or the durable decision system rather than UI autom
 
 Human-oriented explanations and examples are in
 [`docs/creating-an-agent.md`](docs/creating-an-agent.md).
+
+## Reusable collaboration
+
+See [agent collaboration](docs/collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.31.0.
