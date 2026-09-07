@@ -1,4 +1,4 @@
-# Reusable agent collaboration (SDK 3.31.0)
+# Reusable agent collaboration (SDK 3.31.1)
 
 Use `CollaborationActions` with `Platform.Communication` for documentation requests,
 clarification, review, and handoff. These are typed artifacts carried by the existing durable
@@ -108,7 +108,7 @@ Callbacks are delivered at least once. Cache model decisions before mutations an
 revisions when responding or editing. Finalization/turn limits are not implicit acceptance:
 return blocked with unresolved questions and resume explicitly when new context is available.
 
-SDK 3.31.0 is additive. Existing domain artifact payloads continue to work. Deploy the matching
+SDK 3.31.1 is additive. Existing domain artifact payloads continue to work. Deploy the matching
 Core host for sharing at board/work-item starts; updating an SDK package alone does not deploy
 that server behavior. Tests exercise the examples, invalid actions, readiness, and exact-source
 lookup without granting external access or invoking a live model.

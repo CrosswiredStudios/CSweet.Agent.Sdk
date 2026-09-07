@@ -26,6 +26,7 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
     private readonly HttpClient _http;
     private readonly AgentRuntimeOptions _options;
     private readonly ILogger<McpAgentRuntimeClient> _logger;
+    private bool _supportsLlmJobs;
     private readonly TimeSpan _controlRequestTimeout;
     private readonly TimeSpan _capabilityRequestTimeout;
     private readonly TimeSpan _rateLimitRetryDelay;
@@ -99,6 +100,7 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
         using var response = await SendAsync(request, "initialize", cancellationToken);
         var result = await ReadResultAsync(response, cancellationToken);
         var meta = result.GetProperty("_meta").GetProperty("csweet");
+        _supportsLlmJobs = meta.TryGetProperty("llmJobs", out var jobs) && jobs.ValueKind == JsonValueKind.True;
         _accessToken = RequiredString(meta, "accessToken");
         var expiresAt = meta.GetProperty("expiresAt").GetDateTimeOffset();
         var sessionId = response.Headers.TryGetValues("Mcp-Session-Id", out var values)
@@ -245,6 +247,12 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
                 capability,
                 PlatformCapabilityErrorCode.Denied,
                 $"Capability '{capability}' is not in the active installation grant.");
+        if (_supportsLlmJobs && capability == PlatformCapabilities.LlmChatStream && InferenceExecutionScope.Current is { } execution)
+        {
+            await foreach (var chunk in PollInferenceAsync(descriptor.Name, arguments, execution, cancellationToken))
+                yield return chunk;
+            yield break;
+        }
         var token = _accessToken
             ?? throw new InvalidOperationException("The MCP runtime session is not initialized.");
         using var request = CreateRequest(
@@ -358,6 +366,56 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
                 !toolMeta.TryGetProperty("modelVisible", out var modelVisible) ||
                 modelVisible.GetBoolean());
         }).ToList();
+    }
+
+    private async IAsyncEnumerable<JsonElement> PollInferenceAsync(string name, JsonElement arguments,
+        InferenceExecutionScope execution,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken token)
+    {
+        var lease = execution.Lease;
+        var started = await InvokeMethodAsync("csweet/llm/start", new { name, arguments,
+            workId = lease.WorkId, attempt = lease.Attempt, leaseToken = lease.LeaseToken,
+            key = Guid.NewGuid().ToString("N") }, token);
+        var jobId = started.GetProperty("jobId").GetGuid();
+        var completed = false;
+        var cursor = 0;
+        string? lastState = null;
+        try
+        {
+            await execution.ReportStatusAsync("Received", token);
+            while (!completed)
+            {
+                var result = await InvokeMethodAsync("csweet/llm/read", new { jobId, after = cursor }, token);
+                execution.UpdateDeadline(result.GetProperty("workId").GetGuid(), result.GetProperty("workDeadline").GetDateTimeOffset());
+                var state = result.GetProperty("state").GetString()!;
+                if (state != lastState) { await execution.ReportStatusAsync(state, token); lastState = state; }
+                var next = result.GetProperty("next").GetInt32();
+                var chunks = result.GetProperty("chunks");
+                if (next != cursor + chunks.GetArrayLength()) throw new InvalidOperationException("Invalid inference page cursor.");
+                foreach (var chunk in chunks.EnumerateArray())
+                {
+                    if (!chunk.GetProperty("succeeded").GetBoolean())
+                        throw new PlatformCapabilityException(PlatformCapabilities.LlmChatStream, PlatformCapabilityErrorCode.Unavailable,
+                            chunk.GetProperty("error").GetString() ?? "Inference failed.");
+                    if (chunk.TryGetProperty("payload", out var payload) && payload.ValueKind == JsonValueKind.Object)
+                        yield return payload.Clone();
+                }
+                cursor = next;
+                completed = result.GetProperty("completed").GetBoolean();
+                if (completed && result.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.String)
+                    throw new PlatformCapabilityException(PlatformCapabilities.LlmChatStream, PlatformCapabilityErrorCode.Unavailable, error.GetString()!);
+                if (!completed && chunks.GetArrayLength() == 0) await Task.Delay(TimeSpan.FromSeconds(2), token);
+            }
+        }
+        finally
+        {
+            if (!completed)
+            {
+                using var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                try { await InvokeMethodAsync("csweet/llm/cancel", new { jobId }, cancel.Token); }
+                catch (Exception) { /* Host abandons an unpolled job after 60 seconds. */ }
+            }
+        }
     }
 
     private async Task<JsonElement> InvokeMethodAsync(

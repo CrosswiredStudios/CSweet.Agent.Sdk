@@ -213,6 +213,8 @@ internal sealed class AgentRuntimeWorker<TAgent>(
             return;
         }
         var progress = new LeaseProgressReporter(runtime, lease);
+        using var inferenceScope = new InferenceExecutionScope(lease, deadline, progress);
+        inferenceScope.Enter();
         var context = CreateContext(platform, identity, progress);
         var renewal = RenewLeaseAsync(lease, deadline);
         try
@@ -584,12 +586,17 @@ internal sealed class AgentRuntimeWorker<TAgent>(
     {
         private long _sequence;
 
-        public Task ReportAsync(object? value, CancellationToken cancellationToken = default) =>
-            runtime.ReportProgressAsync(
-                lease,
-                Interlocked.Increment(ref _sequence),
-                System.Text.Json.JsonSerializer.SerializeToElement(value),
-                cancellationToken);
+        private readonly SemaphoreSlim _gate = new(1, 1);
+        public async Task ReportAsync(object? value, CancellationToken cancellationToken = default)
+        {
+            await _gate.WaitAsync(cancellationToken);
+            try
+            {
+                await runtime.ReportProgressAsync(lease, ++_sequence,
+                    System.Text.Json.JsonSerializer.SerializeToElement(value), cancellationToken);
+            }
+            finally { _gate.Release(); }
+        }
     }
 
     private sealed class UnavailableProgressReporter : IAgentProgressReporter
