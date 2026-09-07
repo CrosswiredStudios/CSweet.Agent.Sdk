@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 3.31.1
+     --SdkVersion 3.32.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed
@@ -167,8 +167,8 @@ Human-oriented explanations and examples are in
 
 ## Reusable collaboration
 
-See [agent collaboration](docs/collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.31.1.
+See [agent collaboration](docs/collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.32.0.
 
 ## Acknowledged inference waits
 
-SDK 3.31.1 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](docs/llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.
+SDK 3.32.0 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](docs/llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.

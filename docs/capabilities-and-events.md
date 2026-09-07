@@ -173,4 +173,4 @@ publication authority from a subscription.
 
 ## Reusable collaboration
 
-See [agent collaboration](collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.31.1.
+See [agent collaboration](collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.32.0.

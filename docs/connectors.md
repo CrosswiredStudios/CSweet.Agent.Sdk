@@ -1,4 +1,19 @@
-# Protocol 2.1 connector contracts (SDK 3.31.1)
+# Protocol 2.1 connector contracts (SDK 3.32.0)
+
+## Typed action lifecycle
+
+Use `context.Platform.Connectors.RequestActionAsync(new RequestConnectorAction(capability, input,
+idempotencyKey))` for a mutation and persist the returned `ConnectorAction.ActionId`. Provider-specific
+packages should wrap this in narrow typed methods. Requesting a change does not execute it. The host
+selects the explicitly bound account, freezes the plan and requests its exact approval. Read it with
+`ReadActionAsync(new ReadConnectorAction(actionId))`; only `Completed` plus a persisted result proves
+completion. `Approved` means permission has been recorded, not that provider work succeeded.
+
+Declare both needed connector-action controls and the independent provider-operation capabilities.
+Subscribe to `ConnectorActionEvents.Changed`, correlate by action ID and reread state on every wake.
+Use durable personal work while waiting; do not keep an agent turn alive. Indeterminate outcomes
+must reconcile or visibly block, never retry under a fresh key. Credentials, account selection,
+approval authority, request destinations and upload URLs are not arguments to this API.
 
 Connector packages are deterministic integration providers, not employees. Declare
 `kind: connector`, one organization account connection, protocol minimum `2.1`,

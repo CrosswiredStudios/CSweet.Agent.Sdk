@@ -23,6 +23,7 @@ public sealed class PlatformCapabilityClient
         SourceControl = new PlatformSourceControlClient(tools);
         Infrastructure = new PlatformInfrastructureClient(tools);
         Communication = new PlatformCommunicationClient(this);
+        Connectors = new PlatformConnectorClient(this);
     }
 
     internal IPlatformToolInvoker Tools => _tools;
@@ -36,6 +37,7 @@ public sealed class PlatformCapabilityClient
     public PlatformSourceControlClient SourceControl { get; }
     public PlatformInfrastructureClient Infrastructure { get; }
     public PlatformCommunicationClient Communication { get; }
+    public PlatformConnectorClient Connectors { get; }
 
     public Task<BusinessProfileResponse> ReadBusinessProfileAsync(CancellationToken token = default) =>
         InvokeAsync<object, BusinessProfileResponse>(PlatformCapabilities.BusinessProfileRead, new { }, token);

@@ -2,7 +2,7 @@
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 3.31.1 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 3.32.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -19,7 +19,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.31.1
+  --SdkVersion 3.32.0
 cd ResearchAgent
 dotnet test
 ```
@@ -27,7 +27,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 3.31.1
+dotnet add package CSweet.Agent.SDK --version 3.32.0
 ```
 
 ```csharp
@@ -86,8 +86,8 @@ security issues privately to the maintainers as described in [SECURITY.md](SECUR
 
 ## Reusable collaboration
 
-See [agent collaboration](docs/collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.31.1.
+See [agent collaboration](docs/collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.32.0.
 
 ## Acknowledged inference waits
 
-SDK 3.31.1 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](docs/llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.
+SDK 3.32.0 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](docs/llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.

@@ -92,6 +92,8 @@ public static class CapabilityNames
         public const string TeamRosterRead = "platform.team-roster.read.v1";
         public const string ManagedActionExecute = "platform.managed-action.execute.v1";
         public const string ManagedActionDecide = "platform.managed-action.decide.v1";
+        public const string ConnectorActionRequest = "platform.connector.action.request.v1";
+        public const string ConnectorActionRead = "platform.connector.action.read.v1";
         public const string EngagementInboxUpsert = "platform.engagement-inbox.upsert.v1";
         public const string MetricSnapshotWrite = "platform.metric-snapshot.write.v1";
         public const string SynchronizationCheckpoint = "platform.synchronization-checkpoint.v1";
@@ -326,6 +328,8 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.TeamRosterRead,
                 CapabilityNames.Platform.ManagedActionExecute,
                 CapabilityNames.Platform.ManagedActionDecide,
+                CapabilityNames.Platform.ConnectorActionRequest,
+                CapabilityNames.Platform.ConnectorActionRead,
                 CapabilityNames.Platform.EngagementInboxUpsert,
                 CapabilityNames.Platform.MetricSnapshotWrite,
                 CapabilityNames.Platform.SynchronizationCheckpoint,

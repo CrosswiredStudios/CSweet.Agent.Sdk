@@ -1,5 +1,12 @@
 # Runtime maintainer guide
 
+SDK 3.32.0 adds hidden `platform.connector.action.request.v1` and
+`platform.connector.action.read.v1` controls. Their typed client contains no transport logic or
+credentials. The host owns plan preparation, exact decisions, durable execution and sanitized
+results. Deliver `com.csweet.connector.action.changed.v1` only to the exact requesting installation;
+the callback must reread current action state rather than trusting a stale event payload. Pending
+decisions and external work must not retain an agent callback or an in-memory wait.
+
 This document describes SDK internals. Agent authors should use the callback API and must not depend on these details.
 
 The SDK uses private Streamable HTTP `/mcp`. `initialize` reads a one-use workload token from the configured secret file. It sends runtime, tick, installation, organization, package identity, and version metadata. The returned token is held only in memory, renewed after five minutes, and discarded on disconnect.
@@ -48,7 +55,7 @@ For progressive staffing, ReviseWorkItemPlanningRequest accepts optional StageAs
 
 ## Connector protocol minimum
 
-SDK 3.31.1 adds protocol 2.1 [connector contracts](connectors.md). The private MCP
+SDK 3.32.0 adds protocol 2.1 [connector contracts](connectors.md). The private MCP
 wire version is independent. Reject enhanced manifests on older hosts. Connectors
 may not use ordinary provider dispatch, raw HTTP, model tools or credential values.
 Explicit dependency selection pins a package digest; refresh/reconciliation cannot
@@ -68,9 +75,9 @@ creation. Deliver the durable introduction and one 24-hour reminder with distinc
 stable event identities, and keep the ordinary onboarding event behind activation.
 
 
-SDK 3.31.1 adds assignment-scoped internal Git LFS locks through `context.Platform.Git.ListLocksAsync`, `LockFileAsync`, and `UnlockFileAsync`. Declare `git.workspace.locks.read.v2`, `git.workspace.locks.create.v2`, and `git.workspace.locks.release.v2` as needed (the separate `git-file-locks` capability group does not expand existing workspace grants). Core derives repository and employee ownership from the current assignment and team grant. Agents cannot choose owner identities, force another owner's unlock, or access provider credentials. Repeat acquisition of the same owned path returns the existing lock; repeat release is harmless. Own locks permit work-branch publication; release them before a governed merge. Managers can release orphaned locks. GitHub agent-owned locks are not supported by this API.
+SDK 3.32.0 adds assignment-scoped internal Git LFS locks through `context.Platform.Git.ListLocksAsync`, `LockFileAsync`, and `UnlockFileAsync`. Declare `git.workspace.locks.read.v2`, `git.workspace.locks.create.v2`, and `git.workspace.locks.release.v2` as needed (the separate `git-file-locks` capability group does not expand existing workspace grants). Core derives repository and employee ownership from the current assignment and team grant. Agents cannot choose owner identities, force another owner's unlock, or access provider credentials. Repeat acquisition of the same owned path returns the existing lock; repeat release is harmless. Own locks permit work-branch publication; release them before a governed merge. Managers can release orphaned locks. GitHub agent-owned locks are not supported by this API.
 
-## Coordination document sharing (SDK 3.31.1)
+## Coordination document sharing (SDK 3.32.0)
 
 Typed collaboration actions use existing coordination authority. At chat, board, and work-item
 starts and participant replies, Core verifies creator/steward ownership, current document read
@@ -83,4 +90,4 @@ deferral; no new event subscription mechanism is introduced.
 
 ## Acknowledged inference waits
 
-SDK 3.31.1 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.
+SDK 3.32.0 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.

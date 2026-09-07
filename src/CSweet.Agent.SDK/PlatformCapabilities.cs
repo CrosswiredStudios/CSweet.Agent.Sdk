@@ -53,6 +53,8 @@ public static class PlatformCapabilities
     public const string StaffingReplenishmentRead = CapabilityNames.Platform.StaffingReplenishmentRead;
     public const string StaffingReplenishmentDecide = CapabilityNames.Platform.StaffingReplenishmentDecide;
     public const string ManagedActionDecide = CapabilityNames.Platform.ManagedActionDecide;
+    public const string ConnectorActionRequest = CapabilityNames.Platform.ConnectorActionRequest;
+    public const string ConnectorActionRead = CapabilityNames.Platform.ConnectorActionRead;
     public const string ArtifactCreate = CapabilityNames.Platform.ArtifactCreate;
     public const string ArtifactRead = CapabilityNames.Platform.ArtifactRead;
     public const string ArtifactRevise = CapabilityNames.Platform.ArtifactRevise;
@@ -102,7 +104,7 @@ public static class PlatformCapabilities
         ResourceChangeRead, ResourceChangeDecide, HiringWorkflowStage, UserActionSuggest,
         TeamRosterRead, AgentOperatingStateRead, AgentOperatingStateWrite,
         StaffingReplenishmentPropose, StaffingReplenishmentRead, StaffingReplenishmentDecide,
-        ManagedActionDecide, ArtifactCreate, ArtifactRead, ArtifactRevise, ArtifactSubmit,
+        ManagedActionDecide, ConnectorActionRequest, ConnectorActionRead, ArtifactCreate, ArtifactRead, ArtifactRevise, ArtifactSubmit,
         ArtifactDecide, ArtifactDecideV2, ArtifactRequestAccess, ArtifactPackageCreate, ArtifactPackageRead,
         ArtifactPackageSubmit, ArtifactPackageDecide, ToolchainCatalogRead, BuildRequest, BuildRead, BuildClaim,
         BuildHeartbeat, BuildReport, BuildCancel, ValidationRead, PreviewCreate, PreviewRead,

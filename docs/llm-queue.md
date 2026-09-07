@@ -1,4 +1,4 @@
-# LLM queue and waiting budgets (SDK 3.31.1)
+# LLM queue and waiting budgets (SDK 3.32.0)
 
 During a leased agent callback, `context.CreateChatClient(...)` automatically uses the host's
 authenticated inference job protocol when advertised. Agents keep using the same public chat
@@ -54,7 +54,7 @@ The queue coordinator is scoped to one AgentHost process, matching the current l
 Multiple AgentHost replicas require sticky routing and a shared admission coordinator before
 claiming a provider-wide concurrency limit. Separate API-side fallback chat calls and external
 provider clients do not use this agent queue. Older agents share AgentHost admission limits but
-retain their old transport timeout; rebuild/reimport them with SDK 3.31.1 to enable polling.
+retain their old transport timeout; rebuild/reimport them with SDK 3.32.0 to enable polling.
 Older hosts retain the previous SDK streaming path through capability negotiation.
 
 Release checks cover per-provider serialization, queued cancellation, replay keys, runtime
