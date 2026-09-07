@@ -149,6 +149,7 @@ public static class AgentRolePolicyProfiles
 
 public static class UserActionWorkflows
 {
+    public const string PluginSetupOpen = "plugin.setup.open.v1";
     public const string HiringMarketplaceBrowse = "hiring.marketplace.browse.v1";
 }
 

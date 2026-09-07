@@ -72,8 +72,8 @@ public static class AgentManifestLoader
         Required(manifest.Name, "name", errors);
         if (!SemanticVersionPattern.IsMatch(manifest.Version ?? string.Empty))
             errors.Add("Plugin manifest version must be a semantic version such as 1.2.3.");
-        if (manifest.Kind is not ("agent" or "service"))
-            errors.Add("Plugin manifest kind must be 'agent' or 'service'.");
+        if (manifest.Kind is not ("agent" or "service" or "connector"))
+            errors.Add("Plugin manifest kind must be agent, service, or connector.");
         if (manifest.ManifestVersion != "2.0")
             errors.Add("Executable plugins must use manifestVersion 2.0.");
 
@@ -91,13 +91,14 @@ public static class AgentManifestLoader
         ValidateWorkstreamProfiles(manifest.WorkstreamProfiles, errors);
         ValidateToolchainAdapters(manifest.ToolchainAdapters, errors);
         if (manifest.Protocol is null ||
-            manifest.Protocol.MinimumVersion != "2.0" ||
+            manifest.Protocol.MinimumVersion is not ("2.0" or "2.1") ||
             !manifest.Protocol.MaximumVersion.StartsWith("2.", StringComparison.Ordinal))
         {
             errors.Add("Executable plugins must require MCP runtime protocol 2.0 through 2.x.");
         }
 
         ValidateNames(provides.Select(x => x.Name), "provides", errors);
+        errors.AddRange(ConnectorContractValidator.Validate(manifest));
         ValidateNames(requires.Select(x => x.Name), "requires", errors);
         ValidateNames(events.Subscribes ?? [], "events.subscribes", errors);
         if (events.Publishes?.Count > 0)
@@ -153,6 +154,7 @@ public static class AgentManifestLoader
         Connections = manifest.Connections ?? [],
         McpServers = manifest.McpServers ?? [],
         ProviderOperations = manifest.ProviderOperations ?? [],
+        Dependencies = manifest.Dependencies ?? [],
         FileTransferTargets = manifest.FileTransferTargets ?? [],
         Setup = manifest.Setup,
         WebAccess = manifest.WebAccess ?? new AgentWebAccessManifest(),
@@ -194,6 +196,7 @@ public static class AgentManifestLoader
         foreach (var operation in manifest.ProviderOperations ?? [])
         {
             capabilities.Add(operation.Capability);
+            if (operation.Http is not null) continue; // Protocol 2.1 mappings have their own closed validator.
             if (string.IsNullOrWhiteSpace(operation.ProviderProfile) || !IdentifierPattern.IsMatch(operation.ProviderProfile))
                 errors.Add($"Provider operation '{operation.Capability}' providerProfile is invalid.");
             if (string.IsNullOrWhiteSpace(operation.Command) || operation.Command.Length > 200)

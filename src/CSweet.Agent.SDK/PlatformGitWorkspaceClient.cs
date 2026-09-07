@@ -43,6 +43,15 @@ public sealed class PlatformGitWorkspaceClient
         InvokeAsync<CleanupGitWorkspaceRequest, GitWorkspaceCleanupResult>(
             GitWorkspaceCapabilities.Cleanup, request, cancellationToken);
 
+    public Task<GitWorkspaceLockResult> ListLocksAsync(ListGitWorkspaceLocksRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<ListGitWorkspaceLocksRequest, GitWorkspaceLockResult>(GitWorkspaceCapabilities.ListLocks, request, cancellationToken);
+
+    public Task<GitWorkspaceLockResult> LockFileAsync(LockGitWorkspaceFileRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<LockGitWorkspaceFileRequest, GitWorkspaceLockResult>(GitWorkspaceCapabilities.LockFile, request, cancellationToken);
+
+    public Task<GitWorkspaceLockResult> UnlockFileAsync(UnlockGitWorkspaceFileRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<UnlockGitWorkspaceFileRequest, GitWorkspaceLockResult>(GitWorkspaceCapabilities.UnlockFile, request, cancellationToken);
+
     private async Task<TResponse> InvokeAsync<TRequest, TResponse>(
         string capability,
         TRequest request,
@@ -160,3 +169,9 @@ public sealed record GitWorkspaceCleanupResult(
     Guid WorkspaceId,
     bool Removed,
     DateTimeOffset? RetainUntil);
+
+public sealed record ListGitWorkspaceLocksRequest(Guid WorkspaceId, long AssignmentRevision, string? Cursor = null);
+public sealed record LockGitWorkspaceFileRequest(Guid WorkspaceId, long AssignmentRevision, string Path, string IdempotencyKey);
+public sealed record UnlockGitWorkspaceFileRequest(Guid WorkspaceId, long AssignmentRevision, string LockId, string IdempotencyKey);
+public sealed record GitWorkspaceFileLock(string Id, string Path, string OwnerName, bool OwnedByCaller, DateTimeOffset LockedAt);
+public sealed record GitWorkspaceLockResult(string Status, IReadOnlyList<GitWorkspaceFileLock> Locks, string? NextCursor = null, string? Message = null);

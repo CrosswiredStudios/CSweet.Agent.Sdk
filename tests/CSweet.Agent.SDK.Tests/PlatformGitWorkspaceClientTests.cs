@@ -5,6 +5,35 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class PlatformGitWorkspaceClientTests
 {
     [Fact]
+    public async Task FileLocksPreserveAssignmentAndExposeOwnershipWithoutCredentials()
+    {
+        var workspace = Guid.NewGuid(); var lockId = Guid.NewGuid().ToString("N");
+        var fileLock = new GitWorkspaceFileLock(lockId, "art/asset.bin", "Developer", true, DateTimeOffset.UtcNow);
+        var runtime = new AgentTestRuntime()
+            .RegisterCapability<LockGitWorkspaceFileRequest, GitWorkspaceLockResult>(GitWorkspaceCapabilities.LockFile, (request, _) =>
+            {
+                Assert.Equal(workspace, request.WorkspaceId); Assert.Equal(7, request.AssignmentRevision);
+                Assert.Equal("art/asset.bin", request.Path); Assert.Equal("lock:asset", request.IdempotencyKey);
+                return Task.FromResult(new GitWorkspaceLockResult("Locked", [fileLock]));
+            })
+            .RegisterCapability<ListGitWorkspaceLocksRequest, GitWorkspaceLockResult>(GitWorkspaceCapabilities.ListLocks, (request, _) =>
+            {
+                Assert.Equal(workspace, request.WorkspaceId); Assert.Equal(lockId, request.Cursor);
+                return Task.FromResult(new GitWorkspaceLockResult("Listed", [fileLock]));
+            })
+            .RegisterCapability<UnlockGitWorkspaceFileRequest, GitWorkspaceLockResult>(GitWorkspaceCapabilities.UnlockFile, (request, _) =>
+            {
+                Assert.Equal(workspace, request.WorkspaceId); Assert.Equal(lockId, request.LockId);
+                Assert.Equal("unlock:asset", request.IdempotencyKey);
+                return Task.FromResult(new GitWorkspaceLockResult("Unlocked", []));
+            });
+        var git = runtime.CreateContext().Platform.Git;
+        Assert.True(Assert.Single((await git.LockFileAsync(new(workspace, 7, "art/asset.bin", "lock:asset"))).Locks).OwnedByCaller);
+        Assert.Equal(fileLock, Assert.Single((await git.ListLocksAsync(new(workspace, 7, lockId))).Locks));
+        Assert.Equal("Unlocked", (await git.UnlockFileAsync(new(workspace, 7, lockId, "unlock:asset"))).Status);
+    }
+
+    [Fact]
     public async Task PublishAsync_PreservesBoundedValidationEvidence()
     {
         PublishGitWorkspaceRequest? captured = null;
@@ -55,7 +84,10 @@ public sealed class PlatformGitWorkspaceClientTests
             GitWorkspaceCapabilities.Refresh,
             GitWorkspaceCapabilities.Inspect,
             GitWorkspaceCapabilities.Publish,
-            GitWorkspaceCapabilities.Cleanup
+            GitWorkspaceCapabilities.Cleanup,
+            GitWorkspaceCapabilities.ListLocks,
+            GitWorkspaceCapabilities.LockFile,
+            GitWorkspaceCapabilities.UnlockFile
         };
 
         Assert.All(capabilities, capability =>

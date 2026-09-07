@@ -45,3 +45,27 @@ data, filesystem, and ordinary network grants remain unavailable until platform 
 transition the installation to ready.
 
 For progressive staffing, ReviseWorkItemPlanningRequest accepts optional StageAssignments and AccountableOrganizationUserId. Null assignments preserve existing ownership; explicit replacements are validated by the host against stage policy, ticket requirements, roster and profile evidence. The agent cannot use a planning revision to bypass execution immutability or eligibility checks.
+
+## Connector protocol minimum
+
+SDK 3.30.0 adds protocol 2.1 [connector contracts](connectors.md). The private MCP
+wire version is independent. Reject enhanced manifests on older hosts. Connectors
+may not use ordinary provider dispatch, raw HTTP, model tools or credential values.
+Explicit dependency selection pins a package digest; refresh/reconciliation cannot
+carry approval to another build or account. Each request must recheck grants,
+connection state, resource ownership, frozen plan and decision/policy authorization.
+Limited agent setup assistance is separate from connector bootstrap: it may reach
+only designated participants, without normal external or business-data authority.
+Connector `accountOptions` projections run through host-only bootstrap reads, not the
+ordinary provider-work queue. The current step and immutable approval must be rechecked
+around each request, and a health check must rediscover the confirmed account using the
+authenticated provider rather than trust a supplied account ID. Literal bound-resource
+prefixes are fixed mapping data and are included in request-plan hashing.
+`setup.assistance.profile = conversation.v1` requires inbound conversation/event
+binding and outgoing payload enforcement in addition to filtering the runtime
+grant. Recheck at work claim and platform invocation, not only at enqueue/session
+creation. Deliver the durable introduction and one 24-hour reminder with distinct
+stable event identities, and keep the ordinary onboarding event behind activation.
+
+
+SDK 3.30.0 adds assignment-scoped internal Git LFS locks through `context.Platform.Git.ListLocksAsync`, `LockFileAsync`, and `UnlockFileAsync`. Declare `git.workspace.locks.read.v2`, `git.workspace.locks.create.v2`, and `git.workspace.locks.release.v2` as needed (the separate `git-file-locks` capability group does not expand existing workspace grants). Core derives repository and employee ownership from the current assignment and team grant. Agents cannot choose owner identities, force another owner's unlock, or access provider credentials. Repeat acquisition of the same owned path returns the existing lock; repeat release is harmless. Own locks permit work-branch publication; release them before a governed merge. Managers can release orphaned locks. GitHub agent-owned locks are not supported by this API.

@@ -33,6 +33,7 @@ public sealed class AgentManifest
 
     public IReadOnlyList<AgentProvidedCapability> Provides { get; init; } = [];
     public IReadOnlyList<AgentRequiredCapability> Requires { get; init; } = [];
+    public IReadOnlyList<PluginDependencyDeclaration> Dependencies { get; init; } = [];
     public AgentEventManifest Events { get; init; } = new([]);
     public IReadOnlyList<AgentManifestConfigurationField> Configuration { get; init; } = [];
     public IReadOnlyList<AgentCredentialBinding> Credentials { get; init; } = [];
@@ -77,7 +78,11 @@ public sealed record AgentProvidedCapability(
 public sealed record AgentRequiredCapability(
     string Name,
     string? Scope = "organization",
-    string? Purpose = null);
+    string? Purpose = null)
+{
+    public string? Dependency { get; init; }
+    public bool ModelVisible { get; init; } = true;
+}
 
 /// <summary>Event subscriptions for this package. Protocol v2 does not allow generic publications.</summary>
 public sealed record AgentEventManifest(IReadOnlyList<string> Subscribes)
@@ -147,6 +152,7 @@ public sealed record AgentConnectionDeclaration
     public string Id { get; init; } = string.Empty;
     public string Type { get; init; } = "oauth2";
     public string ProviderProfile { get; init; } = string.Empty;
+    public OAuthProviderMetadata? Provider { get; init; }
     public IReadOnlyList<string> AllowedOrigins { get; init; } = [];
     public IReadOnlyList<AgentConnectionScopeSet> ScopeSets { get; init; } = [];
     public IReadOnlyList<string> SecretResponseFields { get; init; } = [];
@@ -188,6 +194,7 @@ public sealed record AgentMcpToolDeclaration
 /// <summary>An exact legacy provider command materialized and invoked only by C-Sweet.</summary>
 public sealed record AgentProviderOperationDeclaration
 {
+    public ConnectorHttpOperation? Http { get; init; }
     public string Capability { get; init; } = string.Empty;
     public string ProviderProfile { get; init; } = string.Empty;
     public string Command { get; init; } = string.Empty;
@@ -215,6 +222,7 @@ public sealed record AgentFileTransferTargetDeclaration
 /// <summary>A declarative, resumable setup graph rendered entirely by C-Sweet.</summary>
 public sealed record AgentSetupManifest
 {
+    public PluginSetupAssistance? Assistance { get; init; }
     public bool Required { get; init; } = true;
     public string EntryFlow { get; init; } = string.Empty;
     public IReadOnlyList<AgentSetupFlow> Flows { get; init; } = [];
@@ -231,6 +239,7 @@ public sealed record AgentSetupFlow
 /// <summary>One declarative setup step. No executable markup or expressions are accepted.</summary>
 public sealed record AgentSetupStep
 {
+    public ConnectorAccountOptions? AccountOptions { get; init; }
     public string Id { get; init; } = string.Empty;
     public string Kind { get; init; } = string.Empty;
     public string Title { get; init; } = string.Empty;

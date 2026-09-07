@@ -72,3 +72,31 @@ cancel affected work and reconnect instead of retaining an expired session indef
 code cannot disable these limits or access the underlying transport.
 
 Planning revisions may now bind stage assignments under the existing scoped planning grant. The host validates stage policy, delegation requirements, active eligible ownership, team/profile evidence and optimistic revisions; executing planning remains immutable. Omitting assignments preserves existing ownership.
+
+## Connector boundary (protocol 2.1)
+
+Connector dependencies, public OAuth metadata and closed HTTP mappings require a
+2.1-enforcing host. Packages never inherit trust from a claimed publisher/profile
+name. Administrator approval binds an immutable build and its reviewed vault
+profile. Consumer grants, provider consent and resource ownership are independent.
+No raw authenticated HTTP or ordinary provider dispatch may bypass frozen-plan
+approval. Host credential injection follows exact request validation, including
+resumed media chunks. Secret-bearing responses fail closed before runtime delivery.
+See [connector contracts](docs/connectors.md). Contract tests do not establish that
+a deployment has implemented these enforcement responsibilities.
+
+The optional `conversation.v1` setup assistance profile is a separate agent-only
+authority boundary. Hosts must bind both inbound work and outgoing platform calls
+to the durable protected conversation, reject unrelated data/media/tool access,
+and recheck setup state when queued work is claimed. It never grants a connector
+model access or lets the agent activate itself. See the setup section in
+[connector contracts](docs/connectors.md).
+
+Connector account-selection projections accept bounded JSON pointers only. Bootstrap
+HTTP stays in the host, rechecking the exact installation, current step, package/profile
+approval, grants and scopes before and after reads. Browser labels cannot replace
+provider-returned account identity. Account lists with duplicate IDs or unfinished
+pagination must not be silently accepted.
+
+
+SDK 3.30.0 adds assignment-scoped internal Git LFS locks through `context.Platform.Git.ListLocksAsync`, `LockFileAsync`, and `UnlockFileAsync`. Declare `git.workspace.locks.read.v2`, `git.workspace.locks.create.v2`, and `git.workspace.locks.release.v2` as needed (the separate `git-file-locks` capability group does not expand existing workspace grants). Core derives repository and employee ownership from the current assignment and team grant. Agents cannot choose owner identities, force another owner's unlock, or access provider credentials. Repeat acquisition of the same owned path returns the existing lock; repeat release is harmless. Own locks permit work-branch publication; release them before a governed merge. Managers can release orphaned locks. GitHub agent-owned locks are not supported by this API.

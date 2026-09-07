@@ -243,6 +243,9 @@ public static class CapabilityNames
         public const string Inspect = "git.workspace.inspect.v2";
         public const string Publish = "git.workspace.publish.v2";
         public const string Cleanup = "git.workspace.cleanup.v2";
+        public const string ListLocks = "git.workspace.locks.read.v2";
+        public const string LockFile = "git.workspace.locks.create.v2";
+        public const string UnlockFile = "git.workspace.locks.release.v2";
     }
 
     public static class GitMerge
@@ -443,6 +446,7 @@ public static class CapabilityCatalog
                 CapabilityNames.GitWorkspace.Inspect,
                 CapabilityNames.GitWorkspace.Publish,
                 CapabilityNames.GitWorkspace.Cleanup),
+            ["git-file-locks"] = Set(CapabilityNames.GitWorkspace.ListLocks, CapabilityNames.GitWorkspace.LockFile, CapabilityNames.GitWorkspace.UnlockFile),
             ["git-merge"] = Set(
                 CapabilityNames.GitMerge.Review,
                 CapabilityNames.GitMerge.Authorize),
@@ -558,6 +562,9 @@ public static class GitWorkspaceCapabilities
     public const string Inspect = CapabilityNames.GitWorkspace.Inspect;
     public const string Publish = CapabilityNames.GitWorkspace.Publish;
     public const string Cleanup = CapabilityNames.GitWorkspace.Cleanup;
+    public const string ListLocks = CapabilityNames.GitWorkspace.ListLocks;
+    public const string LockFile = CapabilityNames.GitWorkspace.LockFile;
+    public const string UnlockFile = CapabilityNames.GitWorkspace.UnlockFile;
 }
 
 public static class WorkSprintCapabilities
