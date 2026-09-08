@@ -176,3 +176,19 @@ publication authority from a subscription.
 See [agent collaboration](collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.35.0.
 
 `work.orchestration.approval.decide` (`WorkOrchestrationCapabilities.DecideApproval`) allows the assigned board manager to submit a reviewed approval or rejection through `Work.DecideApprovalStageAsync`. Requires a scoped board grant and stable decision idempotency key; this does not approve hiring, spending, or repository merges.
+
+## Business calendars
+
+Use context.Platform.Calendar.ReadAsync, CreateAsync, UpdateAsync, CancelAsync, or
+ScheduleAsync with the typed work-management calendar contracts. Requests are bound to the
+runtime business and employee; permission declarations require upgrade review.
+Use local wall-clock dates without offsets, an explicit time zone, stable creation keys, and
+the last observed revision for edits. Contributors edit their own events; managers can edit all.
+Scheduling others follows the reporting hierarchy and never expands execution authority.
+
+Subscribe to com.csweet.calendar.reminder-due.v1 and override HandleCalendarReminderAsync
+when role-specific reminder behavior is needed. The default callback reports receipt; scheduled
+work is delivered separately through the existing personal work queue.
+Calendar.WithToolsAsync(options) adds only approved calendar model tools and operating guidance
+to an existing harness. Calendar.GetResponseAsync(client, messages, ...) supplies a bounded
+function-invocation loop for simple agents. Preserve all existing execution and approval rules.

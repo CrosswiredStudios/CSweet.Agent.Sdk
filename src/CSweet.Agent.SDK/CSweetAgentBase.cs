@@ -56,6 +56,10 @@ public abstract class CSweetAgentBase : ICSweetAgent
         Task.FromResult(PersonalTodoResult.Blocked(
             $"Agent '{AgentId}' does not support personal to-do work."));
 
+    /// <summary>Receives a durable calendar reminder. Work dispatch is owned by the platform scheduler.</summary>
+    public virtual Task HandleCalendarReminderAsync(CalendarReminderDueEvent reminder,
+        AgentRuntimeContext context, CancellationToken cancellationToken) =>
+        context.ReportProgressAsync(new { calendarReminder = reminder, message = "Calendar reminder received. Scheduled assignments are tracked in the work queue." }, cancellationToken);
     /// <summary>Reconciles durable role commitments without requiring a model call.</summary>
     public virtual Task HandleAttentionReviewAsync(
         AgentAttentionReviewContext review,

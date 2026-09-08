@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 3.39.0
+     --SdkVersion 3.40.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed
@@ -167,8 +167,24 @@ Human-oriented explanations and examples are in
 
 ## Reusable collaboration
 
-See [agent collaboration](docs/collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.39.0.
+See [agent collaboration](docs/collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.40.0.
 
 ## Acknowledged inference waits
 
-SDK 3.39.0 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](docs/llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.
+SDK 3.40.0 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](docs/llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.
+
+## Business calendars
+
+Use context.Platform.Calendar.ReadAsync, CreateAsync, UpdateAsync, CancelAsync, or
+ScheduleAsync with the typed work-management calendar contracts. Requests are bound to the
+runtime business and employee; permission declarations require upgrade review.
+Use local wall-clock dates without offsets, an explicit time zone, stable creation keys, and
+the last observed revision for edits. Contributors edit their own events; managers can edit all.
+Scheduling others follows the reporting hierarchy and never expands execution authority.
+
+Subscribe to com.csweet.calendar.reminder-due.v1 and override HandleCalendarReminderAsync
+when role-specific reminder behavior is needed. The default callback reports receipt; scheduled
+work is delivered separately through the existing personal work queue.
+Calendar.WithToolsAsync(options) adds only approved calendar model tools and operating guidance
+to an existing harness. Calendar.GetResponseAsync(client, messages, ...) supplies a bounded
+function-invocation loop for simple agents. Preserve all existing execution and approval rules.

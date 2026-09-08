@@ -32,6 +32,7 @@ public sealed class CapabilityCatalogTests
                 "agent",
                 "agent-catalog",
                 "assistant",
+                "calendar",
                 "communication",
                 "git-file-locks",
                 "git-merge",

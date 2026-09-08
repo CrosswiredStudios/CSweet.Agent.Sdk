@@ -45,8 +45,8 @@
       "riskClass": "standard"
     }
   ],
-  "requires": [],
-  "events": { "subscribes": [] },
+  "requires": [{"name":"work.calendar.read.v1","scope":"organization","purpose":"Operate the business calendar within ownership and reporting authority."},{"name":"work.calendar.create.v1","scope":"organization","purpose":"Operate the business calendar within ownership and reporting authority."},{"name":"work.calendar.update.v1","scope":"organization","purpose":"Operate the business calendar within ownership and reporting authority."},{"name":"work.calendar.cancel.v1","scope":"organization","purpose":"Operate the business calendar within ownership and reporting authority."},{"name":"work.calendar.schedule.v1","scope":"organization","purpose":"Operate the business calendar within ownership and reporting authority."}],
+  "events": { "subscribes": ["com.csweet.calendar.reminder-due.v1"] },
   "configuration": [],
   "credentials": [],
   "webAccess": { "mode": "None", "rules": [] },

@@ -8,6 +8,14 @@ namespace CSweet.Agent.SDK;
 /// </summary>
 public static class CapabilityNames
 {
+    public static class Calendar
+    {
+        public const string Read = CalendarCapabilities.Read;
+        public const string Create = CalendarCapabilities.Create;
+        public const string Update = CalendarCapabilities.Update;
+        public const string Cancel = CalendarCapabilities.Cancel;
+        public const string Schedule = CalendarCapabilities.Schedule;
+    }
     public static class Assistant
     {
         public const string Converse = "assistant.converse.v1";
@@ -273,6 +281,7 @@ public static class CapabilityCatalog
     public static IReadOnlyDictionary<string, IReadOnlySet<string>> ByService { get; } =
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
         {
+            ["calendar"] = Set(CalendarCapabilities.Read, CalendarCapabilities.Create, CalendarCapabilities.Update, CalendarCapabilities.Cancel, CalendarCapabilities.Schedule),
             ["assistant"] = Set(
                 CapabilityNames.Assistant.Converse,
                 CapabilityNames.Assistant.SummarizeActivity,

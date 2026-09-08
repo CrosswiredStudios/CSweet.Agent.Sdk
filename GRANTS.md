@@ -340,3 +340,11 @@ are not formal artifact approval. Runtime scheduling for dependency waits uses p
 deferral; no new event subscription mechanism is introduced.
 
 `work.orchestration.approval.decide` (`WorkOrchestrationCapabilities.DecideApproval`) allows the assigned board manager to submit a reviewed approval or rejection through `Work.DecideApprovalStageAsync`. Requires a scoped board grant and stable decision idempotency key; this does not approve hiring, spending, or repository merges.
+
+## Calendar
+
+- `work.calendar.read.v1` — business scope; event ownership and reporting authority are checked on every operation.
+- `work.calendar.create.v1` — business scope; event ownership and reporting authority are checked on every operation.
+- `work.calendar.update.v1` — business scope; event ownership and reporting authority are checked on every operation.
+- `work.calendar.cancel.v1` — business scope; event ownership and reporting authority are checked on every operation.
+- `work.calendar.schedule.v1` — business scope; event ownership and reporting authority are checked on every operation.

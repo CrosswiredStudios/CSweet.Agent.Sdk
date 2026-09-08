@@ -359,6 +359,13 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 lease.Payload,
                 DateTimeOffset.UtcNow,
                 lease.CorrelationId);
+        if (string.Equals(envelope.EventType, CalendarEvents.ReminderDue, StringComparison.Ordinal) && agent is CSweetAgentBase calendarAgent)
+        {
+            var reminder = envelope.Data.Deserialize<CalendarReminderDueEvent>(CSweetAgentBase.SerializerOptions)
+                ?? throw new InvalidOperationException("Calendar reminder payload is empty.");
+            await calendarAgent.HandleCalendarReminderAsync(reminder, context, cancellationToken);
+            return AgentWorkResult.Success(new { acknowledged = true });
+        }
         if (string.Equals(envelope.EventType, AgentAttentionEvents.ReviewDue, StringComparison.Ordinal) &&
             agent is CSweetAgentBase attentiveAgent)
         {
