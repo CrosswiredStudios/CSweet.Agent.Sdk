@@ -182,6 +182,11 @@ public sealed class PlatformWorkClient
         InvokeAsync<RetryWorkStageExecutionRequest, WorkStageExecutionResponse>(
             WorkOrchestrationCapabilities.Retry, request, cancellationToken);
 
+    public Task<WorkStageExecutionResponse> DecideApprovalStageAsync(
+        DecideWorkApprovalStageRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<DecideWorkApprovalStageRequest, WorkStageExecutionResponse>(
+            WorkOrchestrationCapabilities.DecideApproval, request, cancellationToken);
+
     private async Task<TResponse> InvokeAsync<TRequest, TResponse>(
         string capability, TRequest request, CancellationToken cancellationToken)
     {

@@ -24,8 +24,8 @@ public static class ConnectorContractValidator
         var enhanced = manifest.Kind == "connector" || dependencies.Count > 0 || operations.Length > 0 ||
             manifest.Connections.Any(x => x.Provider is not null) || manifest.Setup?.Assistance is not null ||
             manifest.Setup?.Flows.SelectMany(x => x.Steps).Any(x => x.AccountOptions is not null) == true;
-        if (enhanced && manifest.Protocol?.MinimumVersion != "2.1")
-            errors.Add("Connector contracts and dependencies require protocol minimumVersion 2.1.");
+        if (enhanced && manifest.Protocol?.MinimumVersion is not ("2.1" or "2.2" or "2.3"))
+            errors.Add("Connector contracts and dependencies require protocol minimumVersion 2.1, 2.2 or 2.3.");
         if (manifest.Setup?.Assistance is { } assistance &&
             (manifest.Kind != "agent" || assistance.Profile != "conversation.v1" || !manifest.Setup.Required ||
              manifest.WebAccess.Mode != "None" || manifest.Runtime.WorkspaceAccess != "None"))
@@ -123,12 +123,24 @@ public static class ConnectorContractValidator
                 errors.Add("Request mappings require distinct fields and bounded JSON pointers.");
             if (http.MediaInput is not null && (!Pointer.IsMatch(http.MediaInput) || http.Method != "POST" || operation.Effect == "read"))
                 errors.Add("Media transfer requires a mutating POST and a typed media pointer.");
+            if (http.MediaProtocol is not null && (http.MediaProtocol != "resumable-range.v1" || http.MediaInput is null))
+                errors.Add("A media protocol requires a media pointer and a supported fixed host protocol.");
             if (http.BoundResourceQueryPrefix.Length > 64 || http.BoundResourceQueryPrefix.Any(char.IsControl) ||
                 http.BoundResourceQueryPrefix.Length > 0 && http.BoundResourceQuery is null)
                 errors.Add("A bounded literal resource prefix requires a host-bound query field.");
             if (http.SecretResponseFields.Any(x => !Pointer.IsMatch(x.Replace("/*/", "/0/", StringComparison.Ordinal))))
                 errors.Add("Secret response fields require JSON pointers with optional array wildcards.");
             if (http.ResourceChecks.Count > 8) errors.Add("An operation can check at most eight resource relationships.");
+            if (http.ResponseResourcePointers.Count > 0 && (manifest.Protocol?.MinimumVersion is not ("2.2" or "2.3") || http.Bootstrap))
+                errors.Add("Response resource binding requires protocol 2.2 and a confirmed, non-bootstrap connection.");
+            if (http.IfMatchInput is { } etag && (manifest.Protocol?.MinimumVersion != "2.3" || http.Bootstrap || http.MediaInput is not null ||
+                http.Method is not ("PUT" or "PATCH" or "DELETE") || operation.Effect == "read" || etag.Length > 256 ||
+                !Pointer.IsMatch(etag) || etag.Any(char.IsControl) || !RequiredBoundedString(operation.InputSchema, etag)))
+                errors.Add("If-Match requires protocol 2.3, a non-media conditional mutation and a required bounded string input.");
+            if (http.ResponseResourcePointers.Count > 8 || http.ResponseResourcePointers.Distinct(StringComparer.Ordinal).Count() != http.ResponseResourcePointers.Count ||
+                http.ResponseResourcePointers.Any(x => string.IsNullOrEmpty(x) || x.Length > 256 ||
+                    !System.Text.RegularExpressions.Regex.IsMatch(x, @"\A(?:/(?:[A-Za-z0-9_-]+|\*))+\z") || x.Count(c => c == '*') > 1))
+                errors.Add("Response resource bindings require at most eight unique bounded pointers with at most one array wildcard each.");
             foreach (var check in http.ResourceChecks)
             if (!AllowedEndpoint(check.Endpoint, connection) ||
                 !Pointer.IsMatch(check.InputPointer) || !Pointer.IsMatch(check.OwnerPointer) ||
@@ -146,6 +158,19 @@ public static class ConnectorContractValidator
 
     private static bool AllowedEndpoint(string value, AgentConnectionDeclaration? connection) =>
         PublicEndpoint(value) && connection?.AllowedOrigins.Contains(new Uri(value).GetLeftPart(UriPartial.Authority), StringComparer.Ordinal) == true;
+    private static bool RequiredBoundedString(JsonElement schema, string pointer)
+    {
+        foreach (var part in pointer.Split('/').Skip(1))
+        {
+            if (schema.ValueKind != JsonValueKind.Object || !schema.TryGetProperty("required", out var required) || required.ValueKind != JsonValueKind.Array ||
+                !required.EnumerateArray().Any(x => x.ValueKind == JsonValueKind.String && x.GetString() == part) ||
+                !schema.TryGetProperty("properties", out var properties) || properties.ValueKind != JsonValueKind.Object ||
+                !properties.TryGetProperty(part, out schema)) return false;
+        }
+        return schema.ValueKind == JsonValueKind.Object && schema.TryGetProperty("type", out var type) && type.ValueKind == JsonValueKind.String &&
+            type.GetString() == "string" && schema.TryGetProperty("maxLength", out var limit) && limit.ValueKind == JsonValueKind.Number &&
+            limit.TryGetInt32(out var length) && length is >= 3 and <= 256;
+    }
     private static bool ClosedSchema(JsonElement schema) => schema.ValueKind == JsonValueKind.Object &&
         schema.TryGetProperty("type", out var type) && type.GetString() == "object" &&
         schema.TryGetProperty("additionalProperties", out var additional) && additional.ValueKind == JsonValueKind.False;

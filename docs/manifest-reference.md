@@ -1,6 +1,6 @@
 # Manifest v2 reference
 
-SDK 3.32.0 adds protocol 2.1 [connector and dependency contracts](connectors.md).
+SDK 3.35.0 adds protocol 2.1 [connector and dependency contracts](connectors.md).
 These require explicit host enforcement; declarations are not authority.
 
 Every executable agent repository has exactly one `csweet-plugin.json` at its root. The
@@ -194,3 +194,30 @@ Every agent manifest declares a `rolePolicy`. `declaredRoleKeys` contains the st
   "specializationKeys": ["game-development", "distributed-systems"]
 }
 ```
+
+## Marketplace card branding (SDK 3.39.0)
+
+Optional `catalog` keys customize discovery cards:
+
+```json
+{
+  "summary": "Turns ideas into a prioritized product plan.",
+  "longDescription": "Defines the product direction, organizes discovery, and delivers requirements and a roadmap your team can act on.",
+  "imageUrl": "https://assets.example.com/agents/product-manager.webp",
+  "companyLogoUrl": "https://assets.example.com/company-logo.svg",
+  "accentColor": "#1C6252"
+}
+```
+
+`imageUrl` is the agent portrait, illustration, or artwork; `companyLogoUrl` is the
+publisher's logo. Use absolute HTTPS URLs of at most 2,048 characters, without user
+credentials. `accentColor` accepts exactly six hexadecimal digits prefixed with `#`.
+`longDescription` is plain text, up to 2,000 characters, shown in the hover/tap panel
+and profile. It does not replace `summary` on the front of the card.
+
+All four values can be omitted or null. Blank values also use defaults. Missing or
+failed artwork uses C-Sweet's bundled agent image. Missing or failed company logos
+show `publisher.name`; no separate company-name field is required. An omitted accent
+uses the default marketplace accent, and an omitted long description uses `summary`.
+Legacy `iconUrls` remain independent icons; they are not assumed to be portraits or
+publisher logos. Artwork never controls availability, trust, or permissions.

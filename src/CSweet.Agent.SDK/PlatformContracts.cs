@@ -249,7 +249,13 @@ public sealed record AvailableAgent(
     string? LicenseUrl = null,
     IReadOnlyList<string>? IconUrls = null,
     IReadOnlyList<string>? RoleCategoryKeys = null,
-    IReadOnlyList<string>? SpecializationKeys = null);
+    IReadOnlyList<string>? SpecializationKeys = null)
+{
+    public string? LongDescription { get; init; }
+    public string? ImageUrl { get; init; }
+    public string? CompanyLogoUrl { get; init; }
+    public string? AccentColor { get; init; }
+}
 
 /// <summary>Health information for one catalog source. A failed source does not fail the aggregate search.</summary>
 public sealed record AgentCatalogSourceHealth(

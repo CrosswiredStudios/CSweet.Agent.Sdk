@@ -53,6 +53,10 @@
   "ui": [],
   "catalog": {
     "summary": "Processes a bounded request for C-Sweet.",
+    "longDescription": "Handles a bounded request and returns a clear, structured result for the team to review.",
+    "imageUrl": null,
+    "companyLogoUrl": null,
+    "accentColor": "#1C6252",
     "category": "General",
     "role": { "key": "example-agent", "name": "Example Agent" },
     "license": { "spdxId": "MIT" },

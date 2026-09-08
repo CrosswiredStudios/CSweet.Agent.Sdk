@@ -1,6 +1,33 @@
 # Runtime maintainer guide
 
-SDK 3.32.0 adds hidden `platform.connector.action.request.v1` and
+SDK 3.39.0 adds `ConnectorHttpOperation.IfMatchInput` for protocol 2.3. Its pointer must select a
+required string with `maxLength` between 3 and 256. Only non-bootstrap, non-media PUT/PATCH/DELETE
+mutations may declare it. Use `ConnectorEntityTag.RequireStrong` to reject wildcard, weak, list,
+control-character and oversized values. Freeze the exact tag into the canonical request hash and
+revalidate it with the complete plan before credential injection. Do not copy it onto preflight reads.
+Only a received 412 for that conditional request establishes failed preconditions; retain a durable,
+content-free `resource_changed` condition with the blocked plan. Never release provider error bodies
+or retry unknown outcomes. Fresh evidence and fresh authorization are required for a revised action.
+
+SDK 3.37.0 adds `ConnectorHttpOperation.ResponseResourcePointers`. Freeze these protocol-2.2
+declarations into each prepared request and enforce them on reads, mutation results and completed
+media transfers before storing or releasing content. All selected owners must equal the frozen
+confirmed resource; empty arrays are valid but missing paths and mixed owners are not. Reject new
+declarations on protocol 2.1 and bootstrap. Older hosts must reject minimum protocol 2.2.
+
+SDK 3.35.0 adds `ConversationAttachmentReference` and optional `RequestConnectorAction.MediaSource`.
+The host supplies `CommunicationAttachment.MediaAssetId` only as metadata of visible retained history.
+Media actions must bind that asset to its exact source, not just to an organization. Validate active
+employee/chat membership and the chat-read grant, retained source records, matching checksum/size/type,
+then freeze provenance with the request. Revalidate before chunks and result reads. These fields do
+not carry tokens or authorize provider effects. Unsupported older hosts must reject sourced requests.
+
+SDK 3.35.0 adds the optional closed `http.mediaProtocol` declaration. Freeze its value
+in request plans. A missing or unsupported protocol cannot enter a legacy raw HTTP
+or media handler. Implement transfers as host-owned durable jobs, not retained agent
+callbacks, and recheck authority before each credential injection and checkpoint.
+
+SDK 3.35.0 adds hidden `platform.connector.action.request.v1` and
 `platform.connector.action.read.v1` controls. Their typed client contains no transport logic or
 credentials. The host owns plan preparation, exact decisions, durable execution and sanitized
 results. Deliver `com.csweet.connector.action.changed.v1` only to the exact requesting installation;
@@ -55,7 +82,7 @@ For progressive staffing, ReviseWorkItemPlanningRequest accepts optional StageAs
 
 ## Connector protocol minimum
 
-SDK 3.32.0 adds protocol 2.1 [connector contracts](connectors.md). The private MCP
+SDK 3.35.0 adds protocol 2.1 [connector contracts](connectors.md). The private MCP
 wire version is independent. Reject enhanced manifests on older hosts. Connectors
 may not use ordinary provider dispatch, raw HTTP, model tools or credential values.
 Explicit dependency selection pins a package digest; refresh/reconciliation cannot
@@ -75,9 +102,9 @@ creation. Deliver the durable introduction and one 24-hour reminder with distinc
 stable event identities, and keep the ordinary onboarding event behind activation.
 
 
-SDK 3.32.0 adds assignment-scoped internal Git LFS locks through `context.Platform.Git.ListLocksAsync`, `LockFileAsync`, and `UnlockFileAsync`. Declare `git.workspace.locks.read.v2`, `git.workspace.locks.create.v2`, and `git.workspace.locks.release.v2` as needed (the separate `git-file-locks` capability group does not expand existing workspace grants). Core derives repository and employee ownership from the current assignment and team grant. Agents cannot choose owner identities, force another owner's unlock, or access provider credentials. Repeat acquisition of the same owned path returns the existing lock; repeat release is harmless. Own locks permit work-branch publication; release them before a governed merge. Managers can release orphaned locks. GitHub agent-owned locks are not supported by this API.
+SDK 3.35.0 adds assignment-scoped internal Git LFS locks through `context.Platform.Git.ListLocksAsync`, `LockFileAsync`, and `UnlockFileAsync`. Declare `git.workspace.locks.read.v2`, `git.workspace.locks.create.v2`, and `git.workspace.locks.release.v2` as needed (the separate `git-file-locks` capability group does not expand existing workspace grants). Core derives repository and employee ownership from the current assignment and team grant. Agents cannot choose owner identities, force another owner's unlock, or access provider credentials. Repeat acquisition of the same owned path returns the existing lock; repeat release is harmless. Own locks permit work-branch publication; release them before a governed merge. Managers can release orphaned locks. GitHub agent-owned locks are not supported by this API.
 
-## Coordination document sharing (SDK 3.32.0)
+## Coordination document sharing (SDK 3.35.0)
 
 Typed collaboration actions use existing coordination authority. At chat, board, and work-item
 starts and participant replies, Core verifies creator/steward ownership, current document read
@@ -90,4 +117,12 @@ deferral; no new event subscription mechanism is introduced.
 
 ## Acknowledged inference waits
 
-SDK 3.32.0 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.
+Connector action cancellation must use the execution record's optimistic revision and commit its
+receipt, proposal state and exact-requester wake obligation together. A competing execution claim
+must win or lose atomically. Do not reclaim Executing/Indeterminate/Completed actions through cancel.
+The cancellation control is hidden from model tools and independently granted. Action reads can
+project decision feedback only from the same action/plan receipt after live authority validation.
+
+SDK 3.35.0 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.
+
+The typed Work.DecideApprovalStageAsync client submits a scoped board-manager decision through the broker. The host binds the current waiting stage and active sprint to the assigned manager and enforces idempotent replay; the client grants no approval authority.

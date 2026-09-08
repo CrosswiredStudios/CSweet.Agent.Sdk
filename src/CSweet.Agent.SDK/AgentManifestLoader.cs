@@ -85,13 +85,15 @@ public static class AgentManifestLoader
             Required(manifest.Publisher.Name, "publisher.name", errors);
         }
 
+        if (manifest.Catalog is { } catalog)
+            errors.AddRange(AgentCatalogBranding.Validate(catalog.ImageUrl, catalog.CompanyLogoUrl, catalog.AccentColor, catalog.LongDescription));
         ValidateRuntime(manifest.Runtime, errors);
         ValidateRolePolicy(manifest, errors);
         ValidateWorkItemTypes(manifest.WorkItemTypes, errors);
         ValidateWorkstreamProfiles(manifest.WorkstreamProfiles, errors);
         ValidateToolchainAdapters(manifest.ToolchainAdapters, errors);
         if (manifest.Protocol is null ||
-            manifest.Protocol.MinimumVersion is not ("2.0" or "2.1") ||
+            manifest.Protocol.MinimumVersion is not ("2.0" or "2.1" or "2.2" or "2.3") ||
             !manifest.Protocol.MaximumVersion.StartsWith("2.", StringComparison.Ordinal))
         {
             errors.Add("Executable plugins must require MCP runtime protocol 2.0 through 2.x.");

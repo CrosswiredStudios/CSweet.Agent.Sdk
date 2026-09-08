@@ -48,7 +48,11 @@ public sealed record CommunicationAttachment(
     string FileName,
     string ContentType,
     long SizeBytes,
-    string Sha256);
+    string Sha256)
+{
+    /// <summary>Opaque organization asset identity, when supplied by the host. Knowing it grants no asset or publishing access.</summary>
+    public Guid? MediaAssetId { get; init; }
+}
 
 public static class AgentCoordinationDispositions
 {

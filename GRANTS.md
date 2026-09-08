@@ -1,12 +1,15 @@
 # Generated capability reference
 
-## Durable connector actions (SDK 3.32.0)
+## Durable connector actions (SDK 3.35.0)
 
 `platform.connector.action.request.v1` creates an exact, durable proposal for a declared connector
 operation through `context.Platform.Connectors.RequestActionAsync`. The consuming installation
 also needs its independent grant and binding for the requested provider capability. The host derives
 the account and approver; no request can supply credentials, an installation identity or a destination.
 `platform.connector.action.read.v1` reads only the caller's action through `ReadActionAsync`.
+`platform.connector.action.cancel.v1` independently grants `CancelActionAsync` for the caller's
+unstarted actions. It cannot undo provider effects or hide an uncertain outcome. Action reads now
+include bounded authoritative decision feedback; feedback cannot modify or authorize another plan.
 Use a stable domain idempotency key, persist the returned action ID, and subscribe to
 `com.csweet.connector.action.changed.v1` for wake hints. Read current authoritative status before
 advancing work. AwaitingApproval and Approved are not provider success. Indeterminate requires
@@ -323,9 +326,9 @@ and covered by authorization, schema, quota, approval, and audit tests. Provider
 be valid, hashed manifest-v2 declarations.
 
 
-SDK 3.32.0 adds assignment-scoped internal Git LFS locks through `context.Platform.Git.ListLocksAsync`, `LockFileAsync`, and `UnlockFileAsync`. Declare `git.workspace.locks.read.v2`, `git.workspace.locks.create.v2`, and `git.workspace.locks.release.v2` as needed (the separate `git-file-locks` capability group does not expand existing workspace grants). Core derives repository and employee ownership from the current assignment and team grant. Agents cannot choose owner identities, force another owner's unlock, or access provider credentials. Repeat acquisition of the same owned path returns the existing lock; repeat release is harmless. Own locks permit work-branch publication; release them before a governed merge. Managers can release orphaned locks. GitHub agent-owned locks are not supported by this API.
+SDK 3.35.0 adds assignment-scoped internal Git LFS locks through `context.Platform.Git.ListLocksAsync`, `LockFileAsync`, and `UnlockFileAsync`. Declare `git.workspace.locks.read.v2`, `git.workspace.locks.create.v2`, and `git.workspace.locks.release.v2` as needed (the separate `git-file-locks` capability group does not expand existing workspace grants). Core derives repository and employee ownership from the current assignment and team grant. Agents cannot choose owner identities, force another owner's unlock, or access provider credentials. Repeat acquisition of the same owned path returns the existing lock; repeat release is harmless. Own locks permit work-branch publication; release them before a governed merge. Managers can release orphaned locks. GitHub agent-owned locks are not supported by this API.
 
-## Coordination document sharing (SDK 3.32.0)
+## Coordination document sharing (SDK 3.35.0)
 
 Typed collaboration actions use existing coordination authority. At chat, board, and work-item
 starts and participant replies, Core verifies creator/steward ownership, current document read
@@ -335,3 +338,5 @@ No revise/decide/submit permission is granted by sharing. All references are val
 grant mutation; session persistence and grants commit together. Review/handoff declarations
 are not formal artifact approval. Runtime scheduling for dependency waits uses personal-to-do
 deferral; no new event subscription mechanism is introduced.
+
+`work.orchestration.approval.decide` (`WorkOrchestrationCapabilities.DecideApproval`) allows the assigned board manager to submit a reviewed approval or rejection through `Work.DecideApprovalStageAsync`. Requires a scoped board grant and stable decision idempotency key; this does not approve hiring, spending, or repository merges.

@@ -1,6 +1,24 @@
 # Security Policy
 
-The SDK 3.32.0 connector-action client exposes durable request/read controls, not an authenticated
+SDK 3.39.0 adds protocol-2.3 exact `If-Match` preconditions for non-media mutations.
+Hosts must freeze the declared required input into the approved plan, validate one bounded strong
+entity tag, and inject only that header on the exact PUT/PATCH/DELETE request. Never inherit the
+condition on ownership reads, allow arbitrary headers or replace the version after approval.
+A received HTTP 412 for a conditional request blocks that plan as `resource_changed`; it does not
+authorize another attempt. Lost responses remain indeterminate. Older hosts must reject protocol 2.3.
+
+SDK 3.37.0 adds protocol-2.2 response resource bindings. Hosts must compare every declared response
+owner to the frozen confirmed resource before secret extraction, persistence or runtime delivery.
+Malformed or mixed-owner results are withheld; uncertain mutations remain indeterminate, not retried.
+Older hosts must reject protocol 2.2. See [connector contracts](docs/connectors.md).
+
+Media protocol declarations are reviewed mapping data. `resumable-range.v1` never
+allows a runtime to submit an upload URL, headers or byte offset. A host must bind
+initiation and every resumed chunk to the same approved plan, exact account and
+media digest. Persist opaque sessions, reconcile server offsets after interruption,
+and reject malformed ranges rather than assuming bytes were received.
+
+The SDK 3.35.0 connector-action client exposes durable request/read controls, not an authenticated
 HTTP or execution escape hatch. Hosts must enforce both control and provider-operation grants,
 exact-package account bindings, current authority, exact approvals and result ownership. Changed
 events are wake hints, not authority. Never release results after their bound authority is revoked,
@@ -10,6 +28,14 @@ Please report suspected vulnerabilities privately to the repository maintainers.
 credentials, production data, or working exploits in public issues.
 
 ## Event identity boundary
+
+SDK 3.35.0 carries retained conversation provenance on media action requests through
+`RequestConnectorAction.MediaSource`. Attachment metadata may expose `MediaAssetId`, never bytes or
+storage paths. Neither value grants access. Hosts must require current employee membership and chat
+read permission, validate the exact organization/conversation/message/attachment/asset relationship,
+and freeze the source and checksum into the approved plan. Recheck that relationship before every
+media exchange and result disclosure; reject missing sources, revoked membership, changed metadata
+and older media plans without provenance. Non-media requests omit the optional field for compatibility.
 
 The runtime treats `AgentEventEnvelope.EventId` as authenticated platform metadata. It is the
 stable identity of the originating domain event and is distinct from the delivery `WorkId`.
@@ -105,9 +131,9 @@ provider-returned account identity. Account lists with duplicate IDs or unfinish
 pagination must not be silently accepted.
 
 
-SDK 3.32.0 adds assignment-scoped internal Git LFS locks through `context.Platform.Git.ListLocksAsync`, `LockFileAsync`, and `UnlockFileAsync`. Declare `git.workspace.locks.read.v2`, `git.workspace.locks.create.v2`, and `git.workspace.locks.release.v2` as needed (the separate `git-file-locks` capability group does not expand existing workspace grants). Core derives repository and employee ownership from the current assignment and team grant. Agents cannot choose owner identities, force another owner's unlock, or access provider credentials. Repeat acquisition of the same owned path returns the existing lock; repeat release is harmless. Own locks permit work-branch publication; release them before a governed merge. Managers can release orphaned locks. GitHub agent-owned locks are not supported by this API.
+SDK 3.35.0 adds assignment-scoped internal Git LFS locks through `context.Platform.Git.ListLocksAsync`, `LockFileAsync`, and `UnlockFileAsync`. Declare `git.workspace.locks.read.v2`, `git.workspace.locks.create.v2`, and `git.workspace.locks.release.v2` as needed (the separate `git-file-locks` capability group does not expand existing workspace grants). Core derives repository and employee ownership from the current assignment and team grant. Agents cannot choose owner identities, force another owner's unlock, or access provider credentials. Repeat acquisition of the same owned path returns the existing lock; repeat release is harmless. Own locks permit work-branch publication; release them before a governed merge. Managers can release orphaned locks. GitHub agent-owned locks are not supported by this API.
 
-## Coordination document sharing (SDK 3.32.0)
+## Coordination document sharing (SDK 3.35.0)
 
 Typed collaboration actions use existing coordination authority. At chat, board, and work-item
 starts and participant replies, Core verifies creator/steward ownership, current document read
@@ -120,4 +146,12 @@ deferral; no new event subscription mechanism is introduced.
 
 ## Acknowledged inference waits
 
-SDK 3.32.0 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](docs/llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.
+Connector action cancellation is a separate explicit grant and applies only to the authenticated
+requesting installation. Hosts must fence cancellation against execution with a durable conditional
+transition. Never report an executing or uncertain mutation as cancelled, or use cancellation to
+justify resending under a new key. Decision feedback is bounded data; it cannot amend a frozen plan
+or convey new authority. Return feedback only after revalidating the original result-access boundary.
+
+SDK 3.35.0 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](docs/llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.
+
+The typed Work.DecideApprovalStageAsync client submits a scoped board-manager decision through the broker. The host binds the current waiting stage and active sprint to the assigned manager and enforces idempotent replay; the client grants no approval authority.

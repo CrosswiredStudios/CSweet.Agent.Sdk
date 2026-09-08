@@ -5,6 +5,27 @@ namespace CSweet.Agent.SDK.Tests;
 
 public sealed class PlatformWorkClientTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ApprovalDecision_PreservesExactReviewIdentityAndOutcome(bool approved)
+    {
+        var request = new DecideWorkApprovalStageRequest(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            approved, "Reviewed acceptance evidence.", "stable-review");
+        var runtime = new AgentTestRuntime().RegisterCapability<DecideWorkApprovalStageRequest, WorkStageExecutionResponse>(
+            WorkOrchestrationCapabilities.DecideApproval, (received, _) =>
+            {
+                Assert.Equal(request, received);
+                return Task.FromResult(new WorkStageExecutionResponse(received.StageExecutionId,
+                    "producer-review", "ManagerApproval", 0, "Completed", "BoardManager", Guid.NewGuid(),
+                    null, null, 0, received.Approved ? "approved" : "rejected", received.Summary, null, null, DateTimeOffset.UtcNow));
+            });
+        var result = await runtime.CreateContext().Platform.Work.DecideApprovalStageAsync(request);
+        Assert.Equal(request.StageExecutionId, result.Id);
+        Assert.Equal(approved ? "approved" : "rejected", result.LastOutcomeCode);
+        Assert.True(CapabilityCatalog.IsKnown(WorkOrchestrationCapabilities.DecideApproval));
+    }
+
     [Fact]
     public async Task CreateItemAsync_PreservesAccountabilityAndExactAssignments()
     {

@@ -294,7 +294,9 @@
         "minimumVersion": {
           "enum": [
             "2.0",
-            "2.1"
+            "2.1",
+            "2.2",
+            "2.3"
           ]
         },
         "maximumVersion": {
@@ -908,8 +910,14 @@
         "assistance": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["profile"],
-          "properties": { "profile": { "const": "conversation.v1" } }
+          "required": [
+            "profile"
+          ],
+          "properties": {
+            "profile": {
+              "const": "conversation.v1"
+            }
+          }
         },
         "required": {
           "type": "boolean"
@@ -993,13 +1001,32 @@
         "accountOptions": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["itemsPointer", "idPointer", "namePointer"],
+          "required": [
+            "itemsPointer",
+            "idPointer",
+            "namePointer"
+          ],
           "properties": {
-            "itemsPointer": { "type": "string", "pattern": "^(/[A-Za-z0-9_-]+)+$" },
-            "idPointer": { "type": "string", "pattern": "^(/[A-Za-z0-9_-]+)+$" },
-            "namePointer": { "type": "string", "pattern": "^(/[A-Za-z0-9_-]+)+$" },
-            "handlePointer": { "type": "string", "pattern": "^(/[A-Za-z0-9_-]+)+$" },
-            "nextPageTokenPointer": { "type": "string", "pattern": "^(/[A-Za-z0-9_-]+)+$" }
+            "itemsPointer": {
+              "type": "string",
+              "pattern": "^(/[A-Za-z0-9_-]+)+$"
+            },
+            "idPointer": {
+              "type": "string",
+              "pattern": "^(/[A-Za-z0-9_-]+)+$"
+            },
+            "namePointer": {
+              "type": "string",
+              "pattern": "^(/[A-Za-z0-9_-]+)+$"
+            },
+            "handlePointer": {
+              "type": "string",
+              "pattern": "^(/[A-Za-z0-9_-]+)+$"
+            },
+            "nextPageTokenPointer": {
+              "type": "string",
+              "pattern": "^(/[A-Za-z0-9_-]+)+$"
+            }
           }
         },
         "configurationKeys": {
@@ -1193,6 +1220,82 @@
         },
         "documentationUrl": {
           "type": "string"
+        },
+        "imageUrl": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2048,
+          "pattern": "^$|^https://[^\\s]+$"
+        },
+        "companyLogoUrl": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2048,
+          "pattern": "^$|^https://[^\\s]+$"
+        },
+        "accentColor": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^$|^#[0-9a-fA-F]{6}$"
+        },
+        "longDescription": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2000
+        },
+        "role": {
+          "type": "object",
+          "required": [
+            "key",
+            "name"
+          ],
+          "properties": {
+            "key": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "license": {
+          "type": "object",
+          "required": [
+            "spdxId"
+          ],
+          "properties": {
+            "spdxId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "url": {
+              "type": "string",
+              "maxLength": 2048,
+              "pattern": "^https://"
+            }
+          },
+          "additionalProperties": false
+        },
+        "iconUrls": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "type": "string",
+            "maxLength": 2048,
+            "pattern": "^https://"
+          }
         }
       }
     },
@@ -1372,15 +1475,29 @@
         "bodyConstants": {
           "type": "object"
         },
-        "boundResourceQueryPrefix": { "type": "string", "maxLength": 64 },
+        "boundResourceQueryPrefix": {
+          "type": "string",
+          "maxLength": 64
+        },
         "boundResourceQuery": {
           "type": "string",
           "minLength": 1,
           "maxLength": 2048
         },
+        "mediaProtocol": {
+          "enum": [
+            "resumable-range.v1",
+            null
+          ]
+        },
         "mediaInput": {
           "type": "string",
           "pattern": "^(/[A-Za-z0-9_-]+)+$"
+        },
+        "ifMatchInput": {
+          "type": "string", "maxLength": 256,
+          "pattern": "^(/[A-Za-z0-9_-]+)+$(?![\\s\\S])",
+          "description": "Protocol 2.3: required bounded input string containing one strong quoted entity tag for an If-Match conditional PUT/PATCH/DELETE. No media, bootstrap, wildcard or arbitrary header."
         },
         "bootstrap": {
           "type": "boolean"
@@ -1392,6 +1509,17 @@
             "pattern": "^/"
           },
           "uniqueItems": true
+        },
+        "responseResourcePointers": {
+          "description": "Protocol 2.2: each selected response string must equal the confirmed connection resource. One array wildcard per pointer; empty arrays are allowed, missing paths are rejected.",
+          "type": "array",
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 256,
+            "pattern": "^(?!.*\\*.*\\*)(/([A-Za-z0-9_-]+|\\*))+$(?![\\s\\S])"
+          }
         },
         "resourceChecks": {
           "type": "array",

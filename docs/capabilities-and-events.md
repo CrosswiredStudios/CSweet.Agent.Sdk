@@ -173,4 +173,6 @@ publication authority from a subscription.
 
 ## Reusable collaboration
 
-See [agent collaboration](collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.32.0.
+See [agent collaboration](collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.35.0.
+
+`work.orchestration.approval.decide` (`WorkOrchestrationCapabilities.DecideApproval`) allows the assigned board manager to submit a reviewed approval or rejection through `Work.DecideApprovalStageAsync`. Requires a scoped board grant and stable decision idempotency key; this does not approve hiring, spending, or repository merges.

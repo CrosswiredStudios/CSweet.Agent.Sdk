@@ -94,6 +94,7 @@ public static class CapabilityNames
         public const string ManagedActionDecide = "platform.managed-action.decide.v1";
         public const string ConnectorActionRequest = "platform.connector.action.request.v1";
         public const string ConnectorActionRead = "platform.connector.action.read.v1";
+        public const string ConnectorActionCancel = "platform.connector.action.cancel.v1";
         public const string EngagementInboxUpsert = "platform.engagement-inbox.upsert.v1";
         public const string MetricSnapshotWrite = "platform.metric-snapshot.write.v1";
         public const string SynchronizationCheckpoint = "platform.synchronization-checkpoint.v1";
@@ -204,6 +205,7 @@ public static class CapabilityNames
         public const string OrchestrationPause = WorkManagementCapabilityNames.OrchestrationPause;
         public const string OrchestrationResume = WorkManagementCapabilityNames.OrchestrationResume;
         public const string OrchestrationCancel = WorkManagementCapabilityNames.OrchestrationCancel;
+        public const string OrchestrationDecideApproval = WorkManagementCapabilityNames.OrchestrationDecideApproval;
         public const string OrchestrationRetry = WorkManagementCapabilityNames.OrchestrationRetry;
         public const string OrchestrationConfigureSoftwareTemplate =
             WorkManagementCapabilityNames.OrchestrationConfigureSoftwareTemplate;
@@ -330,6 +332,7 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.ManagedActionDecide,
                 CapabilityNames.Platform.ConnectorActionRequest,
                 CapabilityNames.Platform.ConnectorActionRead,
+                CapabilityNames.Platform.ConnectorActionCancel,
                 CapabilityNames.Platform.EngagementInboxUpsert,
                 CapabilityNames.Platform.MetricSnapshotWrite,
                 CapabilityNames.Platform.SynchronizationCheckpoint,
@@ -424,6 +427,7 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.OrchestrationResume,
                 CapabilityNames.WorkManagement.OrchestrationCancel,
                 CapabilityNames.WorkManagement.OrchestrationRetry,
+                CapabilityNames.WorkManagement.OrchestrationDecideApproval,
                 CapabilityNames.WorkManagement.OrchestrationConfigureSoftwareTemplate,
                 CapabilityNames.WorkManagement.OrchestrationConfigureProfileV1,
                 CapabilityNames.WorkManagement.FlowMetricsReadV1,
@@ -599,6 +603,7 @@ public static class WorkOrchestrationCapabilities
     public const string Resume = CapabilityNames.WorkManagement.OrchestrationResume;
     public const string Cancel = CapabilityNames.WorkManagement.OrchestrationCancel;
     public const string Retry = CapabilityNames.WorkManagement.OrchestrationRetry;
+    public const string DecideApproval = CapabilityNames.WorkManagement.OrchestrationDecideApproval;
     public const string ConfigureSoftwareTemplate =
         CapabilityNames.WorkManagement.OrchestrationConfigureSoftwareTemplate;
     public const string ConfigureProfile = CapabilityNames.WorkManagement.OrchestrationConfigureProfileV1;

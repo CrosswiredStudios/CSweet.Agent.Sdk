@@ -286,6 +286,11 @@ public sealed record AgentUiContribution
 /// <summary>Optional discovery metadata for catalogs and marketplaces.</summary>
 public sealed record AgentCatalogMetadata
 {
+    public string? LongDescription { get; init; }
+    public string? ImageUrl { get; init; }
+    public string? CompanyLogoUrl { get; init; }
+    public string? AccentColor { get; init; }
+
     public string? Summary { get; init; }
     public string? Category { get; init; }
     public IReadOnlyList<string> RoleAliases { get; init; } = [];
