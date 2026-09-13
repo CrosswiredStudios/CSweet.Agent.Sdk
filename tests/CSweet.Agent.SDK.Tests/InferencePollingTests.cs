@@ -13,7 +13,12 @@ public sealed class InferencePollingTests
     [InlineData(false, false)]
     [InlineData(true, false)]
     [InlineData(false, true)]
-    public async Task PollingPreservesAcknowledgedWaitButHonorsCancellationAndWorkIdentity(bool cancel, bool wrongWork)
+    [InlineData(false, false, "chunk", true)]
+    [InlineData(false, false, "chunk", false)]
+    [InlineData(false, false, "terminal", true)]
+    [InlineData(false, false, "terminal", false)]
+    public async Task PollingPreservesAcknowledgedWaitButHonorsCancellationAndWorkIdentity(bool cancel, bool wrongWork,
+        string? failure = null, bool retryable = false)
     {
         var path = Path.GetTempFileName();
         await File.WriteAllTextAsync(path, "workload-token");
@@ -21,7 +26,7 @@ public sealed class InferencePollingTests
         {
             var workId = Guid.NewGuid();
             using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-            var handler = new PollHandler(workId, wrongWork);
+            var handler = new PollHandler(workId, wrongWork, failure, retryable);
             using var http = new HttpClient(handler);
             await using var client = new McpAgentRuntimeClient(http,
                 Options.Create(new AgentRuntimeOptions { McpEndpoint = "http://host/mcp", WorkloadTokenFile = path,
@@ -45,6 +50,12 @@ public sealed class InferencePollingTests
             }
             if (wrongWork) await Assert.ThrowsAsync<InvalidOperationException>(Read);
             else if (cancel) await Assert.ThrowsAnyAsync<OperationCanceledException>(Read);
+            else if (failure is not null)
+            {
+                var error = await Assert.ThrowsAsync<PlatformCapabilityException>(Read);
+                Assert.Equal(retryable, error.Retryable);
+                Assert.Equal("test.failure", error.FailureCode);
+            }
             else
             {
                 Assert.Equal("Done", Assert.Single(await Read()).GetProperty("text").GetString());
@@ -52,7 +63,7 @@ public sealed class InferencePollingTests
                 Assert.Contains("Queued", reporter.States);
                 Assert.Contains("Completed", reporter.States);
             }
-            Assert.Equal(cancel || wrongWork, handler.Cancelled);
+            Assert.Equal(cancel || wrongWork || failure == "chunk", handler.Cancelled);
         }
         finally { File.Delete(path); }
     }
@@ -69,7 +80,7 @@ public sealed class InferencePollingTests
         }
     }
 
-    private sealed class PollHandler(Guid workId, bool wrongWork) : HttpMessageHandler
+    private sealed class PollHandler(Guid workId, bool wrongWork, string? failure, bool retryable) : HttpMessageHandler
     {
         private int reads;
         public bool Cancelled;
@@ -87,6 +98,15 @@ public sealed class InferencePollingTests
             else if (method == "csweet/llm/read")
             {
                 var complete = ++reads > 1;
+                if (complete && failure is not null)
+                {
+                    result = new { workId, workDeadline = DateTimeOffset.UtcNow.AddSeconds(10),
+                        state = "Failed", next = failure == "chunk" ? 1 : 0, completed = true,
+                        error = "Provider failure", failureCode = "test.failure", retryable,
+                        chunks = failure == "chunk" ? new[] { new { succeeded = false, error = "Provider failure",
+                            failureCode = "test.failure", retryable } } : [] };
+                }
+                else
                 result = new { workId = wrongWork ? Guid.NewGuid() : workId, workDeadline = DateTimeOffset.UtcNow.AddSeconds(10),
                     state = complete ? "Completed" : "Queued", next = complete ? 1 : 0, completed = complete,
                     chunks = complete ? new[] { new { succeeded = true, payload = new { text = "Done" } } } : [] };

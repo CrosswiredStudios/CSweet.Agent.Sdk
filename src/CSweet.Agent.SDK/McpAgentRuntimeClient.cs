@@ -395,15 +395,14 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
                 foreach (var chunk in chunks.EnumerateArray())
                 {
                     if (!chunk.GetProperty("succeeded").GetBoolean())
-                        throw new PlatformCapabilityException(PlatformCapabilities.LlmChatStream, PlatformCapabilityErrorCode.Unavailable,
-                            chunk.GetProperty("error").GetString() ?? "Inference failed.");
+                        throw InferenceFailure(chunk);
                     if (chunk.TryGetProperty("payload", out var payload) && payload.ValueKind == JsonValueKind.Object)
                         yield return payload.Clone();
                 }
                 cursor = next;
                 completed = result.GetProperty("completed").GetBoolean();
                 if (completed && result.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.String)
-                    throw new PlatformCapabilityException(PlatformCapabilities.LlmChatStream, PlatformCapabilityErrorCode.Unavailable, error.GetString()!);
+                    throw InferenceFailure(result);
                 if (!completed && chunks.GetArrayLength() == 0) await Task.Delay(TimeSpan.FromSeconds(2), token);
             }
         }
@@ -417,6 +416,15 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
             }
         }
     }
+
+    internal static PlatformCapabilityException InferenceFailure(JsonElement result) => new(
+        PlatformCapabilities.LlmChatStream, PlatformCapabilityErrorCode.Unavailable,
+        result.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.String
+            ? error.GetString()! : "Inference failed.",
+        failureCode: result.TryGetProperty("failureCode", out var code) && code.ValueKind == JsonValueKind.String
+            ? code.GetString() : null,
+        retryable: result.TryGetProperty("retryable", out var retryable) && retryable.ValueKind is JsonValueKind.True or JsonValueKind.False
+            ? retryable.GetBoolean() : null);
 
     private async Task<JsonElement> InvokeMethodAsync(
         string method,

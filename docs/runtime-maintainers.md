@@ -1,6 +1,6 @@
 # Runtime maintainer guide
 
-SDK 3.44.1 adds `ConnectorHttpOperation.IfMatchInput` for protocol 2.3. Its pointer must select a
+SDK 3.44.2 adds `ConnectorHttpOperation.IfMatchInput` for protocol 2.3. Its pointer must select a
 required string with `maxLength` between 3 and 256. Only non-bootstrap, non-media PUT/PATCH/DELETE
 mutations may declare it. Use `ConnectorEntityTag.RequireStrong` to reject wildcard, weak, list,
 control-character and oversized values. Freeze the exact tag into the canonical request hash and
@@ -127,7 +127,7 @@ SDK 3.35.0 uses negotiated, lease-bound inference polling so acknowledged waitin
 
 The typed Work.DecideApprovalStageAsync client submits a scoped board-manager decision through the broker. The host binds the current waiting stage and active sprint to the assigned manager and enforces idempotent replay; the client grants no approval authority.
 
-## Personal development workspaces (3.44.1)
+## Personal development workspaces (3.44.2)
 
 Inside a claimed personal-ticket callback, call `context.Platform.Git.PreparePersonalAsync(new(item.Id, stableKey), token)`.
 Request `source-control.personal-work.prepare.v1` separately in the manifest. Core checks current installation approval,
@@ -141,3 +141,5 @@ capability does not grant it. The current Hyper-V provider keeps VMs without net
 requests closed. Docker inside a prepared guest image does not add host or outbound authority.
 
 Personal queue recovery uses platform reconciliation and leased availability events. Never drain personal work from the unleased startup context: progress and inference require the durable attempt identity.
+
+Inference polling preserves failureCode and retryable for failed chunks and terminal job errors. Only explicit retryable failures authorize automatic recovery; missing metadata does not imply retry permission.
