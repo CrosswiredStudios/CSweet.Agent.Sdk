@@ -366,3 +366,9 @@ The typed compute client uses compute.provision/read/list/start/stop/restart/des
 | `network.inbound.v1` | Independently authorize inbound guest access; not a direct SDK mutation. |
 | `network.publish-port.v1` | Publish an explicitly permitted guest port with a bounded lifetime. |
 `source-control.personal-work.prepare.v1` permits preparation of an owned, actively claimed personal ticket in a private C-Sweet repository. It is a separate installation approval; it does not permit choosing repositories, credentials, refs, merging, or networking.
+
+## Isolated source snapshots (SDK 3.44.0)
+
+`git.workspace.sync.v1` transfers an authorized workspace snapshot through Core. `context.Platform.Git.MaterializeAsync` creates a runtime-local writable copy and returns its local path; the platform path from Prepare is an opaque workspace location, not a shared filesystem mount. `UploadAsync` sends edited files back before inspection/publication. Existing edits are preserved on repeated materialization; after runtime loss, the latest uploaded snapshot is restored.
+
+Transfer requires the sync declaration plus existing preparation/publication authority for the exact assignment. No repository coordinates or credentials are accepted. Limits are 512 KiB compressed per snapshot, 16 MiB content and 4,096 files. Git metadata, redirected paths and traversal are rejected; local `.csweet` control files are excluded from uploads. An uploaded snapshot does not itself publish a commit.

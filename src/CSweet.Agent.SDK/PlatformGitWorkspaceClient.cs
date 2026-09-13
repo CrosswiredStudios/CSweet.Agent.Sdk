@@ -6,7 +6,7 @@ namespace CSweet.Agent.SDK;
 /// Typed operations over an assignment-scoped, credential-free source snapshot. Core derives the
 /// repository, base commit, branch, and provider policy; callers cannot supply any of them.
 /// </summary>
-public sealed class PlatformGitWorkspaceClient
+public sealed partial class PlatformGitWorkspaceClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly IPlatformToolInvoker _tools;

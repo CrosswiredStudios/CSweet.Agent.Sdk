@@ -263,6 +263,7 @@ public static class CapabilityNames
 
     public static class GitWorkspace
     {
+        public const string Sync = "git.workspace.sync.v1";
         public const string PreparePersonal = "source-control.personal-work.prepare.v1";
         public const string Prepare = "git.workspace.prepare.v2";
         public const string Refresh = "git.workspace.refresh.v2";
@@ -475,6 +476,7 @@ public static class CapabilityCatalog
                 CapabilityNames.SourceControl.TeamRepositoryOptions,
                 CapabilityNames.SourceControl.ProvisionRepository),
             ["git-workspace"] = Set(
+                CapabilityNames.GitWorkspace.Sync,
                 CapabilityNames.GitWorkspace.PreparePersonal,
                 CapabilityNames.GitWorkspace.Prepare,
                 CapabilityNames.GitWorkspace.Refresh,
@@ -592,6 +594,7 @@ public static class WorkItemCapabilities
 /// <summary>Ticket-scoped, credential-free workspace operations brokered by C-Sweet.</summary>
 public static class GitWorkspaceCapabilities
 {
+    public const string Sync = CapabilityNames.GitWorkspace.Sync;
     public const string PreparePersonal = CapabilityNames.GitWorkspace.PreparePersonal;
     public const string Prepare = CapabilityNames.GitWorkspace.Prepare;
     public const string Refresh = CapabilityNames.GitWorkspace.Refresh;

@@ -1,4 +1,4 @@
-# Protocol 2.1/2.2/2.3 connector contracts (SDK 3.43.0)
+# Protocol 2.1/2.2/2.3 connector contracts (SDK 3.44.0)
 
 ## Conditional changes (protocol 2.3)
 
