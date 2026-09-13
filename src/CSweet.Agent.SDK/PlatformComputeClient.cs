@@ -31,6 +31,10 @@ public sealed class PlatformComputeClient
         return _platform.InvokeAsync<ProvisionComputeRequest, ComputeEnvironment>(ComputeCapabilities.Provision, request, token);
     }
 
+    /// <summary>Reads application-selected workspace and template readiness. Does not grant authority or launch setup.</summary>
+    public Task<ComputeDefaults> GetDefaultsAsync(CancellationToken token = default) =>
+        _platform.InvokeAsync<object, ComputeDefaults>(ComputeCapabilities.Read, new { defaults = true }, token);
+
     public Task<ComputeEnvironment> ReadAsync(Guid environmentId, CancellationToken token = default)
     {
         Id(environmentId);

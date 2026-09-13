@@ -20,6 +20,7 @@ public static class ComputeCapabilities
 public static class ComputeEvents
 {
     public const string Changed = "com.csweet.compute.changed.v1";
+    public const string Available = "com.csweet.compute.available.v1";
 }
 
 /// <summary>A wake hint. Re-read current authorized state; this event never grants execution authority.</summary>
@@ -74,3 +75,6 @@ public sealed record ComputeCommandResult(Guid RequestId, int? ExitCode, bool Ti
     [JsonIgnore] public string StandardOutputText => Encoding.UTF8.GetString(StandardOutput ?? []);
     [JsonIgnore] public string StandardErrorText => Encoding.UTF8.GetString(StandardError ?? []);
 }
+
+/// <summary>Platform-selected scope. Pending/Running means setup continues; Ready supplies usable request defaults.</summary>
+public sealed record ComputeDefaults(string State, Guid? WorkstreamId, string? TemplateId, string? ErrorCode);

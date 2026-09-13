@@ -1,6 +1,6 @@
 # Typed compute client
 
-SDK 3.41.0 exposes `context.Platform.Compute`. This calls the same authorized broker as the platform's MCP compute tools; agent authors do not implement MCP, provisioning, UAC or credential handling.
+SDK 3.42.0 exposes `context.Platform.Compute`. This calls the same authorized broker as the platform's MCP compute tools; agent authors do not implement MCP, provisioning, UAC or credential handling.
 
 Use `CSweet.Agent.SDK.Compute` for typed requests, results, `ComputeCapabilities` and `ComputeEvents`. Declare only the capabilities your agent uses in its manifest. Declarations do not grant permission. Provisioning, lifecycle changes, command execution and network publication remain separately authorized.
 
@@ -26,3 +26,5 @@ Once ready, `ExecuteAsync(ExecuteComputeCommandRequest)` queues one guest comman
 No SDK method installs host components, enrolls a provider, supplies a host image path, changes grants, or chooses a caller installation identity. The application owns setup and any UAC prompt. SDK validation catches malformed inputs; the broker remains authoritative for current scope, policy, resource bounds and guest-OS validation.
 
 Executable examples and compatibility are covered by `PlatformComputeClientTests`, Core's `ComputeSdkContractTests`, and Software Developer's Hello World workflow.
+
+Call `context.Platform.Compute.GetDefaultsAsync()` to read the application's selected workstream and Linux template. `Pending` or `Running` means preparation continues; retain the task durably and re-read after `ComputeEvents.Available`. `Ready` supplies `WorkstreamId` and `TemplateId` for `ProvisionAsync`. Availability events are wake hints, not execution grants. The application owns setup, enrollment and administrator elevation. Never ask the user to enter IDs or run a script. Callers can still supply an explicitly approved workstream/template for advanced use.
