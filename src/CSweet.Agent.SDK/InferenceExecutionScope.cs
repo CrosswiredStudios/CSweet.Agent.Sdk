@@ -14,7 +14,10 @@ internal sealed class InferenceExecutionScope(AgentWorkLease lease, Cancellation
         if (workId != lease.WorkId) throw new InvalidOperationException("Inference deadline belongs to different work.");
         var remaining = value - DateTimeOffset.UtcNow;
         if (remaining <= TimeSpan.Zero) deadline.Cancel();
-        else deadline.CancelAfter(remaining);
+        // Personal work has no domain deadline. CancelAfter cannot represent that range;
+        // disable any previous finite timer while keeping linked runtime cancellation active.
+        else deadline.CancelAfter(remaining <= TimeSpan.FromMilliseconds(uint.MaxValue - 1d)
+            ? remaining : Timeout.InfiniteTimeSpan);
     }
     public Task ReportStatusAsync(string state, CancellationToken token) => progress.ReportAsync(new
     {

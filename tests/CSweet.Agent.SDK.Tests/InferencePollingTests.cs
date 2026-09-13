@@ -17,8 +17,10 @@ public sealed class InferencePollingTests
     [InlineData(false, false, "chunk", false)]
     [InlineData(false, false, "terminal", true)]
     [InlineData(false, false, "terminal", false)]
+    [InlineData(false, false, null, false, true)]
+    [InlineData(true, false, null, false, true)]
     public async Task PollingPreservesAcknowledgedWaitButHonorsCancellationAndWorkIdentity(bool cancel, bool wrongWork,
-        string? failure = null, bool retryable = false)
+        string? failure = null, bool retryable = false, bool unbounded = false)
     {
         var path = Path.GetTempFileName();
         await File.WriteAllTextAsync(path, "workload-token");
@@ -26,7 +28,7 @@ public sealed class InferencePollingTests
         {
             var workId = Guid.NewGuid();
             using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-            var handler = new PollHandler(workId, wrongWork, failure, retryable);
+            var handler = new PollHandler(workId, wrongWork, failure, retryable, unbounded);
             using var http = new HttpClient(handler);
             await using var client = new McpAgentRuntimeClient(http,
                 Options.Create(new AgentRuntimeOptions { McpEndpoint = "http://host/mcp", WorkloadTokenFile = path,
@@ -80,7 +82,7 @@ public sealed class InferencePollingTests
         }
     }
 
-    private sealed class PollHandler(Guid workId, bool wrongWork, string? failure, bool retryable) : HttpMessageHandler
+    private sealed class PollHandler(Guid workId, bool wrongWork, string? failure, bool retryable, bool unbounded) : HttpMessageHandler
     {
         private int reads;
         public bool Cancelled;
@@ -107,7 +109,8 @@ public sealed class InferencePollingTests
                             failureCode = "test.failure", retryable } } : [] };
                 }
                 else
-                result = new { workId = wrongWork ? Guid.NewGuid() : workId, workDeadline = DateTimeOffset.UtcNow.AddSeconds(10),
+                result = new { workId = wrongWork ? Guid.NewGuid() : workId,
+                    workDeadline = unbounded ? DateTimeOffset.MaxValue : DateTimeOffset.UtcNow.AddSeconds(10),
                     state = complete ? "Completed" : "Queued", next = complete ? 1 : 0, completed = complete,
                     chunks = complete ? new[] { new { succeeded = true, payload = new { text = "Done" } } } : [] };
             }
