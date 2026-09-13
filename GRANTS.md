@@ -348,3 +348,20 @@ deferral; no new event subscription mechanism is introduced.
 - `work.calendar.update.v1` — business scope; event ownership and reporting authority are checked on every operation.
 - `work.calendar.cancel.v1` — business scope; event ownership and reporting authority are checked on every operation.
 - `work.calendar.schedule.v1` — business scope; event ownership and reporting authority are checked on every operation.
+## Generic compute
+
+The typed compute client uses compute.provision/read/list/start/stop/restart/destroy/execute.v1 and network.publish-port.v1. Port publication additionally requires network.inbound.v1. Each action has independent current scoped constraints; provisioning alone grants neither inbound access nor port publishing. OS, template, resource, lifetime and persistence limits stay broker-owned. See [compute](docs/compute.md).
+
+
+| Capability | Purpose |
+| --- | --- |
+| `compute.provision.v1` | Request an environment under template, resource, lifetime and persistence constraints. |
+| `compute.read.v1` | Read the caller's environment or operation result. |
+| `compute.list.v1` | Bounded discovery within an authorized workstream. |
+| `compute.start.v1` | Start an owned environment at the expected generation. |
+| `compute.stop.v1` | Stop an owned environment at the expected generation. |
+| `compute.restart.v1` | Restart an owned environment at the expected generation. |
+| `compute.destroy.v1` | Request destruction and await confirmed teardown. |
+| `compute.execute.v1` | Queue a bounded guest command. |
+| `network.inbound.v1` | Independently authorize inbound guest access; not a direct SDK mutation. |
+| `network.publish-port.v1` | Publish an explicitly permitted guest port with a bounded lifetime. |

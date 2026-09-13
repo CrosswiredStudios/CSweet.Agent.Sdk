@@ -195,7 +195,7 @@ Every agent manifest declares a `rolePolicy`. `declaredRoleKeys` contains the st
 }
 ```
 
-## Marketplace card branding (SDK 3.40.0)
+## Marketplace card branding (SDK 3.41.0)
 
 Optional `catalog` keys customize discovery cards:
 

@@ -40,7 +40,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.40.0
+  --SdkVersion 3.41.0
 cd ResearchAgent
 dotnet test
 ```
@@ -323,4 +323,4 @@ and [Testing and release](testing-and-release.md) for the review checklists.
 
 ## Reusable collaboration
 
-See [agent collaboration](collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.40.0.
+See [agent collaboration](collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.41.0.

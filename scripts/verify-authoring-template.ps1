@@ -40,7 +40,7 @@ try {
         --output $feed `
         --no-restore `
         -p:UseLocalCSweetWorkManagementContracts=false `
-        -p:CSweetAgentSdkPackageVersion=3.40.0
+        -p:CSweetAgentSdkPackageVersion=3.41.0
     if ($LASTEXITCODE -ne 0) { throw 'SDK package creation failed.' }
 
     $env:DOTNET_CLI_HOME = Join-Path $tempRoot 'dotnet-home'
@@ -57,7 +57,7 @@ try {
         --PublisherName 'Example Publisher' `
         --AgentVersion 0.1.0 `
         --PrimaryCapability example.verify.v1 `
-        --SdkVersion 3.40.0
+        --SdkVersion 3.41.0
     if ($LASTEXITCODE -ne 0) { throw 'Template generation failed.' }
 
     Copy-Item -LiteralPath $nugetConfig -Destination (Join-Path $generated 'NuGet.config')
@@ -65,7 +65,7 @@ try {
     $generatedProject = Get-Content `
         -LiteralPath (Join-Path $generated 'src/VerifiedAgent/VerifiedAgent.csproj') `
         -Raw
-    if ($generatedProject -notmatch 'PackageReference Include="CSweet.Agent.SDK" Version="3.40.0"') {
+    if ($generatedProject -notmatch 'PackageReference Include="CSweet.Agent.SDK" Version="3.41.0"') {
         throw 'Generated agent does not use the pinned SDK package.'
     }
     if ($generatedProject -match 'ProjectReference') {

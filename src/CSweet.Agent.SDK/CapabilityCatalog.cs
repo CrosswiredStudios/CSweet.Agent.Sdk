@@ -8,6 +8,19 @@ namespace CSweet.Agent.SDK;
 /// </summary>
 public static class CapabilityNames
 {
+    public static class Compute
+    {
+        public const string Provision = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.Provision;
+        public const string Read = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.Read;
+        public const string List = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.List;
+        public const string Start = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.Start;
+        public const string Stop = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.Stop;
+        public const string Restart = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.Restart;
+        public const string Destroy = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.Destroy;
+        public const string Execute = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.Execute;
+        public const string Inbound = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.Inbound;
+        public const string PublishPort = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.PublishPort;
+    }
     public static class Calendar
     {
         public const string Read = CalendarCapabilities.Read;
@@ -281,6 +294,9 @@ public static class CapabilityCatalog
     public static IReadOnlyDictionary<string, IReadOnlySet<string>> ByService { get; } =
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
         {
+            ["compute"] = Set(CapabilityNames.Compute.Provision, CapabilityNames.Compute.Read, CapabilityNames.Compute.List,
+                CapabilityNames.Compute.Start, CapabilityNames.Compute.Stop, CapabilityNames.Compute.Restart, CapabilityNames.Compute.Destroy,
+                CapabilityNames.Compute.Execute, CapabilityNames.Compute.Inbound, CapabilityNames.Compute.PublishPort),
             ["calendar"] = Set(CalendarCapabilities.Read, CalendarCapabilities.Create, CalendarCapabilities.Update, CalendarCapabilities.Cancel, CalendarCapabilities.Schedule),
             ["assistant"] = Set(
                 CapabilityNames.Assistant.Converse,

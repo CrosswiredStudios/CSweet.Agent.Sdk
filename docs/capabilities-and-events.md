@@ -192,3 +192,7 @@ work is delivered separately through the existing personal work queue.
 Calendar.WithToolsAsync(options) adds only approved calendar model tools and operating guidance
 to an existing harness. Calendar.GetResponseAsync(client, messages, ...) supplies a bounded
 function-invocation loop for simple agents. Preserve all existing execution and approval rules.
+## Compute events
+
+ComputeEvents.Changed identifies com.csweet.compute.changed.v1. Deserialize ComputeChangedEvent, then re-read the authorized environment or operation through Platform.Compute. The revision is a wake hint, not a current snapshot or execution grant. Persist stable command keys and generations across duplicate deliveries; use bounded recovery for missed events. See [typed compute](compute.md).
+

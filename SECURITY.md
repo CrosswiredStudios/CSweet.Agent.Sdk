@@ -1,6 +1,6 @@
 # Security Policy
 
-SDK 3.40.0 adds protocol-2.3 exact `If-Match` preconditions for non-media mutations.
+SDK 3.41.0 adds protocol-2.3 exact `If-Match` preconditions for non-media mutations.
 Hosts must freeze the declared required input into the approved plan, validate one bounded strong
 entity tag, and inject only that header on the exact PUT/PATCH/DELETE request. Never inherit the
 condition on ownership reads, allow arbitrary headers or replace the version after approval.

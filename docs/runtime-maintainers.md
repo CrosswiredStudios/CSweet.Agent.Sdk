@@ -1,6 +1,6 @@
 # Runtime maintainer guide
 
-SDK 3.40.0 adds `ConnectorHttpOperation.IfMatchInput` for protocol 2.3. Its pointer must select a
+SDK 3.41.0 adds `ConnectorHttpOperation.IfMatchInput` for protocol 2.3. Its pointer must select a
 required string with `maxLength` between 3 and 256. Only non-bootstrap, non-media PUT/PATCH/DELETE
 mutations may declare it. Use `ConnectorEntityTag.RequireStrong` to reject wildcard, weak, list,
 control-character and oversized values. Freeze the exact tag into the canonical request hash and

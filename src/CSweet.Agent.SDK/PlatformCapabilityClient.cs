@@ -19,6 +19,7 @@ public sealed class PlatformCapabilityClient
         Work = new PlatformWorkClient(tools);
         PersonalTodo = new PlatformPersonalTodoClient(tools);
         Calendar = new PlatformCalendarClient(this);
+        Compute = new PlatformComputeClient(this);
         Artifacts = new PlatformArtifactClient(tools);
         Git = new PlatformGitWorkspaceClient(tools);
         SourceControl = new PlatformSourceControlClient(tools);
@@ -34,6 +35,7 @@ public sealed class PlatformCapabilityClient
     public PlatformWorkClient Work { get; }
     public PlatformPersonalTodoClient PersonalTodo { get; }
     public PlatformCalendarClient Calendar { get; }
+    public PlatformComputeClient Compute { get; }
     public PlatformArtifactClient Artifacts { get; }
     public PlatformGitWorkspaceClient Git { get; }
     public PlatformSourceControlClient SourceControl { get; }
