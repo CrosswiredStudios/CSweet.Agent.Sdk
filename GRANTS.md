@@ -365,3 +365,4 @@ The typed compute client uses compute.provision/read/list/start/stop/restart/des
 | `compute.execute.v1` | Queue a bounded guest command. |
 | `network.inbound.v1` | Independently authorize inbound guest access; not a direct SDK mutation. |
 | `network.publish-port.v1` | Publish an explicitly permitted guest port with a bounded lifetime. |
+`source-control.personal-work.prepare.v1` permits preparation of an owned, actively claimed personal ticket in a private C-Sweet repository. It is a separate installation approval; it does not permit choosing repositories, credentials, refs, merging, or networking.

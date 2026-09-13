@@ -1,6 +1,6 @@
 # Security Policy
 
-SDK 3.42.0 adds protocol-2.3 exact `If-Match` preconditions for non-media mutations.
+SDK 3.43.0 adds protocol-2.3 exact `If-Match` preconditions for non-media mutations.
 Hosts must freeze the declared required input into the approved plan, validate one bounded strong
 entity tag, and inject only that header on the exact PUT/PATCH/DELETE request. Never inherit the
 condition on ownership reads, allow arbitrary headers or replace the version after approval.
@@ -155,3 +155,16 @@ or convey new authority. Return feedback only after revalidating the original re
 SDK 3.35.0 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](docs/llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.
 
 The typed Work.DecideApprovalStageAsync client submits a scoped board-manager decision through the broker. The host binds the current waiting stage and active sprint to the assigned manager and enforces idempotent replay; the client grants no approval authority.
+
+## Personal development workspaces (3.43.0)
+
+Inside a claimed personal-ticket callback, call `context.Platform.Git.PreparePersonalAsync(new(item.Id, stableKey), token)`.
+Request `source-control.personal-work.prepare.v1` separately in the manifest. Core checks current installation approval,
+ticket ownership, its retained conversation source, live claim, business repository policy and quota. It selects a private
+C-Sweet repository and branch; the agent cannot select another repository or obtain credentials. Use the returned workspace
+with the existing Git inspect/publish SDK methods. Personal queue completion and deferral remain SDK-owned.
+
+Compute defaults grant no network access. Local test publication needs explicit inbound and publish-port grants for the
+instance and guest port. Outbound access, private networking and public exposure are separate authorities; declaring a
+capability does not grant it. The current Hyper-V provider keeps VMs without network adapters and fails unsupported network
+requests closed. Docker inside a prepared guest image does not add host or outbound authority.
