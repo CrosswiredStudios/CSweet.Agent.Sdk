@@ -6,22 +6,6 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class AgentRuntimePersonalTodoRecoveryTests
 {
     [Fact]
-    public void StartupSweepRequiresBothSubscriptionAndClaimDeclaration()
-    {
-        var subscribed = Manifest(
-            [PersonalTodoEvents.Available],
-            [new AgentRequiredCapability(PersonalTodoCapabilities.Claim)]);
-        var noSubscription = Manifest(
-            [],
-            [new AgentRequiredCapability(PersonalTodoCapabilities.Claim)]);
-        var noClaim = Manifest([PersonalTodoEvents.Available], []);
-
-        Assert.True(AgentRuntimeWorker<TestAgent>.ShouldRecoverPersonalTodoOnStartup(subscribed));
-        Assert.False(AgentRuntimeWorker<TestAgent>.ShouldRecoverPersonalTodoOnStartup(noSubscription));
-        Assert.False(AgentRuntimeWorker<TestAgent>.ShouldRecoverPersonalTodoOnStartup(noClaim));
-    }
-
-    [Fact]
     public void RuntimeFailuresExposeSafeClassificationAndDiagnosticInsteadOfExceptionText()
     {
         var diagnosticId = Guid.Parse("11111111-2222-3333-4444-555555555555");

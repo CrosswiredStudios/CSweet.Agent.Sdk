@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 3.44.0
+     --SdkVersion 3.44.1
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed
@@ -113,8 +113,7 @@ subscribe to `com.csweet.work.personal-todo.available.v1`, and override
 `PersonalTodoResult.Completed(...)`, `PersonalTodoResult.InProgress(...)`, or
 `PersonalTodoResult.Blocked(...)`; it must not move queue cards directly. `InProgress` releases
 the transient claim while retaining the card in Doing until an external event resumes it.
-Subscribed agents also sweep their queue once when a runtime session connects, so
-a wake event missed during an installation upgrade cannot strand ready work. Mention identities on
+The platform reconciles ready work and reissues missed wake events through the durable inbox. Personal callbacks run only under a work lease, including after startup or reconnect, so progress and inference keep their normal lease lifecycle. Mention identities on
 `PersonalTodoItem.Mentions` come from validated source messages or structured ticket spans and may
 be used with granted communication actions such as
 `context.Platform.Communication.SendDirectMessageAsync(...)`.
@@ -167,11 +166,11 @@ Human-oriented explanations and examples are in
 
 ## Reusable collaboration
 
-See [agent collaboration](docs/collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.44.0.
+See [agent collaboration](docs/collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.44.1.
 
 ## Acknowledged inference waits
 
-SDK 3.44.0 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](docs/llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.
+SDK 3.44.1 uses negotiated, lease-bound inference polling so acknowledged waiting does not consume the agent execution budget. See [LLM queue and deadlines](docs/llm-queue.md) for states, cancellation, ownership, runtime limits, and deployment requirements.
 
 ## Business calendars
 

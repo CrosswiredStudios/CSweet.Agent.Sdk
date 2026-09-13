@@ -1,6 +1,6 @@
 # Typed compute client
 
-SDK 3.44.0 exposes `context.Platform.Compute`. This calls the same authorized broker as the platform's MCP compute tools; agent authors do not implement MCP, provisioning, UAC or credential handling.
+SDK 3.44.1 exposes `context.Platform.Compute`. This calls the same authorized broker as the platform's MCP compute tools; agent authors do not implement MCP, provisioning, UAC or credential handling.
 
 Use `CSweet.Agent.SDK.Compute` for typed requests, results, `ComputeCapabilities` and `ComputeEvents`. Declare only the capabilities your agent uses in its manifest. Declarations do not grant permission. Provisioning, lifecycle changes, command execution and network publication remain separately authorized.
 
@@ -28,7 +28,7 @@ No SDK method installs host components, enrolls a provider, supplies a host imag
 Executable examples and compatibility are covered by `PlatformComputeClientTests`, Core's `ComputeSdkContractTests`, and Software Developer's Hello World workflow.
 
 Call `context.Platform.Compute.GetDefaultsAsync()` to read the application's selected workstream and Linux template. `Pending` or `Running` means preparation continues; retain the task durably and re-read after `ComputeEvents.Available`. `Ready` supplies `WorkstreamId` and `TemplateId` for `ProvisionAsync`. Availability events are wake hints, not execution grants. The application owns setup, enrollment and administrator elevation. Never ask the user to enter IDs or run a script. Callers can still supply an explicitly approved workstream/template for advanced use.
-## Personal development workspaces (3.44.0)
+## Personal development workspaces (3.44.1)
 
 Inside a claimed personal-ticket callback, call `context.Platform.Git.PreparePersonalAsync(new(item.Id, stableKey), token)`.
 Request `source-control.personal-work.prepare.v1` separately in the manifest. Core checks current installation approval,
@@ -41,7 +41,7 @@ instance and guest port. Outbound access, private networking and public exposure
 capability does not grant it. The current Hyper-V provider keeps VMs without network adapters and fails unsupported network
 requests closed. Docker inside a prepared guest image does not add host or outbound authority.
 
-## Isolated source snapshots (SDK 3.44.0)
+## Isolated source snapshots (SDK 3.44.1)
 
 `git.workspace.sync.v1` transfers an authorized workspace snapshot through Core. `context.Platform.Git.MaterializeAsync` creates a runtime-local writable copy and returns its local path; the platform path from Prepare is an opaque workspace location, not a shared filesystem mount. `UploadAsync` sends edited files back before inspection/publication. Existing edits are preserved on repeated materialization; after runtime loss, the latest uploaded snapshot is restored.
 

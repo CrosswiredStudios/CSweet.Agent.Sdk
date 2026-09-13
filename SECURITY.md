@@ -1,6 +1,6 @@
 # Security Policy
 
-SDK 3.44.0 adds protocol-2.3 exact `If-Match` preconditions for non-media mutations.
+SDK 3.44.1 adds protocol-2.3 exact `If-Match` preconditions for non-media mutations.
 Hosts must freeze the declared required input into the approved plan, validate one bounded strong
 entity tag, and inject only that header on the exact PUT/PATCH/DELETE request. Never inherit the
 condition on ownership reads, allow arbitrary headers or replace the version after approval.
@@ -156,7 +156,7 @@ SDK 3.35.0 uses negotiated, lease-bound inference polling so acknowledged waitin
 
 The typed Work.DecideApprovalStageAsync client submits a scoped board-manager decision through the broker. The host binds the current waiting stage and active sprint to the assigned manager and enforces idempotent replay; the client grants no approval authority.
 
-## Personal development workspaces (3.44.0)
+## Personal development workspaces (3.44.1)
 
 Inside a claimed personal-ticket callback, call `context.Platform.Git.PreparePersonalAsync(new(item.Id, stableKey), token)`.
 Request `source-control.personal-work.prepare.v1` separately in the manifest. Core checks current installation approval,
