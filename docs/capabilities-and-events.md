@@ -196,3 +196,11 @@ function-invocation loop for simple agents. Preserve all existing execution and 
 
 ComputeEvents.Changed identifies com.csweet.compute.changed.v1. Deserialize ComputeChangedEvent, then re-read the authorized environment or operation through Platform.Compute. The revision is a wake hint, not a current snapshot or execution grant. Persist stable command keys and generations across duplicate deliveries; use bounded recovery for missed events. See [typed compute](compute.md).
 
+
+## Planning solo development work (3.45.0)
+
+Use `Platform.PersonalTodo.CreatePlanAsync(CreatePersonalWorkPlanRequest)` from the owning personal-work callback to atomically create an MVP epic, testable stories, and scoped tasks. Retain the request before calling so retries submit the same plan. Replaying the same content returns the existing hierarchy; a different plan is rejected. The SDK tracks the resulting epic revision for its callback completion/defer transition.
+
+Use `ReportPlanTaskAsync(ReportPersonalWorkPlanTaskRequest)` to start the next task and record completion or blocking evidence under the epic's live claim. Save the source snapshot before completing a task. The platform enforces task order and requires all tasks to finish before the epic completes. Child tickets do not receive independent execution claims. Continue through durable personal-work review scheduling; do not add polling loops.
+
+The manifest must request `work.personal-plan.create.v1` and `work.personal-plan.report-task.v1`. Both require scoped grants and the owning epic's live claim. They confer no Git, compute, or network authority.

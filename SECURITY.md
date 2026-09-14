@@ -1,6 +1,6 @@
 # Security Policy
 
-SDK 3.44.3 adds protocol-2.3 exact `If-Match` preconditions for non-media mutations.
+SDK 3.45.0 adds protocol-2.3 exact `If-Match` preconditions for non-media mutations.
 Hosts must freeze the declared required input into the approved plan, validate one bounded strong
 entity tag, and inject only that header on the exact PUT/PATCH/DELETE request. Never inherit the
 condition on ownership reads, allow arbitrary headers or replace the version after approval.
@@ -156,7 +156,7 @@ SDK 3.35.0 uses negotiated, lease-bound inference polling so acknowledged waitin
 
 The typed Work.DecideApprovalStageAsync client submits a scoped board-manager decision through the broker. The host binds the current waiting stage and active sprint to the assigned manager and enforces idempotent replay; the client grants no approval authority.
 
-## Personal development workspaces (3.44.3)
+## Personal development workspaces (3.45.0)
 
 Inside a claimed personal-ticket callback, call `context.Platform.Git.PreparePersonalAsync(new(item.Id, stableKey), token)`.
 Request `source-control.personal-work.prepare.v1` separately in the manifest. Core checks current installation approval,
@@ -168,3 +168,5 @@ Compute defaults grant no network access. Local test publication needs explicit 
 instance and guest port. Outbound access, private networking and public exposure are separate authorities; declaring a
 capability does not grant it. The current Hyper-V provider keeps VMs without network adapters and fails unsupported network
 requests closed. Docker inside a prepared guest image does not add host or outbound authority.
+
+Personal plan creation and progress reporting are separate grant-governed capabilities. The server requires the owning installation, employee, organization, board grant, and live coordinator claim; a child ticket is not an execution grant. Plans cannot grant repository access, compute, or networking. All such operations keep their existing independent authorization.

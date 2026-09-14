@@ -1,6 +1,6 @@
 # Runtime maintainer guide
 
-SDK 3.44.3 adds `ConnectorHttpOperation.IfMatchInput` for protocol 2.3. Its pointer must select a
+SDK 3.45.0 adds `ConnectorHttpOperation.IfMatchInput` for protocol 2.3. Its pointer must select a
 required string with `maxLength` between 3 and 256. Only non-bootstrap, non-media PUT/PATCH/DELETE
 mutations may declare it. Use `ConnectorEntityTag.RequireStrong` to reject wildcard, weak, list,
 control-character and oversized values. Freeze the exact tag into the canonical request hash and
@@ -127,7 +127,7 @@ SDK 3.35.0 uses negotiated, lease-bound inference polling so acknowledged waitin
 
 The typed Work.DecideApprovalStageAsync client submits a scoped board-manager decision through the broker. The host binds the current waiting stage and active sprint to the assigned manager and enforces idempotent replay; the client grants no approval authority.
 
-## Personal development workspaces (3.44.3)
+## Personal development workspaces (3.45.0)
 
 Inside a claimed personal-ticket callback, call `context.Platform.Git.PreparePersonalAsync(new(item.Id, stableKey), token)`.
 Request `source-control.personal-work.prepare.v1` separately in the manifest. Core checks current installation approval,
@@ -145,3 +145,5 @@ Personal queue recovery uses platform reconciliation and leased availability eve
 Inference polling preserves failureCode and retryable for failed chunks and terminal job errors. Only explicit retryable failures authorize automatic recovery; missing metadata does not imply retry permission.
 
 Inference deadline updates beyond the .NET timer range disable the prior domain timer. Linked runtime cancellation remains active, and later finite or expired deadlines still apply.
+
+Personal planning uses the existing personal-work claim as coordinator. The SDK retains the revision returned by successful plan creation when finishing or deferring that callback; later, newer claim revisions always take precedence. Story/task progress does not mutate the coordinator revision. The platform commits the full hierarchy and realtime outbox together and enforces ordered task completion under the live owning claim. Child rows cannot be claimed independently.

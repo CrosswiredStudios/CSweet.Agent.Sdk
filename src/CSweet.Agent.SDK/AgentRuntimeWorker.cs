@@ -238,6 +238,9 @@ internal sealed class AgentRuntimeWorker<TAgent>(
             logger.LogError(exception,
                 "Agent {AgentId} failed work {WorkId} ({WorkName}). Diagnostic {DiagnosticId}.",
                 agent.AgentId, lease.WorkId, lease.Name, diagnosticId);
+            // Keep a short header after the potentially long stack so bounded guest logs retain the cause.
+            logger.LogError("Work failure summary {DiagnosticId}: {ExceptionType}: {Message}", diagnosticId,
+                exception.GetType().Name, new string(exception.Message.Where(x => !char.IsControl(x)).Take(1400).ToArray()));
             await runtime.FailAsync(
                 lease,
                 DescribeFailure(exception, diagnosticId),
@@ -432,34 +435,34 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 catch
                 {
                     await context.Platform.PersonalTodo.ReleaseAsync(
-                        claim.Item.Id, eventId, claim.Item.Revision,
+                        claim.Item.Id, eventId, context.Platform.PersonalTodo.ClaimedRevision(claim.Item.Id, claim.Item.Revision),
                         keepInProgress: false, cancellationToken);
                     throw;
                 }
                 if (result.IsCompleted)
                 {
                     await context.Platform.PersonalTodo.CompleteAsync(
-                        claim.Item.Id, eventId, claim.Item.Revision,
+                        claim.Item.Id, eventId, context.Platform.PersonalTodo.ClaimedRevision(claim.Item.Id, claim.Item.Revision),
                         string.IsNullOrEmpty(result.Content) ? null : result.Content,
                         cancellationToken);
                 }
                 else if (result.NextReviewAt is { } nextReviewAt)
                 {
                     await context.Platform.PersonalTodo.DeferAsync(
-                        claim.Item.Id, eventId, claim.Item.Revision,
+                        claim.Item.Id, eventId, context.Platform.PersonalTodo.ClaimedRevision(claim.Item.Id, claim.Item.Revision),
                         nextReviewAt, result.Content, result.WaitingOnOrganizationUserId,
                         cancellationToken);
                 }
                 else if (result.KeepInProgress)
                 {
                     await context.Platform.PersonalTodo.ReleaseAsync(
-                        claim.Item.Id, eventId, claim.Item.Revision,
+                        claim.Item.Id, eventId, context.Platform.PersonalTodo.ClaimedRevision(claim.Item.Id, claim.Item.Revision),
                         keepInProgress: true, cancellationToken);
                 }
                 else
                 {
                     await context.Platform.PersonalTodo.BlockAsync(
-                        claim.Item.Id, eventId, claim.Item.Revision, result.Content,
+                        claim.Item.Id, eventId, context.Platform.PersonalTodo.ClaimedRevision(claim.Item.Id, claim.Item.Revision), result.Content,
                         cancellationToken);
                 }
             }

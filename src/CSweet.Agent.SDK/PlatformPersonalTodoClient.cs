@@ -11,6 +11,18 @@ public sealed class PlatformPersonalTodoClient
 
     internal PlatformPersonalTodoClient(IPlatformToolInvoker tools) => _tools = tools;
 
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<Guid, long> _planRevisions = new();
+    internal long ClaimedRevision(Guid itemId, long original) => Math.Max(original, _planRevisions.GetValueOrDefault(itemId, original));
+
+    public async Task<PersonalWorkPlan> CreatePlanAsync(CreatePersonalWorkPlanRequest request, CancellationToken cancellationToken = default)
+    {
+        var plan = await InvokeAsync<CreatePersonalWorkPlanRequest, PersonalWorkPlan>(PersonalWorkPlanCapabilities.Create, request, cancellationToken);
+        _planRevisions[request.RootItemId] = plan.RootRevision;
+        return plan;
+    }
+
+    public Task<PersonalTodoItem> ReportPlanTaskAsync(ReportPersonalWorkPlanTaskRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<ReportPersonalWorkPlanTaskRequest, PersonalTodoItem>(PersonalWorkPlanCapabilities.ReportTask, request, cancellationToken);
     public Task<PersonalTodoDirectory> ListAsync(CancellationToken cancellationToken = default) =>
         InvokeAsync<object, PersonalTodoDirectory>(PersonalTodoCapabilities.Read, new { }, cancellationToken);
 
