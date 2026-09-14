@@ -7,9 +7,11 @@ set "SOLUTION=CSweetAgentSdk.slnx"
 set "PACKAGE_PROJECT=src\CSweet.Agent.SDK\CSweet.Agent.SDK.csproj"
 set "PACKAGE_VERSION=%~1"
 set "OUTPUT_ROOT=%~2"
+set "DOTNET=dotnet"
+if exist "%ProgramFiles%\dotnet\dotnet.exe" set "DOTNET=%ProgramFiles%\dotnet\dotnet.exe"
 
 if not defined PACKAGE_VERSION (
-    for /f "tokens=3 delims=<>" %%V in ('findstr /c:"<Version>" "%PACKAGE_PROJECT%"') do set "PACKAGE_VERSION=%%V"
+    for /f "delims=" %%V in ('""%DOTNET%" msbuild "%PACKAGE_PROJECT%" -nologo -getProperty:Version"') do set "PACKAGE_VERSION=%%V"
 )
 
 if not defined PACKAGE_VERSION (
@@ -21,7 +23,7 @@ if not defined OUTPUT_ROOT set "OUTPUT_ROOT=artifacts\packages"
 set "OUTPUT_DIRECTORY=%OUTPUT_ROOT%\%PACKAGE_VERSION%"
 for %%I in ("%OUTPUT_DIRECTORY%") do set "OUTPUT_DIRECTORY=%%~fI"
 
-set "VERSION_PROPERTY=-p:CSweetAgentSdkPackageVersion=%PACKAGE_VERSION%"
+set "BUILD_PROPERTIES=-p:CSweetAgentSdkPackageVersion=%PACKAGE_VERSION% -p:UseLocalCSweetWorkManagementContracts=false"
 
 echo Package version: %PACKAGE_VERSION%
 
@@ -31,17 +33,17 @@ if not exist "%OUTPUT_DIRECTORY%" (
 
 echo.
 echo Restoring dependencies...
-dotnet restore "%SOLUTION%" %VERSION_PROPERTY%
+"%DOTNET%" restore "%SOLUTION%" %BUILD_PROPERTIES%
 if errorlevel 1 goto :failed
 
 echo.
 echo Running tests...
-dotnet test "%SOLUTION%" -c Release --no-restore %VERSION_PROPERTY%
+"%DOTNET%" test "%SOLUTION%" -c Release --no-restore %BUILD_PROPERTIES%
 if errorlevel 1 goto :failed
 
 echo.
 echo Creating NuGet packages in "%OUTPUT_DIRECTORY%"...
-dotnet pack "%PACKAGE_PROJECT%" -c Release --no-restore %VERSION_PROPERTY% -o "%OUTPUT_DIRECTORY%"
+"%DOTNET%" pack "%PACKAGE_PROJECT%" -c Release --no-restore %BUILD_PROPERTIES% -o "%OUTPUT_DIRECTORY%"
 if errorlevel 1 goto :failed
 
 echo.
