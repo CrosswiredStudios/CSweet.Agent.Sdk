@@ -3,8 +3,21 @@ using System.Text;
 
 namespace CSweet.Agent.SDK.Tests;
 
-public sealed class WorkspaceSyncTests
+[Collection("Workspace sync configuration")]
+public sealed class WorkspaceSyncTests : IDisposable
 {
+    private const string ArchiveVariable = "CSWEET_WORKSPACE_MAXIMUM_ARCHIVE_BYTES";
+    private const string ExpandedVariable = "CSWEET_WORKSPACE_MAXIMUM_EXPANDED_BYTES";
+    private const string FileCountVariable = "CSWEET_WORKSPACE_MAXIMUM_FILE_COUNT";
+    private readonly Dictionary<string, string?> original = new();
+
+    public WorkspaceSyncTests()
+    {
+        Configure(ArchiveVariable, 1024 * 1024);
+        Configure(ExpandedVariable, 16 * 1024 * 1024);
+        Configure(FileCountVariable, 4096);
+    }
+
     [Fact]
     public async Task Materialization_preserves_edits_and_uploaded_source_recovers_after_restart()
     {
@@ -55,6 +68,50 @@ public sealed class WorkspaceSyncTests
         await Assert.ThrowsAsync<ArgumentException>(() => new AgentTestRuntime().CreateContext().Platform.Git.UploadAsync(workspace, 1));
     }
 
+    [Fact]
+    public async Task Materialization_uses_platform_configured_archive_limit()
+    {
+        Environment.SetEnvironmentVariable(ArchiveVariable, "1");
+        var workspace = new GitWorkspaceResult(Guid.NewGuid(), Guid.NewGuid(), "ignored", Guid.NewGuid(),
+            "InternalGit", "PullRequest", "base", "Ready", false);
+        var runtime = new AgentTestRuntime().RegisterCapability<GitWorkspaceSyncRequest, GitWorkspaceSyncResult>(
+            GitWorkspaceCapabilities.Sync,
+            (_, _) => Task.FromResult(new GitWorkspaceSyncResult(Zip("app.js", "content"))));
+
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            runtime.CreateContext().Platform.Git.MaterializeAsync(workspace, 1));
+
+        Assert.Contains("configured 1-byte transfer limit", error.Message);
+    }
+
+    [Fact]
+    public async Task Materialization_requires_platform_workspace_configuration()
+    {
+        Environment.SetEnvironmentVariable(ArchiveVariable, null);
+        var workspace = new GitWorkspaceResult(Guid.NewGuid(), Guid.NewGuid(), "ignored", Guid.NewGuid(),
+            "InternalGit", "PullRequest", "base", "Ready", false);
+        var runtime = new AgentTestRuntime().RegisterCapability<GitWorkspaceSyncRequest, GitWorkspaceSyncResult>(
+            GitWorkspaceCapabilities.Sync,
+            (_, _) => Task.FromResult(new GitWorkspaceSyncResult(Zip("app.js", "content"))));
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            runtime.CreateContext().Platform.Git.MaterializeAsync(workspace, 1));
+
+        Assert.Contains(ArchiveVariable, error.Message);
+    }
+
+    public void Dispose()
+    {
+        foreach (var pair in original)
+            Environment.SetEnvironmentVariable(pair.Key, pair.Value);
+    }
+
+    private void Configure(string name, int value)
+    {
+        original[name] = Environment.GetEnvironmentVariable(name);
+        Environment.SetEnvironmentVariable(name, value.ToString());
+    }
+
     private static byte[] Zip(string name, string text)
     {
         using var stream = new MemoryStream();
@@ -63,3 +120,6 @@ public sealed class WorkspaceSyncTests
         return stream.ToArray();
     }
 }
+
+[CollectionDefinition("Workspace sync configuration", DisableParallelization = true)]
+public sealed class WorkspaceSyncConfigurationCollection;

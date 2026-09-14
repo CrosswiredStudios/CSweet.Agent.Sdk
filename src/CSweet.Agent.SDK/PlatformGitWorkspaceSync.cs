@@ -11,8 +11,9 @@ public sealed record GitWorkspaceSyncResult(byte[]? Archive = null);
 public sealed partial class PlatformGitWorkspaceClient
 {
     public const string SyncCapability = "git.workspace.sync.v1";
-    public const int MaximumSnapshotBytes = 512 * 1024;
-    public const int MaximumSnapshotContentBytes = 16 * 1024 * 1024;
+    private const string MaximumArchiveBytesVariable = "CSWEET_WORKSPACE_MAXIMUM_ARCHIVE_BYTES";
+    private const string MaximumExpandedBytesVariable = "CSWEET_WORKSPACE_MAXIMUM_EXPANDED_BYTES";
+    private const string MaximumFileCountVariable = "CSWEET_WORKSPACE_MAXIMUM_FILE_COUNT";
     public static string LocalWorkspaceRoot => Path.Combine(Path.GetTempPath(), "csweet-workspaces");
     public static string LocalWorkspacePath(Guid workspaceId) => Path.Combine(LocalWorkspaceRoot, workspaceId.ToString("N"));
 
@@ -35,7 +36,9 @@ public sealed partial class PlatformGitWorkspaceClient
             return workspace with { Path = path };
         }
         var archive = result.Archive ?? throw new InvalidDataException("The platform returned no source snapshot.");
-        if (archive.Length > MaximumSnapshotBytes) throw new InvalidDataException("The source snapshot exceeds the 512 KiB transfer limit.");
+        var limits = ReadWorkspaceLimits();
+        if (archive.Length > limits.MaximumArchiveBytes)
+            throw new InvalidDataException($"The source snapshot exceeds the configured {limits.MaximumArchiveBytes}-byte transfer limit.");
         Directory.CreateDirectory(LocalWorkspaceRoot);
         var staging = Path.Combine(LocalWorkspaceRoot, ".prepare-" + Guid.NewGuid().ToString("N"));
         try
@@ -64,7 +67,8 @@ public sealed partial class PlatformGitWorkspaceClient
 
     internal static async Task ExtractSnapshotAsync(byte[] archive, string root, CancellationToken ct)
     {
-        if (archive.Length > MaximumSnapshotBytes) throw new InvalidDataException("Snapshot transfer is too large.");
+        var limits = ReadWorkspaceLimits();
+        if (archive.Length > limits.MaximumArchiveBytes) throw new InvalidDataException("Snapshot transfer is too large.");
         EnsureNoLinks(root); Directory.CreateDirectory(root);
         using var zip = new ZipArchive(new MemoryStream(archive), ZipArchiveMode.Read);
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -74,11 +78,12 @@ public sealed partial class PlatformGitWorkspaceClient
             var relative = entry.FullName;
             var parts = relative.TrimEnd('/').Split('/');
             if (parts.Any(p => p is "" or "." or ".." || p.Contains(':') || p.Contains('\\') || p.Any(char.IsControl) || p.TrimEnd(' ', '.') != p || p.Equals(".git", StringComparison.OrdinalIgnoreCase)) ||
-                relative.Length > 512 || !names.Add(relative.TrimEnd('/')) || names.Count > 4096 ||
+                relative.Length > 512 || !names.Add(relative.TrimEnd('/')) || names.Count > limits.MaximumFileCount ||
                 ((entry.ExternalAttributes >> 16) & 0xF000) == 0xA000 || (entry.ExternalAttributes & (int)FileAttributes.ReparsePoint) != 0)
                 throw new InvalidDataException("The source snapshot contains an unsafe path or link.");
             total = checked(total + entry.Length);
-            if (total > MaximumSnapshotContentBytes) throw new InvalidDataException("The source snapshot exceeds 16 MiB of content.");
+            if (total > limits.MaximumExpandedBytes)
+                throw new InvalidDataException($"The source snapshot exceeds the configured {limits.MaximumExpandedBytes}-byte content limit.");
             var target = Path.GetFullPath(Path.Combine(root, relative));
             if (!target.StartsWith(Path.GetFullPath(root) + Path.DirectorySeparatorChar, StringComparison.Ordinal)) throw new InvalidDataException("Invalid snapshot path.");
             if (relative.EndsWith('/')) { Directory.CreateDirectory(target); continue; }
@@ -92,6 +97,7 @@ public sealed partial class PlatformGitWorkspaceClient
 
     internal static async Task<byte[]> CreateSnapshotAsync(string root, CancellationToken ct)
     {
+        var limits = ReadWorkspaceLimits();
         EnsureNoLinks(root);
         using var output = new MemoryStream();
         using (var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
@@ -103,16 +109,38 @@ public sealed partial class PlatformGitWorkspaceClient
                 var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
                 if (relative.Split('/').Any(p => p.Equals(".git", StringComparison.OrdinalIgnoreCase) || p.Equals(".csweet", StringComparison.OrdinalIgnoreCase))) continue;
                 EnsureNoLinks(path); total = checked(total + new FileInfo(path).Length);
-                if (++count > 4096 || total > MaximumSnapshotContentBytes) throw new InvalidDataException("Source exceeds the workspace content limit.");
+                if (++count > limits.MaximumFileCount || total > limits.MaximumExpandedBytes)
+                    throw new InvalidDataException("Source exceeds the configured workspace content limit.");
                 var entry = zip.CreateEntry(relative, CompressionLevel.Optimal);
                 entry.LastWriteTime = new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero);
                 await using var input = File.OpenRead(path); await using var stream = entry.Open();
                 await input.CopyToAsync(stream, ct);
             }
         }
-        if (output.Length > MaximumSnapshotBytes) throw new InvalidDataException("The source snapshot exceeds the 512 KiB transfer limit.");
+        if (output.Length > limits.MaximumArchiveBytes)
+            throw new InvalidDataException($"The source snapshot exceeds the configured {limits.MaximumArchiveBytes}-byte transfer limit.");
         return output.ToArray();
     }
+
+    private static WorkspaceSyncLimits ReadWorkspaceLimits()
+    {
+        var archive = ReadPositiveLimit(MaximumArchiveBytesVariable);
+        var expanded = ReadPositiveLimit(MaximumExpandedBytesVariable);
+        var files = ReadPositiveLimit(MaximumFileCountVariable);
+        if (expanded < archive)
+            throw new InvalidOperationException($"{MaximumExpandedBytesVariable} must be at least {MaximumArchiveBytesVariable}.");
+        return new(archive, expanded, files);
+    }
+
+    private static int ReadPositiveLimit(string name)
+    {
+        var value = Environment.GetEnvironmentVariable(name);
+        if (!int.TryParse(value, out var parsed) || parsed < 1)
+            throw new InvalidOperationException($"The platform did not configure the required {name} workspace limit.");
+        return parsed;
+    }
+
+    private sealed record WorkspaceSyncLimits(int MaximumArchiveBytes, int MaximumExpandedBytes, int MaximumFileCount);
 
     private static void EnsureNoLinks(string path)
     {

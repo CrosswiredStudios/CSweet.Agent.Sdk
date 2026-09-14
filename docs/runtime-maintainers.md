@@ -1,6 +1,6 @@
 # Runtime maintainer guide
 
-SDK 3.45.0 adds `ConnectorHttpOperation.IfMatchInput` for protocol 2.3. Its pointer must select a
+SDK 3.45.1 adds `ConnectorHttpOperation.IfMatchInput` for protocol 2.3. Its pointer must select a
 required string with `maxLength` between 3 and 256. Only non-bootstrap, non-media PUT/PATCH/DELETE
 mutations may declare it. Use `ConnectorEntityTag.RequireStrong` to reject wildcard, weak, list,
 control-character and oversized values. Freeze the exact tag into the canonical request hash and
@@ -127,7 +127,7 @@ SDK 3.35.0 uses negotiated, lease-bound inference polling so acknowledged waitin
 
 The typed Work.DecideApprovalStageAsync client submits a scoped board-manager decision through the broker. The host binds the current waiting stage and active sprint to the assigned manager and enforces idempotent replay; the client grants no approval authority.
 
-## Personal development workspaces (3.45.0)
+## Personal development workspaces (3.45.1)
 
 Inside a claimed personal-ticket callback, call `context.Platform.Git.PreparePersonalAsync(new(item.Id, stableKey), token)`.
 Request `source-control.personal-work.prepare.v1` separately in the manifest. Core checks current installation approval,
@@ -147,3 +147,9 @@ Inference polling preserves failureCode and retryable for failed chunks and term
 Inference deadline updates beyond the .NET timer range disable the prior domain timer. Linked runtime cancellation remains active, and later finite or expired deadlines still apply.
 
 Personal planning uses the existing personal-work claim as coordinator. The SDK retains the revision returned by successful plan creation when finishing or deferring that callback; later, newer claim revisions always take precedence. Story/task progress does not mutate the coordinator revision. The platform commits the full hierarchy and realtime outbox together and enforces ordered task completion under the live owning claim. Child rows cannot be claimed independently.
+
+The runtime host must provide `CSWEET_WORKSPACE_MAXIMUM_ARCHIVE_BYTES`,
+`CSWEET_WORKSPACE_MAXIMUM_EXPANDED_BYTES`, and `CSWEET_WORKSPACE_MAXIMUM_FILE_COUNT`.
+The SDK applies those platform-owned limits while extracting and uploading snapshots; it has no
+separate compiled transfer-size or file-count ceiling. Missing, non-positive, or inconsistent
+values fail closed before workspace files are materialized.
