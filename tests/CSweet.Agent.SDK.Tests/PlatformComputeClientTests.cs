@@ -6,15 +6,17 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class PlatformComputeClientTests
 {
     [Theory]
-    [InlineData("linux", "x64")]
-    [InlineData("windows", "arm64")]
-    public async Task Provision_preserves_requirements_keys_and_runtime_owned_scope(string os, string architecture)
+    [InlineData("linux", "x64", 0)]
+    [InlineData("linux", "x64", 3600)]
+    [InlineData("windows", "arm64", 3600)]
+    public async Task Provision_preserves_requirements_keys_and_runtime_owned_scope(string os, string architecture, int lifetime)
     {
         JsonElement captured = default;
         var runtime = new AgentTestRuntime().RegisterCapability<JsonElement, ComputeEnvironment>(ComputeCapabilities.Provision,
             (input, _) => { captured = input; return Task.FromResult(Environment()); });
-        var request = new ProvisionComputeRequest(Guid.NewGuid(), "test-app", "stable-create", new(os, architecture, "clean", new(1, 1024, 20480), 3600));
+        var request = new ProvisionComputeRequest(Guid.NewGuid(), "test-app", "stable-create", new(os, architecture, "clean", new(1, 1024, 20480), lifetime));
         await runtime.CreateContext().Platform.Compute.ProvisionAsync(request);
+        Assert.Equal(lifetime, captured.GetProperty("specification").GetProperty("lifetimeSeconds").GetInt32());
         Assert.Equal("stable-create", captured.GetProperty("idempotencyKey").GetString());
         Assert.Equal(os, captured.GetProperty("specification").GetProperty("operatingSystem").GetString());
         Assert.Equal(architecture, captured.GetProperty("specification").GetProperty("architecture").GetString());
@@ -118,6 +120,7 @@ public sealed class PlatformComputeClientTests
     public async Task Invalid_inputs_fail_before_transport()
     {
         var client = new AgentTestRuntime().CreateContext().Platform.Compute;
+        await Assert.ThrowsAsync<ArgumentException>(() => client.ProvisionAsync(new(Guid.NewGuid(), "desired", "key", new("linux", "x64", "clean", new(1, 1024, 20480), -1))));
         await Assert.ThrowsAsync<ArgumentException>(() => client.ReadAsync(Guid.Empty));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => client.ListAsync(Guid.NewGuid(), limit: 101));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => client.PublishPortAsync(new(Guid.NewGuid(), 1, "key", 80)));

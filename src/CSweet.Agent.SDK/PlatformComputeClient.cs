@@ -16,7 +16,7 @@ public sealed class PlatformComputeClient
         var spec = request.Specification ?? throw new ArgumentException("A compute specification is required.", nameof(request));
         Identifier(spec.OperatingSystem); Identifier(spec.Architecture); Identifier(spec.TemplateId);
         if (spec.Resources is not { CpuCount: > 0, MemoryMiB: > 0, DiskMiB: > 0, GpuCount: >= 0 } ||
-            spec.LifetimeSeconds <= 0 || spec.Persistence is not ("ephemeral" or "persistent"))
+            spec.LifetimeSeconds < 0 || spec.Persistence is not ("ephemeral" or "persistent"))
             throw new ArgumentException("Positive resources, a lifetime and a supported persistence policy are required.", nameof(request));
         if (spec.Network is { } network)
         {

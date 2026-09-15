@@ -33,7 +33,9 @@ public sealed record ComputeNetworkPolicy(string Mode = "none", bool AllowOutbou
     bool PublicEndpoint = false, IReadOnlyList<int>? PublishedPorts = null);
 
 /// <summary>Provider-independent requirements. OS and architecture identifiers include linux/windows and x64/arm64.
-/// Template IDs come from platform configuration; agents never provide image paths or credentials.</summary>
+/// Template IDs come from platform configuration; agents never provide image paths or credentials.
+/// LifetimeSeconds = 0 requests retention until explicit destruction; positive values request a timed lease.
+/// Both are subject to platform grants. Until-release environments report DateTimeOffset.MaxValue as LeaseExpiresAt.</summary>
 public sealed record ComputeSpecification(string OperatingSystem, string Architecture, string TemplateId,
     ComputeResources Resources, int LifetimeSeconds, string Persistence = "ephemeral",
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ComputeNetworkPolicy? Network = null);
