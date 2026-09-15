@@ -23,6 +23,18 @@ public sealed class AgentRuntimePersonalTodoRecoveryTests
     }
 
     [Fact]
+    public void RuntimeTransportFailureIncludesSafeFailureTypeAndHttpStatus()
+    {
+        var failure = AgentRuntimeWorker<TestAgent>.DescribeFailure(
+            new HttpRequestException("sensitive endpoint response", null, System.Net.HttpStatusCode.BadGateway), Guid.Empty);
+
+        Assert.Equal(
+            "agent-failure:v1;code=runtime.transport;retryable=true;exceptionType=HttpRequestException;httpStatus=502;diagnosticId=00000000-0000-0000-0000-000000000000",
+            failure);
+        Assert.DoesNotContain("sensitive", failure, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void UnboundedPlatformDeadlineDoesNotOverflowTheRuntimeTimer()
     {
         using var cancellation = new CancellationTokenSource();

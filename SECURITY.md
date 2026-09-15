@@ -1,6 +1,6 @@
 # Security Policy
 
-SDK 3.46.0 adds protocol-2.3 exact `If-Match` preconditions for non-media mutations.
+SDK 3.46.1 adds protocol-2.3 exact `If-Match` preconditions for non-media mutations.
 
 Workspace snapshot size and file-count limits are injected by the trusted runtime and enforced by
 both the SDK and platform broker. Agents cannot enlarge these values, and deployments fail closed
@@ -160,7 +160,7 @@ SDK 3.35.0 uses negotiated, lease-bound inference polling so acknowledged waitin
 
 The typed Work.DecideApprovalStageAsync client submits a scoped board-manager decision through the broker. The host binds the current waiting stage and active sprint to the assigned manager and enforces idempotent replay; the client grants no approval authority.
 
-## Personal development workspaces (3.46.0)
+## Personal development workspaces (3.46.1)
 
 Inside a claimed personal-ticket callback, call `context.Platform.Git.PreparePersonalAsync(new(item.Id, stableKey), token)`.
 Request `source-control.personal-work.prepare.v1` separately in the manifest. Core checks current installation approval,

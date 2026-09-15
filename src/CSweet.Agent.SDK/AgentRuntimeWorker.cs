@@ -275,15 +275,19 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         }
 
         if (exception is HttpRequestException { StatusCode: System.Net.HttpStatusCode.TooManyRequests })
-            return $"agent-failure:v1;code=runtime.rate_limited;retryable=true;diagnosticId={diagnosticId:D}";
-        if (exception is HttpRequestException)
-            return $"agent-failure:v1;code=runtime.transport;retryable=true;diagnosticId={diagnosticId:D}";
+            return $"agent-failure:v1;code=runtime.rate_limited;retryable=true;exceptionType={SanitizeFailureToken(exception.GetType().Name)};httpStatus=429;diagnosticId={diagnosticId:D}";
+        if (exception is HttpRequestException transport)
+            return $"agent-failure:v1;code=runtime.transport;retryable=true;exceptionType={SanitizeFailureToken(exception.GetType().Name)};{HttpStatusToken(transport)}diagnosticId={diagnosticId:D}";
         if (exception is JsonException)
-            return $"agent-failure:v1;code=agent.payload_invalid;diagnosticId={diagnosticId:D}";
+            return $"agent-failure:v1;code=agent.payload_invalid;exceptionType={SanitizeFailureToken(exception.GetType().Name)};diagnosticId={diagnosticId:D}";
         if (exception is InvalidOperationException)
-            return $"agent-failure:v1;code=agent.invalid_operation;diagnosticId={diagnosticId:D}";
-        return $"agent-failure:v1;code=agent.unhandled;diagnosticId={diagnosticId:D}";
+            return $"agent-failure:v1;code=agent.invalid_operation;exceptionType={SanitizeFailureToken(exception.GetType().Name)};diagnosticId={diagnosticId:D}";
+        return $"agent-failure:v1;code=agent.unhandled;exceptionType={SanitizeFailureToken(exception.GetType().Name)};diagnosticId={diagnosticId:D}";
     }
+
+    private static string HttpStatusToken(HttpRequestException exception) => exception.StatusCode is { } status
+        ? $"httpStatus={(int)status};"
+        : string.Empty;
 
     internal static bool ConfigureWorkDeadline(
         CancellationTokenSource cancellation,

@@ -1,6 +1,6 @@
 # Runtime maintainer guide
 
-SDK 3.46.0 adds `ConnectorHttpOperation.IfMatchInput` for protocol 2.3. Its pointer must select a
+SDK 3.46.1 adds `ConnectorHttpOperation.IfMatchInput` for protocol 2.3. Its pointer must select a
 required string with `maxLength` between 3 and 256. Only non-bootstrap, non-media PUT/PATCH/DELETE
 mutations may declare it. Use `ConnectorEntityTag.RequireStrong` to reject wildcard, weak, list,
 control-character and oversized values. Freeze the exact tag into the canonical request hash and
@@ -127,7 +127,7 @@ SDK 3.35.0 uses negotiated, lease-bound inference polling so acknowledged waitin
 
 The typed Work.DecideApprovalStageAsync client submits a scoped board-manager decision through the broker. The host binds the current waiting stage and active sprint to the assigned manager and enforces idempotent replay; the client grants no approval authority.
 
-## Personal development workspaces (3.46.0)
+## Personal development workspaces (3.46.1)
 
 Inside a claimed personal-ticket callback, call `context.Platform.Git.PreparePersonalAsync(new(item.Id, stableKey), token)`.
 Request `source-control.personal-work.prepare.v1` separately in the manifest. Core checks current installation approval,
@@ -154,4 +154,4 @@ The SDK applies those platform-owned limits while extracting and uploading snaps
 separate compiled transfer-size or file-count ceiling. Missing, non-positive, or inconsistent
 values fail closed before workspace files are materialized.
 
-Compute requests with zero lifetime are valid until-release requests as of SDK 3.46.0. Providers and Core must both support this policy; do not rewrite a signed timed reservation in place.
+Compute requests with zero lifetime are valid until-release requests as of SDK 3.46.1. Providers and Core must both support this policy; do not rewrite a signed timed reservation in place.

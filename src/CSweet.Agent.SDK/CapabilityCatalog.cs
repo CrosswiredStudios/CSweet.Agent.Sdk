@@ -246,6 +246,9 @@ public static class CapabilityNames
         public const string PersonalTodoUpdate = WorkManagementCapabilityNames.PersonalTodoUpdate;
         public const string PersonalTodoArchive = WorkManagementCapabilityNames.PersonalTodoArchive;
         public const string PersonalTodoRestore = WorkManagementCapabilityNames.PersonalTodoRestore;
+        // This capability was added after the SDK's minimum shared-contract dependency.
+        // Keep the canonical wire name here so SDK 3.46.1 can build against both contract versions.
+        public const string PersonalTodoCancel = "work.personal-todo.cancel.v1";
     }
 
     public static class Web
@@ -471,7 +474,8 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.PersonalTodoDefer,
                 CapabilityNames.WorkManagement.PersonalTodoUpdate,
                 CapabilityNames.WorkManagement.PersonalTodoArchive,
-                CapabilityNames.WorkManagement.PersonalTodoRestore),
+                CapabilityNames.WorkManagement.PersonalTodoRestore,
+                CapabilityNames.WorkManagement.PersonalTodoCancel),
             ["source-control"] = Set(
                 CapabilityNames.SourceControl.TeamRepositoryOptions,
                 CapabilityNames.SourceControl.ProvisionRepository),
