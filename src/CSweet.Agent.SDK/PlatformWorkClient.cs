@@ -80,6 +80,16 @@ public sealed class PlatformWorkClient
         InvokeAsync<ReadWorkItemCommentsRequest, WorkItemCommentPage>(
             WorkItemCapabilities.ReadComments, request, cancellationToken);
 
+    public Task<WorkItemComment> UpdateCommentAsync(
+        UpdateWorkItemCommentRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<UpdateWorkItemCommentRequest, WorkItemComment>(
+            WorkItemCapabilities.CommentUpdate, request, cancellationToken);
+
+    public Task<DeleteWorkItemCommentResult> DeleteCommentAsync(
+        DeleteWorkItemCommentRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<DeleteWorkItemCommentRequest, DeleteWorkItemCommentResult>(
+            WorkItemCapabilities.CommentDelete, request, cancellationToken);
+
     public Task<WorkItem> EstimateAsync(
         EstimateWorkItemRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<EstimateWorkItemRequest, WorkItem>(

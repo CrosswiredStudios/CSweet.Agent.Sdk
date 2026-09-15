@@ -216,6 +216,10 @@ New governed software-board mutations:
 Work-management capabilities require both an approved package capability and a live scoped grant
 on the organization or board. SDK calls never bypass the board grant model. Mutation requests
 include an idempotency key and, where applicable, the last observed resource revision.
+Comment updates and deletions are author-scoped: the platform permits an agent to change only
+comments its own installation created, and rejects a stale expected revision rather than
+overwriting a concurrent edit. Deletion is soft, so the comment's activity and audit history
+remain durable while the body disappears from reads.
 
 - `WorkBoardCapabilities.Read` — `work.board.read`
 - `WorkBoardCapabilities.Create` — `work.board.create`
@@ -228,6 +232,8 @@ include an idempotency key and, where applicable, the last observed resource rev
 - `WorkItemCapabilities.FinalizeDelivery` — `work.item.delivery.finalize`
 - `WorkItemCapabilities.Comment` — `work.item.comment`
 - `WorkItemCapabilities.ReadComments` — `work.item.comments.read`
+- `WorkItemCapabilities.CommentUpdate` — `work.item.comment.update.v1`
+- `WorkItemCapabilities.CommentDelete` — `work.item.comment.delete.v1`
 - `WorkItemCapabilities.Estimate` — `work.item.estimate`
 - `WorkItemCapabilities.Move` — `work.item.move`
 - `WorkItemCapabilities.Complete` — `work.item.complete`

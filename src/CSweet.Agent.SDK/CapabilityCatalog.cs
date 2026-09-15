@@ -201,6 +201,8 @@ public static class CapabilityNames
         public const string ItemFinalizeDelivery = WorkManagementCapabilityNames.ItemFinalizeDelivery;
         public const string ItemComment = WorkManagementCapabilityNames.ItemComment;
         public const string ItemCommentsRead = WorkManagementCapabilityNames.ItemCommentsRead;
+        public const string ItemCommentUpdateV1 = WorkManagementCapabilityNames.ItemCommentUpdateV1;
+        public const string ItemCommentDeleteV1 = WorkManagementCapabilityNames.ItemCommentDeleteV1;
         public const string ItemEstimate = WorkManagementCapabilityNames.ItemEstimate;
         public const string ItemMove = WorkManagementCapabilityNames.ItemMove;
         public const string ItemComplete = WorkManagementCapabilityNames.ItemComplete;
@@ -441,6 +443,8 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.ItemFinalizeDelivery,
                 CapabilityNames.WorkManagement.ItemComment,
                 CapabilityNames.WorkManagement.ItemCommentsRead,
+                CapabilityNames.WorkManagement.ItemCommentUpdateV1,
+                CapabilityNames.WorkManagement.ItemCommentDeleteV1,
                 CapabilityNames.WorkManagement.ItemEstimate,
                 CapabilityNames.WorkManagement.ItemMove,
                 CapabilityNames.WorkManagement.ItemTransfer,
@@ -586,6 +590,8 @@ public static class WorkItemCapabilities
     public const string FinalizeDelivery = CapabilityNames.WorkManagement.ItemFinalizeDelivery;
     public const string Comment = CapabilityNames.WorkManagement.ItemComment;
     public const string ReadComments = CapabilityNames.WorkManagement.ItemCommentsRead;
+    public const string CommentUpdate = CapabilityNames.WorkManagement.ItemCommentUpdateV1;
+    public const string CommentDelete = CapabilityNames.WorkManagement.ItemCommentDeleteV1;
     public const string Estimate = CapabilityNames.WorkManagement.ItemEstimate;
     public const string Move = CapabilityNames.WorkManagement.ItemMove;
     public const string Complete = CapabilityNames.WorkManagement.ItemComplete;
