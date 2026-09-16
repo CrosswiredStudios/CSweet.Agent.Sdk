@@ -62,9 +62,16 @@ public sealed class PlatformPersonalTodoClient
             PersonalTodoCapabilities.Restore, request, cancellationToken);
 
     internal Task<PersonalTodoClaim> ClaimAsync(Guid eventId, CancellationToken cancellationToken) =>
+        ClaimAsync(eventId, null, null, cancellationToken);
+
+    internal Task<PersonalTodoClaim> ClaimAsync(Guid eventId, Guid? itemId, long? expectedRevision, CancellationToken cancellationToken) =>
         InvokeAsync<ClaimPersonalTodoItemRequest, PersonalTodoClaim>(
             PersonalTodoCapabilities.Claim,
-            new(eventId, $"personal-todo-claim:{eventId:N}"), cancellationToken);
+            new(eventId, $"personal-todo-claim:{eventId:N}:{itemId?.ToString("N") ?? "next"}")
+            {
+                ItemId = itemId,
+                ExpectedRevision = expectedRevision
+            }, cancellationToken);
 
     internal Task<PersonalTodoItem> CompleteAsync(
         Guid itemId, Guid eventId, long expectedRevision, string? summary,

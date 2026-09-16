@@ -269,6 +269,7 @@ public static class CapabilityNames
     public static class GitWorkspace
     {
         public const string Sync = "git.workspace.sync.v1";
+        public const string ReservePersonal = "source-control.personal-work.reserve.v1";
         public const string PreparePersonal = "source-control.personal-work.prepare.v1";
         public const string Prepare = "git.workspace.prepare.v2";
         public const string Refresh = "git.workspace.refresh.v2";
@@ -485,6 +486,7 @@ public static class CapabilityCatalog
                 CapabilityNames.SourceControl.ProvisionRepository),
             ["git-workspace"] = Set(
                 CapabilityNames.GitWorkspace.Sync,
+                CapabilityNames.GitWorkspace.ReservePersonal,
                 CapabilityNames.GitWorkspace.PreparePersonal,
                 CapabilityNames.GitWorkspace.Prepare,
                 CapabilityNames.GitWorkspace.Refresh,
@@ -605,6 +607,7 @@ public static class WorkItemCapabilities
 public static class GitWorkspaceCapabilities
 {
     public const string Sync = CapabilityNames.GitWorkspace.Sync;
+    public const string ReservePersonal = CapabilityNames.GitWorkspace.ReservePersonal;
     public const string PreparePersonal = CapabilityNames.GitWorkspace.PreparePersonal;
     public const string Prepare = CapabilityNames.GitWorkspace.Prepare;
     public const string Refresh = CapabilityNames.GitWorkspace.Refresh;

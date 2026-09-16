@@ -13,6 +13,11 @@ public sealed partial class PlatformGitWorkspaceClient
 
     internal PlatformGitWorkspaceClient(IPlatformToolInvoker tools) => _tools = tools;
 
+    /// <summary>Reserve a private repository for an owned Ready personal ticket without preparing a workspace.</summary>
+    public Task<PersonalRepositoryReservation> ReservePersonalAsync(ReservePersonalRepositoryRequest request,
+        CancellationToken cancellationToken = default) =>
+        InvokeAsync<ReservePersonalRepositoryRequest, PersonalRepositoryReservation>(
+            GitWorkspaceCapabilities.ReservePersonal, request, cancellationToken);
     /// <summary>Prepare a private C-Sweet repository for the caller's claimed personal ticket.
     /// Requires separate source-control.personal-work.prepare.v1 approval. No repository or ref can be selected.</summary>
     public Task<GitWorkspaceResult> PreparePersonalAsync(PreparePersonalGitWorkspaceRequest request,
@@ -182,4 +187,7 @@ public sealed record UnlockGitWorkspaceFileRequest(Guid WorkspaceId, long Assign
 public sealed record GitWorkspaceFileLock(string Id, string Path, string OwnerName, bool OwnedByCaller, DateTimeOffset LockedAt);
 public sealed record GitWorkspaceLockResult(string Status, IReadOnlyList<GitWorkspaceFileLock> Locks, string? NextCursor = null, string? Message = null);
 
+public sealed record ReservePersonalRepositoryRequest(Guid ItemId, long ExpectedRevision,
+    string SuggestedName, string IdempotencyKey);
+public sealed record PersonalRepositoryReservation(Guid RepositoryId, string Name, string Status, bool Created);
 public sealed record PreparePersonalGitWorkspaceRequest(Guid ItemId, string IdempotencyKey);

@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <PackageId>CSweet.Agent.SDK</PackageId>
-    <Version>3.47.0</Version>
+    <Version>3.48.0</Version>
     <PackageVersion Condition="'$(CSweetAgentSdkPackageVersion)' != ''">$(CSweetAgentSdkPackageVersion)</PackageVersion>
     <Authors>C-Sweet</Authors>
     <Company>C-Sweet</Company>
@@ -23,7 +23,7 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CSweet.WorkManagement.Contracts" Version="3.23.0" Condition="'$(UseLocalCSweetWorkManagementContracts)' != 'true'" />
+    <PackageReference Include="CSweet.WorkManagement.Contracts" Version="3.24.0" Condition="'$(UseLocalCSweetWorkManagementContracts)' != 'true'" />
     <ProjectReference Include="$(CSweetWorkManagementContractsRepositoryRoot)\src\CSweet.WorkManagement.Contracts\CSweet.WorkManagement.Contracts.csproj" Condition="'$(UseLocalCSweetWorkManagementContracts)' == 'true'" />
   </ItemGroup>
   <ItemGroup>

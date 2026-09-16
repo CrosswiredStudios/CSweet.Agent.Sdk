@@ -427,7 +427,32 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         {
             for (var handled = 0; handled < maximumItems; handled++)
             {
-                var claim = await context.Platform.PersonalTodo.ClaimAsync(eventId, cancellationToken);
+                PersonalTodoClaim claim;
+                if (personalTodoAgent is IPersonalTodoClaimPolicy policy)
+                {
+                    var directory = await context.Platform.PersonalTodo.ListAsync(cancellationToken);
+                    var ownerId = Guid.TryParse(context.Identity?.EmployeeId, out var parsedOwner) ? parsedOwner : directory.CurrentOrganizationUserId;
+                    var candidates = directory.Boards
+                        .Where(board => ownerId is null || board.OwnerOrganizationUserId == ownerId)
+                        .SelectMany(board => board.Items)
+                        .Where(item => item.ArchivedAt is null && item.IsExecutable &&
+                            string.Equals(item.Status, PersonalTodoStatuses.Ready, StringComparison.Ordinal))
+                        .OrderBy(item => item.Rank).ThenBy(item => item.CreatedAt)
+                        .ToArray();
+                    claim = new PersonalTodoClaim(null);
+                    foreach (var candidate in candidates)
+                    {
+                        if (await policy.EvaluatePersonalTodoClaimAsync(candidate, context, cancellationToken) != PersonalTodoClaimDecision.Claim)
+                            continue;
+                        claim = await context.Platform.PersonalTodo.ClaimAsync(
+                            eventId, candidate.Id, candidate.Revision, cancellationToken);
+                        break;
+                    }
+                }
+                else
+                {
+                    claim = await context.Platform.PersonalTodo.ClaimAsync(eventId, cancellationToken);
+                }
                 if (claim.Item is null)
                     return;
                 PersonalTodoResult result;
