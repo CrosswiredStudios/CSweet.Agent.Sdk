@@ -19,8 +19,13 @@ public sealed class InferencePollingTests
     [InlineData(false, false, "terminal", false)]
     [InlineData(false, false, null, false, true)]
     [InlineData(true, false, null, false, true)]
+    [InlineData(false, false, null, false, false, "csweet/llm/start", 1)]
+    [InlineData(false, false, null, false, false, "csweet/llm/read", 2)]
+    [InlineData(false, false, null, false, false, "csweet/llm/start", 3)]
+    [InlineData(false, false, null, false, false, "csweet/llm/read", 3)]
+    [InlineData(false, false, null, false, false, "tools/list", 1)]
     public async Task PollingPreservesAcknowledgedWaitButHonorsCancellationAndWorkIdentity(bool cancel, bool wrongWork,
-        string? failure = null, bool retryable = false, bool unbounded = false)
+        string? failure = null, bool retryable = false, bool unbounded = false, string? interruption = null, int interruptionCount = 0)
     {
         var path = Path.GetTempFileName();
         await File.WriteAllTextAsync(path, "workload-token");
@@ -28,7 +33,7 @@ public sealed class InferencePollingTests
         {
             var workId = Guid.NewGuid();
             using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-            var handler = new PollHandler(workId, wrongWork, failure, retryable, unbounded);
+            var handler = new PollHandler(workId, wrongWork, failure, retryable, unbounded, interruption, interruptionCount);
             using var http = new HttpClient(handler);
             await using var client = new McpAgentRuntimeClient(http,
                 Options.Create(new AgentRuntimeOptions { McpEndpoint = "http://host/mcp", WorkloadTokenFile = path,
@@ -50,7 +55,17 @@ public sealed class InferencePollingTests
                     JsonSerializer.SerializeToElement(new { }), deadline.Token)) chunks.Add(chunk);
                 return chunks;
             }
-            if (wrongWork) await Assert.ThrowsAsync<InvalidOperationException>(Read);
+            var exhausted = interruptionCount == 3 || interruption == "tools/list";
+            if (exhausted)
+            {
+                var error = await Assert.ThrowsAsync<HttpRequestException>(Read);
+                Assert.Contains(interruption!, error.Message);
+                Assert.Contains("request bytes", error.Message);
+                Assert.Contains("IOException", error.Message);
+                Assert.DoesNotContain("sensitive transport detail", error.Message);
+                Assert.IsType<HttpRequestException>(error.InnerException);
+            }
+            else if (wrongWork) await Assert.ThrowsAsync<InvalidOperationException>(Read);
             else if (cancel) await Assert.ThrowsAnyAsync<OperationCanceledException>(Read);
             else if (failure is not null)
             {
@@ -65,7 +80,14 @@ public sealed class InferencePollingTests
                 Assert.Contains("Queued", reporter.States);
                 Assert.Contains("Completed", reporter.States);
             }
-            Assert.Equal(cancel || wrongWork || failure == "chunk", handler.Cancelled);
+            Assert.Equal(cancel || wrongWork || failure == "chunk" || exhausted && interruption == "csweet/llm/read", handler.Cancelled);
+            if (interruption is not null)
+            {
+                // Lost start responses must keep the same idempotency key; lost read
+                // responses must keep the cursor, without losing or duplicating output.
+                Assert.Equal(interruptionCount + (exhausted ? 0 : 1), handler.ReplayedBodies.Count);
+                Assert.Single(handler.ReplayedBodies.Distinct());
+            }
         }
         finally { File.Delete(path); }
     }
@@ -82,20 +104,30 @@ public sealed class InferencePollingTests
         }
     }
 
-    private sealed class PollHandler(Guid workId, bool wrongWork, string? failure, bool retryable, bool unbounded) : HttpMessageHandler
+    private sealed class PollHandler(Guid workId, bool wrongWork, string? failure, bool retryable, bool unbounded, string? interruption, int interruptionCount) : HttpMessageHandler
     {
         private int reads;
+        private readonly Guid jobId = Guid.NewGuid();
+        public List<string> ReplayedBodies { get; } = [];
+        private int interruptedAttempts;
         public bool Cancelled;
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
             using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(token));
             var method = body.RootElement.GetProperty("method").GetString();
+            if (method == interruption && interruptedAttempts <= interruptionCount)
+            {
+                ReplayedBodies.Add(body.RootElement.GetRawText());
+                if (interruptedAttempts++ < interruptionCount)
+                    throw new HttpRequestException("Error while copying content to a stream.",
+                        new IOException("sensitive transport detail"));
+            }
             object result;
             if (method == "initialize") result = new { _meta = new { csweet = new { sessionId = "session", accessToken = "access",
                 expiresAt = DateTimeOffset.UtcNow.AddHours(1), grantRevision = 1, llmJobs = true } } };
             else if (method == "tools/list") result = new { tools = new[] { new { name = "llm", description = "LLM",
                 inputSchema = new { type = "object" }, _meta = new { csweet = new { capability = PlatformCapabilities.LlmChatStream, modelVisible = false } } } } };
-            else if (method == "csweet/llm/start") result = new { jobId = Guid.NewGuid() };
+            else if (method == "csweet/llm/start") result = new { jobId };
             else if (method == "csweet/llm/cancel") { Cancelled = true; result = new { }; }
             else if (method == "csweet/llm/read")
             {

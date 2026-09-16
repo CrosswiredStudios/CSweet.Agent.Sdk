@@ -155,3 +155,17 @@ separate compiled transfer-size or file-count ceiling. Missing, non-positive, or
 values fail closed before workspace files are materialized.
 
 Compute requests with zero lifetime are valid until-release requests as of SDK 3.46.1. Providers and Core must both support this policy; do not rewrite a signed timed reservation in place.
+
+## Broker connection recovery (3.48.1)
+
+`McpAgentRuntimeClient.SendAsync` retries connection interruptions for `csweet/llm/start`
+and `csweet/llm/read` up to three sends within the original request timeout and cancellation token.
+Each retry uses the same buffered envelope: start retains its idempotency key and read retains its
+cursor. This lets inference continue in the existing coding session after a lost request or response.
+Arbitrary capability mutations, authorization errors, TLS errors, and serialization failures do not
+receive these connection retries. Existing HTTP 429 handling is unchanged.
+
+Unrecovered transport exceptions retain the original exception chain and include the method,
+serialized request byte count, attempt count, error category, and innermost exception type (or socket
+error code). These bounded diagnostics omit payloads and exception messages so the runtime log tail
+can retain useful evidence without copying request contents or credentials.

@@ -17,6 +17,7 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
     private static readonly TimeSpan DefaultCapabilityRequestTimeout = TimeSpan.FromMinutes(3);
     private static readonly TimeSpan DefaultRateLimitRetryDelay = TimeSpan.FromSeconds(10);
     private const int MaximumRateLimitAttempts = 3;
+    private const int MaximumInferenceTransportAttempts = 3;
     private static readonly Meter Meter = new("CSweet.Agent.SDK.Streaming");
     private static readonly Counter<long> StreamFallbacks = Meter.CreateCounter<long>("csweet.agent.sdk.stream.fallbacks");
     private static readonly Counter<long> StreamFrames = Meter.CreateCounter<long>("csweet.agent.sdk.stream.frames");
@@ -519,7 +520,31 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
             for (var attempt = 1; ; attempt++)
             {
                 using var attemptRequest = CopyRequest(request, content, contentHeaders);
-                var response = await _http.SendAsync(attemptRequest, timeoutCancellation.Token);
+                HttpResponseMessage response;
+                try
+                {
+                    response = await _http.SendAsync(attemptRequest, timeoutCancellation.Token);
+                }
+                catch (HttpRequestException exception) when (!timeoutCancellation.IsCancellationRequested)
+                {
+                    // A start key deduplicates an accepted job, and reads replay the same
+                    // cursor. Reuse the buffered envelope, including that key, after a
+                    // lost connection/response; never replay arbitrary capability mutations.
+                    if (method is "csweet/llm/start" or "csweet/llm/read" &&
+                        IsConnectionInterruption(exception) && attempt < MaximumInferenceTransportAttempts)
+                    {
+                        _logger.LogWarning(
+                            "The MCP broker connection interrupted '{Method}' ({RequestBytes} bytes). Retrying attempt {Attempt} of {MaximumAttempts} with the same request.",
+                            method, content?.Length ?? 0, attempt + 1, MaximumInferenceTransportAttempts);
+                        await Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), timeoutCancellation.Token);
+                        continue;
+                    }
+                    // Preserve bounded, payload-free evidence even when the guest log tail
+                    // cannot retain the full exception stack.
+                    throw new HttpRequestException(exception.HttpRequestError,
+                        $"MCP broker transport failed during '{method}' ({content?.Length ?? 0} request bytes, {attempt} attempt(s)): " +
+                        DescribeTransportFailure(exception), exception, exception.StatusCode);
+                }
                 if (response.StatusCode != HttpStatusCode.TooManyRequests ||
                     attempt >= MaximumRateLimitAttempts)
                     return response;
@@ -545,6 +570,18 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
         }
     }
 
+    internal static bool IsConnectionInterruption(HttpRequestException exception) =>
+        exception.StatusCode is null &&
+        (exception.HttpRequestError is HttpRequestError.ConnectionError or HttpRequestError.ResponseEnded ||
+         exception.HttpRequestError == HttpRequestError.Unknown && exception.InnerException is IOException);
+
+    private static string DescribeTransportFailure(HttpRequestException exception)
+    {
+        var cause = exception.GetBaseException();
+        return cause is System.Net.Sockets.SocketException socket
+            ? $"{exception.HttpRequestError}; {nameof(System.Net.Sockets.SocketException)} ({socket.SocketErrorCode})."
+            : $"{exception.HttpRequestError}; {cause.GetType().Name}.";
+    }
     private TimeSpan ResolveRetryDelay(HttpResponseMessage response)
     {
         var retryAfter = response.Headers.RetryAfter?.Delta;

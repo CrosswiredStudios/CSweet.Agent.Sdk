@@ -157,6 +157,22 @@ public sealed class McpAgentRuntimeClientTests
         Assert.Equal(1, fixture.Handler.NonStreamingCalls);
     }
 
+    [Fact]
+    public void ConnectionRetryClassificationExcludesRejectionsAndNonTransportFailures()
+    {
+        Assert.True(McpAgentRuntimeClient.IsConnectionInterruption(
+            new HttpRequestException(HttpRequestError.ConnectionError)));
+        Assert.True(McpAgentRuntimeClient.IsConnectionInterruption(
+            new HttpRequestException(HttpRequestError.ResponseEnded)));
+        Assert.True(McpAgentRuntimeClient.IsConnectionInterruption(
+            new HttpRequestException("Error while copying content to a stream.", new IOException())));
+        Assert.False(McpAgentRuntimeClient.IsConnectionInterruption(
+            new HttpRequestException(HttpRequestError.ConnectionError, statusCode: HttpStatusCode.Forbidden)));
+        Assert.False(McpAgentRuntimeClient.IsConnectionInterruption(
+            new HttpRequestException(HttpRequestError.SecureConnectionError)));
+        Assert.False(McpAgentRuntimeClient.IsConnectionInterruption(
+            new HttpRequestException("Serialization failed", new ObjectDisposedException("document"))));
+    }
     private static AgentManifest Manifest() => new()
     {
         Id = "com.example.timeout-test",
