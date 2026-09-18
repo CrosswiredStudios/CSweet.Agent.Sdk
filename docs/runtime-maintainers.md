@@ -169,3 +169,16 @@ Unrecovered transport exceptions retain the original exception chain and include
 serialized request byte count, attempt count, error category, and innermost exception type (or socket
 error code). These bounded diagnostics omit payloads and exception messages so the runtime log tail
 can retain useful evidence without copying request contents or credentials.
+
+## Personal project continuation (3.50.0)
+
+`PreparePersonalGitWorkspaceRequest.SourceWorkItemId` is an optional reference to an owned completed
+personal development task. It grants no arbitrary repository or commit access. The platform verifies
+business, installation, personal-board ownership, completion, archive state and existing repository
+policy, then stores an immutable project binding and pins published source before creating a separate
+task workspace. Retry requests cannot switch source tasks. A null value retains new-project behavior.
+Deploy the matching platform before upgrading agents that send this field; older hosts may ignore it.
+
+## Durable task review (3.50.0)
+
+`PlatformTaskDeliveryClient` exposes assignment-bound submission/read/list and exact-commit QA reports. The platform owns task Testing transitions, human merge questions, persisted story/epic settings, and merge execution. `TaskReviewChanged` is only a wake hint; reread current state. `SourceMessageId` must be the actual current human message, never model-selected context. Reconnect discovery is bounded. Merge preference changes serialize with merge start, while task approvals are invalidated when the candidate or preference revision changes. QA snapshot transfer cannot publish source.

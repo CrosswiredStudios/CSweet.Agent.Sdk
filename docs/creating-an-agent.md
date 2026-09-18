@@ -40,7 +40,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.48.1
+  --SdkVersion 3.50.0
 cd ResearchAgent
 dotnet test
 ```

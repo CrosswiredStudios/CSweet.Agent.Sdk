@@ -6,7 +6,7 @@ namespace CSweet.Agent.SDK;
 /// Business-governed source-control inventory, provisioning, and exact-SHA merge decisions.
 /// Provider credentials and administrative provider operations are never exposed through this API.
 /// </summary>
-public sealed class PlatformSourceControlClient
+public sealed partial class PlatformSourceControlClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly IPlatformToolInvoker _tools;

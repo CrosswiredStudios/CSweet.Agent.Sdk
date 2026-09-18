@@ -190,4 +190,10 @@ public sealed record GitWorkspaceLockResult(string Status, IReadOnlyList<GitWork
 public sealed record ReservePersonalRepositoryRequest(Guid ItemId, long ExpectedRevision,
     string SuggestedName, string IdempotencyKey);
 public sealed record PersonalRepositoryReservation(Guid RepositoryId, string Name, string Status, bool Created);
-public sealed record PreparePersonalGitWorkspaceRequest(Guid ItemId, string IdempotencyKey);
+public sealed record PreparePersonalGitWorkspaceRequest(Guid ItemId, string IdempotencyKey)
+{
+    /// <summary>An owned, completed personal project task to continue. The platform resolves and pins its source; callers cannot choose a repository or commit.</summary>
+    public Guid? SourceWorkItemId { get; init; }
+    /// <summary>Execute one child task on its own branch under the claimed personal plan.</summary>
+    public Guid? TaskItemId { get; init; }
+}

@@ -39,19 +39,19 @@ grants access; even baseline operations such as `ask_user` require an explicit g
 
 ## Assistant
 
-- `AssistantCapabilities.Converse` — `assistant.converse.v1`
-- `AssistantCapabilities.SummarizeActivity` — `assistant.summarize-activity.v1`
-- `AssistantCapabilities.PlanWork` — `assistant.plan-work.v1`
+- `AssistantCapabilities.Converse` â€” `assistant.converse.v1`
+- `AssistantCapabilities.SummarizeActivity` â€” `assistant.summarize-activity.v1`
+- `AssistantCapabilities.PlanWork` â€” `assistant.plan-work.v1`
 
 ## Agent lifecycle and configuration
 
-- `AgentConfigurationCapabilities.Describe` — `agent.configuration.describe.v1`
-- `AgentConfigurationCapabilities.Update` — `agent.configuration.update.v1`
-- `AgentLifecycleCapabilities.CompleteOnboarding` — `agent.onboarding.complete.v1`
+- `AgentConfigurationCapabilities.Describe` â€” `agent.configuration.describe.v1`
+- `AgentConfigurationCapabilities.Update` â€” `agent.configuration.update.v1`
+- `AgentLifecycleCapabilities.CompleteOnboarding` â€” `agent.onboarding.complete.v1`
 
 ## Agent catalog
 
-- `AgentCatalogCapabilities.Search` — `platform.agent-catalog.search.v1`
+- `AgentCatalogCapabilities.Search` â€” `platform.agent-catalog.search.v1`
 
 This read-only grant allows an agent to search installed, local-directory, first-party, and
 marketplace agent listings through the SDK-managed platform tool. It does not authorize preview, import,
@@ -59,62 +59,62 @@ installation, grant changes, hiring, assignment, or spending.
 
 ## Platform
 
-- `PlatformCapabilities.LlmChatStream` — `platform.llm.chat-stream.v1`
-- `PlatformCapabilities.BusinessProfileRead` — `platform.business-profile.read.v1`
-- `PlatformCapabilities.BusinessProfileUpdateExplicit` — `platform.business-profile.update-explicit.v1`
-- `PlatformCapabilities.BusinessProfileProposeUpdate` — `platform.business-profile.propose-update.v1`
-- `PlatformCapabilities.OrganizationSnapshotRead` — `platform.organization.snapshot.read.v1`
-- `PlatformCapabilities.BusinessPatternSearch` — `platform.business-pattern.search.v1`
-- `PlatformCapabilities.WorkstreamPlanPropose` — `platform.workstream.plan.propose.v1`
-- `PlatformCapabilities.WorkstreamRead` — `platform.workstream.read.v1`
-- `PlatformCapabilities.WorkstreamPlanProposeV2` — `platform.workstream.plan.propose.v2`
-- `PlatformCapabilities.WorkstreamChangePropose` — `platform.workstream.change.propose.v1`
-- `PlatformCapabilities.WorkstreamGateRead` — `platform.workstream.gate.read.v1`
-- `PlatformCapabilities.WorkstreamGateSubmit` — `platform.workstream.gate.submit.v1`
-- `PlatformCapabilities.WorkstreamGateDecide` — `platform.workstream.gate.decide.v1`
-- `PlatformCapabilities.PortfolioRead` — `platform.management.portfolio.read.v1`
-- `PlatformCapabilities.TeamRosterReadV2` — `platform.team-roster.read.v2`
-- `PlatformCapabilities.DecisionRequest` — `platform.decision.request.v1`
-- `PlatformCapabilities.DecisionRead` — `platform.decision.read.v1`
-- `PlatformCapabilities.DecisionDecide` — `platform.decision.decide.v1`
-- `PlatformCapabilities.WorkforceSearch` — `platform.workforce.search.v1`
-- `PlatformCapabilities.WorkforcePlanPropose` — `platform.workforce-plan.propose.v1`
-- `PlatformCapabilities.FinanceProfileRead` — `platform.finance-profile.read.v1`
-- `PlatformCapabilities.FinanceProfileProposeUpdate` — `platform.finance-profile.propose-update.v1`
-- `PlatformCapabilities.BudgetEvaluate` — `platform.budget.evaluate.v1`
-- `PlatformCapabilities.ApprovalPropose` — `platform.approval.propose.v1`
-- `PlatformCapabilities.ManagementCycleRead` — `platform.management-cycle.read.v1`
-- `PlatformCapabilities.UserInputRequest` — `platform.user-input.request.v1`
-- `PlatformCapabilities.HiringRecommendationList` — `platform.hiring-recommendation.list.v1`
-- `PlatformCapabilities.HiringRecommendationUpsert` — `platform.hiring-recommendation.upsert.v1`
-- `PlatformCapabilities.HiringRecommendationResolve` — `platform.hiring-recommendation.resolve.v1`
-- `PlatformCapabilities.HiringRecommendationWithdraw` — `platform.hiring-recommendation.withdraw.v1`
-- `PlatformCapabilities.ResourceChangePropose` — `platform.management.resource-change.propose.v1`
-- `PlatformCapabilities.ResourceChangeRead` — `platform.management.resource-change.read.v1`
-- `PlatformCapabilities.ResourceChangeDecide` — `platform.management.resource-change.decide.v1`
-- `PlatformCapabilities.HiringWorkflowStage` — `platform.hiring-workflow.stage.v1`
-- `PlatformCapabilities.UserActionSuggest` — `platform.user-action.suggest.v1`
+- `PlatformCapabilities.LlmChatStream` â€” `platform.llm.chat-stream.v1`
+- `PlatformCapabilities.BusinessProfileRead` â€” `platform.business-profile.read.v1`
+- `PlatformCapabilities.BusinessProfileUpdateExplicit` â€” `platform.business-profile.update-explicit.v1`
+- `PlatformCapabilities.BusinessProfileProposeUpdate` â€” `platform.business-profile.propose-update.v1`
+- `PlatformCapabilities.OrganizationSnapshotRead` â€” `platform.organization.snapshot.read.v1`
+- `PlatformCapabilities.BusinessPatternSearch` â€” `platform.business-pattern.search.v1`
+- `PlatformCapabilities.WorkstreamPlanPropose` â€” `platform.workstream.plan.propose.v1`
+- `PlatformCapabilities.WorkstreamRead` â€” `platform.workstream.read.v1`
+- `PlatformCapabilities.WorkstreamPlanProposeV2` â€” `platform.workstream.plan.propose.v2`
+- `PlatformCapabilities.WorkstreamChangePropose` â€” `platform.workstream.change.propose.v1`
+- `PlatformCapabilities.WorkstreamGateRead` â€” `platform.workstream.gate.read.v1`
+- `PlatformCapabilities.WorkstreamGateSubmit` â€” `platform.workstream.gate.submit.v1`
+- `PlatformCapabilities.WorkstreamGateDecide` â€” `platform.workstream.gate.decide.v1`
+- `PlatformCapabilities.PortfolioRead` â€” `platform.management.portfolio.read.v1`
+- `PlatformCapabilities.TeamRosterReadV2` â€” `platform.team-roster.read.v2`
+- `PlatformCapabilities.DecisionRequest` â€” `platform.decision.request.v1`
+- `PlatformCapabilities.DecisionRead` â€” `platform.decision.read.v1`
+- `PlatformCapabilities.DecisionDecide` â€” `platform.decision.decide.v1`
+- `PlatformCapabilities.WorkforceSearch` â€” `platform.workforce.search.v1`
+- `PlatformCapabilities.WorkforcePlanPropose` â€” `platform.workforce-plan.propose.v1`
+- `PlatformCapabilities.FinanceProfileRead` â€” `platform.finance-profile.read.v1`
+- `PlatformCapabilities.FinanceProfileProposeUpdate` â€” `platform.finance-profile.propose-update.v1`
+- `PlatformCapabilities.BudgetEvaluate` â€” `platform.budget.evaluate.v1`
+- `PlatformCapabilities.ApprovalPropose` â€” `platform.approval.propose.v1`
+- `PlatformCapabilities.ManagementCycleRead` â€” `platform.management-cycle.read.v1`
+- `PlatformCapabilities.UserInputRequest` â€” `platform.user-input.request.v1`
+- `PlatformCapabilities.HiringRecommendationList` â€” `platform.hiring-recommendation.list.v1`
+- `PlatformCapabilities.HiringRecommendationUpsert` â€” `platform.hiring-recommendation.upsert.v1`
+- `PlatformCapabilities.HiringRecommendationResolve` â€” `platform.hiring-recommendation.resolve.v1`
+- `PlatformCapabilities.HiringRecommendationWithdraw` â€” `platform.hiring-recommendation.withdraw.v1`
+- `PlatformCapabilities.ResourceChangePropose` â€” `platform.management.resource-change.propose.v1`
+- `PlatformCapabilities.ResourceChangeRead` â€” `platform.management.resource-change.read.v1`
+- `PlatformCapabilities.ResourceChangeDecide` â€” `platform.management.resource-change.decide.v1`
+- `PlatformCapabilities.HiringWorkflowStage` â€” `platform.hiring-workflow.stage.v1`
+- `PlatformCapabilities.UserActionSuggest` â€” `platform.user-action.suggest.v1`
 
 ### Infrastructure delivery
 
-- `PlatformCapabilities.InfrastructureEnvironmentRead` — `platform.infrastructure.environment.read.v1`
-- `PlatformCapabilities.InfrastructureStateWrite` — `platform.infrastructure.state.write.v1`
-- `PlatformCapabilities.InfrastructureChangePropose` — `platform.infrastructure.change.propose.v1`
-- `PlatformCapabilities.InfrastructureChangeRead` — `platform.infrastructure.change.read.v1`
-- `PlatformCapabilities.InfrastructureOperationExecute` — `platform.infrastructure.operation.execute.v1`
-- `PlatformCapabilities.InfrastructureReconcile` — `platform.infrastructure.reconcile.v1`
-- `PlatformCapabilities.InfrastructureDeploymentContractPublish` — `platform.infrastructure.deployment-contract.publish.v1`
-- `PlatformCapabilities.InfrastructureFileTransfer` — `platform.infrastructure.file-transfer.v1`
-- `InfrastructureCapabilityNames.EnvironmentRead` — `platform.infrastructure.environment.read.v1`
-- `InfrastructureCapabilityNames.StateWrite` — `platform.infrastructure.state.write.v1`
-- `InfrastructureCapabilityNames.ChangePropose` — `platform.infrastructure.change.propose.v1`
-- `InfrastructureCapabilityNames.ChangeRead` — `platform.infrastructure.change.read.v1`
-- `InfrastructureCapabilityNames.OperationExecute` — `platform.infrastructure.operation.execute.v1`
-- `InfrastructureCapabilityNames.Reconcile` — `platform.infrastructure.reconcile.v1`
-- `InfrastructureCapabilityNames.DeploymentContractPublish` — `platform.infrastructure.deployment-contract.publish.v1`
-- `InfrastructureCapabilityNames.FileTransfer` — `platform.infrastructure.file-transfer.v1`
+- `PlatformCapabilities.InfrastructureEnvironmentRead` â€” `platform.infrastructure.environment.read.v1`
+- `PlatformCapabilities.InfrastructureStateWrite` â€” `platform.infrastructure.state.write.v1`
+- `PlatformCapabilities.InfrastructureChangePropose` â€” `platform.infrastructure.change.propose.v1`
+- `PlatformCapabilities.InfrastructureChangeRead` â€” `platform.infrastructure.change.read.v1`
+- `PlatformCapabilities.InfrastructureOperationExecute` â€” `platform.infrastructure.operation.execute.v1`
+- `PlatformCapabilities.InfrastructureReconcile` â€” `platform.infrastructure.reconcile.v1`
+- `PlatformCapabilities.InfrastructureDeploymentContractPublish` â€” `platform.infrastructure.deployment-contract.publish.v1`
+- `PlatformCapabilities.InfrastructureFileTransfer` â€” `platform.infrastructure.file-transfer.v1`
+- `InfrastructureCapabilityNames.EnvironmentRead` â€” `platform.infrastructure.environment.read.v1`
+- `InfrastructureCapabilityNames.StateWrite` â€” `platform.infrastructure.state.write.v1`
+- `InfrastructureCapabilityNames.ChangePropose` â€” `platform.infrastructure.change.propose.v1`
+- `InfrastructureCapabilityNames.ChangeRead` â€” `platform.infrastructure.change.read.v1`
+- `InfrastructureCapabilityNames.OperationExecute` â€” `platform.infrastructure.operation.execute.v1`
+- `InfrastructureCapabilityNames.Reconcile` â€” `platform.infrastructure.reconcile.v1`
+- `InfrastructureCapabilityNames.DeploymentContractPublish` â€” `platform.infrastructure.deployment-contract.publish.v1`
+- `InfrastructureCapabilityNames.FileTransfer` â€” `platform.infrastructure.file-transfer.v1`
 
-- `PlatformCapabilities.TeamRosterRead` — `platform.team-roster.read.v1`
+- `PlatformCapabilities.TeamRosterRead` â€” `platform.team-roster.read.v1`
 
 `TeamRosterRead` is resolved from the authenticated installation to its active agent employee and
 sole eligible team. It exposes bounded employee IDs, display names, human/agent type, company and
@@ -124,40 +124,40 @@ memory, or unrelated employees. Team membership does not grant any other authori
 
 ### Documents and design packages
 
-- `PlatformCapabilities.ArtifactDecideV2` — `platform.artifact.decide.v2`
+- `PlatformCapabilities.ArtifactDecideV2` â€” `platform.artifact.decide.v2`
 
 ### Generic delivery evidence
 
-- `PlatformCapabilities.ToolchainCatalogRead` — `platform.toolchain.catalog.read.v2`
-- `PlatformCapabilities.BuildRequest` — `platform.build.request.v2`
-- `PlatformCapabilities.BuildRead` — `platform.build.read.v2`
-- `PlatformCapabilities.BuildClaim` — `platform.build.claim.v1`
-- `PlatformCapabilities.BuildHeartbeat` — `platform.build.heartbeat.v1`
-- `PlatformCapabilities.BuildReport` — `platform.build.report.v2`
-- `PlatformCapabilities.BuildCancel` — `platform.build.cancel.v1`
-- `PlatformCapabilities.ValidationRead` — `platform.validation.read.v2`
-- `PlatformCapabilities.PreviewCreate` — `platform.preview.create.v2`
-- `PlatformCapabilities.PreviewRead` — `platform.preview.read.v2`
-- `PlatformCapabilities.EvaluationPlan` — `platform.evaluation-session.plan.v1`
-- `PlatformCapabilities.EvaluationRead` — `platform.evaluation-session.read.v1`
-- `PlatformCapabilities.EvaluationReport` — `platform.evaluation-session.report.v1`
-- `PlatformCapabilities.ReleaseReadinessRead` — `platform.release-readiness.read.v1`
-- `PlatformCapabilities.ReleaseReadinessSubmit` — `platform.release-readiness.submit.v1`
-- `PlatformCapabilities.PublicationPropose` — `platform.publication.propose.v1`
+- `PlatformCapabilities.ToolchainCatalogRead` â€” `platform.toolchain.catalog.read.v2`
+- `PlatformCapabilities.BuildRequest` â€” `platform.build.request.v2`
+- `PlatformCapabilities.BuildRead` â€” `platform.build.read.v2`
+- `PlatformCapabilities.BuildClaim` â€” `platform.build.claim.v1`
+- `PlatformCapabilities.BuildHeartbeat` â€” `platform.build.heartbeat.v1`
+- `PlatformCapabilities.BuildReport` â€” `platform.build.report.v2`
+- `PlatformCapabilities.BuildCancel` â€” `platform.build.cancel.v1`
+- `PlatformCapabilities.ValidationRead` â€” `platform.validation.read.v2`
+- `PlatformCapabilities.PreviewCreate` â€” `platform.preview.create.v2`
+- `PlatformCapabilities.PreviewRead` â€” `platform.preview.read.v2`
+- `PlatformCapabilities.EvaluationPlan` â€” `platform.evaluation-session.plan.v1`
+- `PlatformCapabilities.EvaluationRead` â€” `platform.evaluation-session.read.v1`
+- `PlatformCapabilities.EvaluationReport` â€” `platform.evaluation-session.report.v1`
+- `PlatformCapabilities.ReleaseReadinessRead` â€” `platform.release-readiness.read.v1`
+- `PlatformCapabilities.ReleaseReadinessSubmit` â€” `platform.release-readiness.submit.v1`
+- `PlatformCapabilities.PublicationPropose` â€” `platform.publication.propose.v1`
 
 These grants operate on generic Workstream-scoped resources. Profile and type keys carry domain
 meaning; capability names must not be specialized for individual industries.
 
-- `PlatformCapabilities.ArtifactCreate` — `platform.artifact.create.v1`
-- `PlatformCapabilities.ArtifactRead` — `platform.artifact.read.v1`
-- `PlatformCapabilities.ArtifactRevise` — `platform.artifact.revise.v1`
-- `PlatformCapabilities.ArtifactSubmit` — `platform.artifact.submit.v1`
-- `PlatformCapabilities.ArtifactDecide` — `platform.artifact.decide.v1`
-- `PlatformCapabilities.ArtifactRequestAccess` — `platform.artifact.request-access.v1`
-- `PlatformCapabilities.ArtifactPackageCreate` — `platform.artifact-package.create.v1`
-- `PlatformCapabilities.ArtifactPackageRead` — `platform.artifact-package.read.v1`
-- `PlatformCapabilities.ArtifactPackageSubmit` — `platform.artifact-package.submit.v1`
-- `PlatformCapabilities.ArtifactPackageDecide` — `platform.artifact-package.decide.v1`
+- `PlatformCapabilities.ArtifactCreate` â€” `platform.artifact.create.v1`
+- `PlatformCapabilities.ArtifactRead` â€” `platform.artifact.read.v1`
+- `PlatformCapabilities.ArtifactRevise` â€” `platform.artifact.revise.v1`
+- `PlatformCapabilities.ArtifactSubmit` â€” `platform.artifact.submit.v1`
+- `PlatformCapabilities.ArtifactDecide` â€” `platform.artifact.decide.v1`
+- `PlatformCapabilities.ArtifactRequestAccess` â€” `platform.artifact.request-access.v1`
+- `PlatformCapabilities.ArtifactPackageCreate` â€” `platform.artifact-package.create.v1`
+- `PlatformCapabilities.ArtifactPackageRead` â€” `platform.artifact-package.read.v1`
+- `PlatformCapabilities.ArtifactPackageSubmit` â€” `platform.artifact-package.submit.v1`
+- `PlatformCapabilities.ArtifactPackageDecide` â€” `platform.artifact-package.decide.v1`
 
 Artifact tool exposure is only the first authorization check. Except for organization-scoped
 creation, every agent operation also requires an active grant for the exact artifact and action;
@@ -168,50 +168,50 @@ document content.
 
 ## Memory
 
-- `MemoryCapabilities.BusinessRead` — `memory.business.read.v1`
-- `MemoryCapabilities.BusinessPropose` — `memory.business.propose.v1`
-- `MemoryCapabilities.UserRead` — `memory.user.read.v1`
-- `MemoryCapabilities.UserPropose` — `memory.user.propose.v1`
+- `MemoryCapabilities.BusinessRead` â€” `memory.business.read.v1`
+- `MemoryCapabilities.BusinessPropose` â€” `memory.business.propose.v1`
+- `MemoryCapabilities.UserRead` â€” `memory.user.read.v1`
+- `MemoryCapabilities.UserPropose` â€” `memory.user.propose.v1`
 
 ## Communication
 
-- `CommunicationCapabilities.ChatRead` — `communication.chat.read.v1`
-- `CommunicationCapabilities.ChatCreate` — `communication.chat.create.v1`
-- `CommunicationCapabilities.ChatModify` — `communication.chat.modify.v1`
-- `CommunicationCapabilities.ChatDelete` — `communication.chat.delete.v1`
-- `CommunicationCapabilities.MessageSend` — `communication.message.send.v1`
-- `CommunicationCapabilities.CoordinationStart` — `communication.coordination.start.v1`
-- `CommunicationCapabilities.CoordinationStartWork` — `communication.coordination.start-work.v1`
-- `CommunicationCapabilities.CoordinationStartBoard` — `communication.coordination.start-board.v1`
-- `CommunicationCapabilities.CoordinationRespond` — `communication.coordination.respond.v1`
-- `CommunicationCapabilities.CoordinationRead` — `communication.coordination.read.v1`
-- `CommunicationCapabilities.CoordinationList` — `communication.coordination.list.v1`
-- `CommunicationCapabilities.CoordinationResume` — `communication.coordination.resume.v1`
-- `CommunicationCapabilities.CoordinationCancel` — `communication.coordination.cancel.v1`
-- `CommunicationCapabilities.MessageIngest` — `communication.message.ingest.v1`
-- `CommunicationCapabilities.Send` — `communication.send.v1`
-- `CommunicationCapabilities.WorkspaceApply` — `communication.workspace.apply.v1`
-- `CommunicationCapabilities.IdentityAssign` — `communication.identity.assign.v1`
-- `CommunicationCapabilities.LinkCodeRegister` — `communication.link-code.register.v1`
+- `CommunicationCapabilities.ChatRead` â€” `communication.chat.read.v1`
+- `CommunicationCapabilities.ChatCreate` â€” `communication.chat.create.v1`
+- `CommunicationCapabilities.ChatModify` â€” `communication.chat.modify.v1`
+- `CommunicationCapabilities.ChatDelete` â€” `communication.chat.delete.v1`
+- `CommunicationCapabilities.MessageSend` â€” `communication.message.send.v1`
+- `CommunicationCapabilities.CoordinationStart` â€” `communication.coordination.start.v1`
+- `CommunicationCapabilities.CoordinationStartWork` â€” `communication.coordination.start-work.v1`
+- `CommunicationCapabilities.CoordinationStartBoard` â€” `communication.coordination.start-board.v1`
+- `CommunicationCapabilities.CoordinationRespond` â€” `communication.coordination.respond.v1`
+- `CommunicationCapabilities.CoordinationRead` â€” `communication.coordination.read.v1`
+- `CommunicationCapabilities.CoordinationList` â€” `communication.coordination.list.v1`
+- `CommunicationCapabilities.CoordinationResume` â€” `communication.coordination.resume.v1`
+- `CommunicationCapabilities.CoordinationCancel` â€” `communication.coordination.cancel.v1`
+- `CommunicationCapabilities.MessageIngest` â€” `communication.message.ingest.v1`
+- `CommunicationCapabilities.Send` â€” `communication.send.v1`
+- `CommunicationCapabilities.WorkspaceApply` â€” `communication.workspace.apply.v1`
+- `CommunicationCapabilities.IdentityAssign` â€” `communication.identity.assign.v1`
+- `CommunicationCapabilities.LinkCodeRegister` â€” `communication.link-code.register.v1`
 
 ## Management and product leadership
 
-- `ManagementCapabilities.CheckIn` — `management.check-in.v1`
-- `ProductManagementCapabilities.RoleBrief` — `management.product-role-brief.v1`
-- `ProductManagementCapabilities.PlanReview` — `management.product-plan.review.v1`
-- `ProductManagementCapabilities.Escalation` — `management.product-escalation.v1`
-- `ProductManagementCapabilities.Plan` — `product-management.plan.v1`
-- `ProductManagementCapabilities.ContextUpdate` — `product-management.context.update.v1`
+- `ManagementCapabilities.CheckIn` â€” `management.check-in.v1`
+- `ProductManagementCapabilities.RoleBrief` â€” `management.product-role-brief.v1`
+- `ProductManagementCapabilities.PlanReview` â€” `management.product-plan.review.v1`
+- `ProductManagementCapabilities.Escalation` â€” `management.product-escalation.v1`
+- `ProductManagementCapabilities.Plan` â€” `product-management.plan.v1`
+- `ProductManagementCapabilities.ContextUpdate` â€” `product-management.context.update.v1`
 
 ## Work management
 
 New governed software-board mutations:
 
-- `WorkBoardCapabilities.Configure` — `work.board.configure`
-- `WorkBoardCapabilities.ConfigureColumns` — `work.board.columns.configure`
-- `WorkOrchestrationCapabilities.ConfigureSoftwareTemplate` — `work.orchestration.software-template.configure`
-- `WorkOrchestrationCapabilities.ConfigureProfile` — `work.orchestration.profile.configure.v1`
-- `WorkFlowMetricCapabilities.Read` — `work.flow-metrics.read.v1`
+- `WorkBoardCapabilities.Configure` â€” `work.board.configure`
+- `WorkBoardCapabilities.ConfigureColumns` â€” `work.board.columns.configure`
+- `WorkOrchestrationCapabilities.ConfigureSoftwareTemplate` â€” `work.orchestration.software-template.configure`
+- `WorkOrchestrationCapabilities.ConfigureProfile` â€” `work.orchestration.profile.configure.v1`
+- `WorkFlowMetricCapabilities.Read` â€” `work.flow-metrics.read.v1`
 
 Work-management capabilities require both an approved package capability and a live scoped grant
 on the organization or board. SDK calls never bypass the board grant model. Mutation requests
@@ -221,91 +221,91 @@ comments its own installation created, and rejects a stale expected revision rat
 overwriting a concurrent edit. Deletion is soft, so the comment's activity and audit history
 remain durable while the body disappears from reads.
 
-- `WorkBoardCapabilities.Read` — `work.board.read`
-- `WorkBoardCapabilities.Create` — `work.board.create`
-- `WorkItemCapabilities.Read` — `work.item.read`
-- `WorkItemCapabilities.Start` — `work.item.start`
-- `WorkItemCapabilities.Create` — `work.item.create`
-- `WorkItemCapabilities.ReadTypes` — `work.item.types.read.v1`
-- `WorkItemCapabilities.RevisePlanning` — `work.item.planning.revise.v1`
-- `WorkItemCapabilities.DecideApproval` — `work.item.approval.decide.v1`
-- `WorkItemCapabilities.FinalizeDelivery` — `work.item.delivery.finalize`
-- `WorkItemCapabilities.Comment` — `work.item.comment`
-- `WorkItemCapabilities.ReadComments` — `work.item.comments.read`
-- `WorkItemCapabilities.CommentUpdate` — `work.item.comment.update.v1`
-- `WorkItemCapabilities.CommentDelete` — `work.item.comment.delete.v1`
-- `WorkItemCapabilities.Estimate` — `work.item.estimate`
-- `WorkItemCapabilities.Move` — `work.item.move`
-- `WorkItemCapabilities.Complete` — `work.item.complete`
-- `WorkItemCapabilities.Cancel` — `work.item.cancel`
-- `WorkItemCapabilities.Reopen` — `work.item.reopen`
-- `WorkItemCapabilities.Transfer` — `work.item.transfer`
-- `WorkItemCapabilities.QualitySubmit` — `work.item.quality.submit`
-- `WorkSprintCapabilities.Read` — `work.sprint.read`
-- `WorkSprintCapabilities.Create` — `work.sprint.create`
-- `WorkSprintCapabilities.Start` — `work.sprint.start`
-- `WorkSprintCapabilities.Complete` — `work.sprint.complete`
-- `WorkSprintCapabilities.Cancel` — `work.sprint.cancel`
-- `WorkSprintCapabilities.ManageScope` — `work.sprint.scope.manage`
-- `WorkSprintCapabilities.ManageCapacity` — `work.sprint.capacity.manage`
-- `WorkSprintCapabilities.CarryOver` — `work.sprint.carryover`
-- `WorkSprintCapabilities.ReadReports` — `work.sprint.report.read`
-- `WorkAutomationCapabilities.Read` — `work.automation.read`
-- `WorkAutomationCapabilities.Manage` — `work.automation.manage`
-- `PersonalTodoCapabilities.Read` — `work.personal-todo.read.v1`
-- `PersonalTodoCapabilities.Add` — `work.personal-todo.add.v1`
-- `PersonalTodoCapabilities.Reorder` — `work.personal-todo.reorder.v1`
-- `PersonalTodoCapabilities.Requeue` — `work.personal-todo.requeue.v1`
-- `PersonalTodoCapabilities.Activate` — `work.personal-todo.activate.v1`
-- `PersonalTodoCapabilities.Claim` — `work.personal-todo.claim.v1` (SDK runtime only)
-- `PersonalTodoCapabilities.Complete` — `work.personal-todo.complete.v1` (SDK runtime only)
-- `PersonalTodoCapabilities.Block` — `work.personal-todo.block.v1` (SDK runtime only)
-- `PersonalTodoCapabilities.Release` — `work.personal-todo.release.v1` (SDK runtime only)
-- `PersonalTodoCapabilities.Defer` — `work.personal-todo.defer.v1` (SDK runtime only)
-- `PersonalTodoCapabilities.Update` — `work.personal-todo.update.v1`
-- `PersonalTodoCapabilities.Archive` — `work.personal-todo.archive.v1`
-- `PersonalTodoCapabilities.Restore` — `work.personal-todo.restore.v1`
-- `CapabilityNames.WorkManagement.PersonalTodoCancel` — `work.personal-todo.cancel.v1`
+- `WorkBoardCapabilities.Read` â€” `work.board.read`
+- `WorkBoardCapabilities.Create` â€” `work.board.create`
+- `WorkItemCapabilities.Read` â€” `work.item.read`
+- `WorkItemCapabilities.Start` â€” `work.item.start`
+- `WorkItemCapabilities.Create` â€” `work.item.create`
+- `WorkItemCapabilities.ReadTypes` â€” `work.item.types.read.v1`
+- `WorkItemCapabilities.RevisePlanning` â€” `work.item.planning.revise.v1`
+- `WorkItemCapabilities.DecideApproval` â€” `work.item.approval.decide.v1`
+- `WorkItemCapabilities.FinalizeDelivery` â€” `work.item.delivery.finalize`
+- `WorkItemCapabilities.Comment` â€” `work.item.comment`
+- `WorkItemCapabilities.ReadComments` â€” `work.item.comments.read`
+- `WorkItemCapabilities.CommentUpdate` â€” `work.item.comment.update.v1`
+- `WorkItemCapabilities.CommentDelete` â€” `work.item.comment.delete.v1`
+- `WorkItemCapabilities.Estimate` â€” `work.item.estimate`
+- `WorkItemCapabilities.Move` â€” `work.item.move`
+- `WorkItemCapabilities.Complete` â€” `work.item.complete`
+- `WorkItemCapabilities.Cancel` â€” `work.item.cancel`
+- `WorkItemCapabilities.Reopen` â€” `work.item.reopen`
+- `WorkItemCapabilities.Transfer` â€” `work.item.transfer`
+- `WorkItemCapabilities.QualitySubmit` â€” `work.item.quality.submit`
+- `WorkSprintCapabilities.Read` â€” `work.sprint.read`
+- `WorkSprintCapabilities.Create` â€” `work.sprint.create`
+- `WorkSprintCapabilities.Start` â€” `work.sprint.start`
+- `WorkSprintCapabilities.Complete` â€” `work.sprint.complete`
+- `WorkSprintCapabilities.Cancel` â€” `work.sprint.cancel`
+- `WorkSprintCapabilities.ManageScope` â€” `work.sprint.scope.manage`
+- `WorkSprintCapabilities.ManageCapacity` â€” `work.sprint.capacity.manage`
+- `WorkSprintCapabilities.CarryOver` â€” `work.sprint.carryover`
+- `WorkSprintCapabilities.ReadReports` â€” `work.sprint.report.read`
+- `WorkAutomationCapabilities.Read` â€” `work.automation.read`
+- `WorkAutomationCapabilities.Manage` â€” `work.automation.manage`
+- `PersonalTodoCapabilities.Read` â€” `work.personal-todo.read.v1`
+- `PersonalTodoCapabilities.Add` â€” `work.personal-todo.add.v1`
+- `PersonalTodoCapabilities.Reorder` â€” `work.personal-todo.reorder.v1`
+- `PersonalTodoCapabilities.Requeue` â€” `work.personal-todo.requeue.v1`
+- `PersonalTodoCapabilities.Activate` â€” `work.personal-todo.activate.v1`
+- `PersonalTodoCapabilities.Claim` â€” `work.personal-todo.claim.v1` (SDK runtime only)
+- `PersonalTodoCapabilities.Complete` â€” `work.personal-todo.complete.v1` (SDK runtime only)
+- `PersonalTodoCapabilities.Block` â€” `work.personal-todo.block.v1` (SDK runtime only)
+- `PersonalTodoCapabilities.Release` â€” `work.personal-todo.release.v1` (SDK runtime only)
+- `PersonalTodoCapabilities.Defer` â€” `work.personal-todo.defer.v1` (SDK runtime only)
+- `PersonalTodoCapabilities.Update` â€” `work.personal-todo.update.v1`
+- `PersonalTodoCapabilities.Archive` â€” `work.personal-todo.archive.v1`
+- `PersonalTodoCapabilities.Restore` â€” `work.personal-todo.restore.v1`
+- `CapabilityNames.WorkManagement.PersonalTodoCancel` â€” `work.personal-todo.cancel.v1`
 
 ### Board orchestration
 
-- `WorkOrchestrationCapabilities.Read` — `work.orchestration.read`
-- `WorkOrchestrationCapabilities.Preflight` — `work.orchestration.preflight`
-- `WorkOrchestrationCapabilities.Start` — `work.orchestration.start`
-- `WorkOrchestrationCapabilities.Pause` — `work.orchestration.pause`
-- `WorkOrchestrationCapabilities.Resume` — `work.orchestration.resume`
-- `WorkOrchestrationCapabilities.Cancel` — `work.orchestration.cancel`
-- `WorkOrchestrationCapabilities.Retry` — `work.orchestration.retry`
-- `WorkOrchestrationCapabilities.Execute` — `work.execution.run.v1`
+- `WorkOrchestrationCapabilities.Read` â€” `work.orchestration.read`
+- `WorkOrchestrationCapabilities.Preflight` â€” `work.orchestration.preflight`
+- `WorkOrchestrationCapabilities.Start` â€” `work.orchestration.start`
+- `WorkOrchestrationCapabilities.Pause` â€” `work.orchestration.pause`
+- `WorkOrchestrationCapabilities.Resume` â€” `work.orchestration.resume`
+- `WorkOrchestrationCapabilities.Cancel` â€” `work.orchestration.cancel`
+- `WorkOrchestrationCapabilities.Retry` â€” `work.orchestration.retry`
+- `WorkOrchestrationCapabilities.Execute` â€” `work.execution.run.v1`
 
 ## Source control and Git workspace
 
-- `SourceControlCapabilities.TeamRepositoryOptions` — `source-control.repository.team-options.v2`
-- `SourceControlCapabilities.ProvisionRepository` — `source-control.repository.provision.v2`
+- `SourceControlCapabilities.TeamRepositoryOptions` â€” `source-control.repository.team-options.v2`
+- `SourceControlCapabilities.ProvisionRepository` â€” `source-control.repository.provision.v2`
 
 Git workspace operations are scoped to an assigned work item and its authoritative assignment
 revision. Core derives the repository, base commit, and deterministic ticket branch. Agent
 containers receive a credential-free tree without `.git`; provider credentials and installation
 identifiers never appear in these contracts.
 
-- `GitWorkspaceCapabilities.Prepare` — `git.workspace.prepare.v2`
-- `GitWorkspaceCapabilities.Refresh` — `git.workspace.refresh.v2`
-- `GitWorkspaceCapabilities.Inspect` — `git.workspace.inspect.v2`
-- `GitWorkspaceCapabilities.Publish` — `git.workspace.publish.v2`
-- `GitWorkspaceCapabilities.Cleanup` — `git.workspace.cleanup.v2`
-- `GitMergeCapabilities.Review` — `git.merge.review.v2`
-- `GitMergeCapabilities.Authorize` — `git.merge.authorize.v2`
+- `GitWorkspaceCapabilities.Prepare` â€” `git.workspace.prepare.v2`
+- `GitWorkspaceCapabilities.Refresh` â€” `git.workspace.refresh.v2`
+- `GitWorkspaceCapabilities.Inspect` â€” `git.workspace.inspect.v2`
+- `GitWorkspaceCapabilities.Publish` â€” `git.workspace.publish.v2`
+- `GitWorkspaceCapabilities.Cleanup` â€” `git.workspace.cleanup.v2`
+- `GitMergeCapabilities.Review` â€” `git.merge.review.v2`
+- `GitMergeCapabilities.Authorize` â€” `git.merge.authorize.v2`
 
 ## Web proxy
 
-- `WebCapabilities.Fetch` — `web.fetch.v1`
-- `WebCapabilities.Request` — `web.request.v1`
-- `WebCapabilities.Render` — `web.render.v1`
-- `WebCapabilities.Socket` — `web.socket.v1`
+- `WebCapabilities.Fetch` â€” `web.fetch.v1`
+- `WebCapabilities.Request` â€” `web.request.v1`
+- `WebCapabilities.Render` â€” `web.render.v1`
+- `WebCapabilities.Socket` â€” `web.socket.v1`
 
 ## Plugin runtime
 
-- `PluginCapabilities.State` — `plugin.state.v1`
+- `PluginCapabilities.State` â€” `plugin.state.v1`
 
 ## Secure plugin operations
 
@@ -313,17 +313,17 @@ These provider-neutral broker capabilities keep credentials, provider upload ses
 operational storage outside plugin processes. Installations receive only the individual grants
 declared and approved in their manifest.
 
-- `CapabilityNames.ManagedActionExecute` — `platform.managed-action.execute.v1`
-- `PlatformCapabilities.ManagedActionDecide` — `platform.managed-action.decide.v1` (restricted to the exact assigned agent-approver installation after a durable `com.csweet.managed-action.approval-requested.v1` event)
-- `CapabilityNames.EngagementInboxUpsert` — `platform.engagement-inbox.upsert.v1`
-- `CapabilityNames.MetricSnapshotWrite` — `platform.metric-snapshot.write.v1`
-- `CapabilityNames.SynchronizationCheckpoint` — `platform.synchronization-checkpoint.v1`
-- `PlatformCapabilities.AgentOperatingStateRead` — `platform.agent-operating-state.read.v1`
-- `PlatformCapabilities.AgentOperatingStateWrite` — `platform.agent-operating-state.write.v1`
-- `PlatformCapabilities.StaffingReplenishmentPropose` — `platform.management.staffing-replenishment.propose.v1`
-- `PlatformCapabilities.StaffingReplenishmentRead` — `platform.management.staffing-replenishment.read.v1`
-- `PlatformCapabilities.StaffingReplenishmentDecide` — `platform.management.staffing-replenishment.decide.v1`
-- `CapabilityNames.MediaTransfer` — `platform.media.transfer.v1`
+- `CapabilityNames.ManagedActionExecute` â€” `platform.managed-action.execute.v1`
+- `PlatformCapabilities.ManagedActionDecide` â€” `platform.managed-action.decide.v1` (restricted to the exact assigned agent-approver installation after a durable `com.csweet.managed-action.approval-requested.v1` event)
+- `CapabilityNames.EngagementInboxUpsert` â€” `platform.engagement-inbox.upsert.v1`
+- `CapabilityNames.MetricSnapshotWrite` â€” `platform.metric-snapshot.write.v1`
+- `CapabilityNames.SynchronizationCheckpoint` â€” `platform.synchronization-checkpoint.v1`
+- `PlatformCapabilities.AgentOperatingStateRead` â€” `platform.agent-operating-state.read.v1`
+- `PlatformCapabilities.AgentOperatingStateWrite` â€” `platform.agent-operating-state.write.v1`
+- `PlatformCapabilities.StaffingReplenishmentPropose` â€” `platform.management.staffing-replenishment.propose.v1`
+- `PlatformCapabilities.StaffingReplenishmentRead` â€” `platform.management.staffing-replenishment.read.v1`
+- `PlatformCapabilities.StaffingReplenishmentDecide` â€” `platform.management.staffing-replenishment.decide.v1`
+- `CapabilityNames.MediaTransfer` â€” `platform.media.transfer.v1`
 
 ## Contribution rule
 
@@ -350,11 +350,11 @@ deferral; no new event subscription mechanism is introduced.
 
 ## Calendar
 
-- `work.calendar.read.v1` — business scope; event ownership and reporting authority are checked on every operation.
-- `work.calendar.create.v1` — business scope; event ownership and reporting authority are checked on every operation.
-- `work.calendar.update.v1` — business scope; event ownership and reporting authority are checked on every operation.
-- `work.calendar.cancel.v1` — business scope; event ownership and reporting authority are checked on every operation.
-- `work.calendar.schedule.v1` — business scope; event ownership and reporting authority are checked on every operation.
+- `work.calendar.read.v1` â€” business scope; event ownership and reporting authority are checked on every operation.
+- `work.calendar.create.v1` â€” business scope; event ownership and reporting authority are checked on every operation.
+- `work.calendar.update.v1` â€” business scope; event ownership and reporting authority are checked on every operation.
+- `work.calendar.cancel.v1` â€” business scope; event ownership and reporting authority are checked on every operation.
+- `work.calendar.schedule.v1` â€” business scope; event ownership and reporting authority are checked on every operation.
 ## Generic compute
 
 The typed compute client uses compute.provision/read/list/start/stop/restart/destroy/execute.v1 and network.publish-port.v1. Port publication additionally requires network.inbound.v1. Each action has independent current scoped constraints; provisioning alone grants neither inbound access nor port publishing. OS, template, resource, lifetime and persistence limits stay broker-owned. See [compute](docs/compute.md).
@@ -381,3 +381,15 @@ The typed compute client uses compute.provision/read/list/start/stop/restart/des
 `git.workspace.sync.v1` transfers an authorized workspace snapshot through Core. `context.Platform.Git.MaterializeAsync` creates a runtime-local writable copy and returns its local path; the platform path from Prepare is an opaque workspace location, not a shared filesystem mount. `UploadAsync` sends edited files back before inspection/publication. Existing edits are preserved on repeated materialization; after runtime loss, the latest uploaded snapshot is restored.
 
 Transfer requires the sync declaration plus existing preparation/publication authority for the exact assignment. No repository coordinates or credentials are accepted. Limits are 512 KiB compressed per snapshot, 16 MiB content and 4,096 files. Git metadata, redirected paths and traversal are rejected; local `.csweet` control files are excluded from uploads. An uploaded snapshot does not itself publish a commit.
+
+## Task delivery and merge preferences (3.50.0)
+
+- `TaskDeliveryCapabilities.Submit` — `source-control.task-review.submit.v1`
+- `TaskDeliveryCapabilities.List` — `source-control.task-review.list.v1`
+- `TaskDeliveryCapabilities.Read` — `source-control.task-review.read.v1`
+- `TaskDeliveryCapabilities.Decide` — `source-control.task-review.decide.v1`
+- `TaskDeliveryCapabilities.Quality` — `source-control.task-review.quality.v1`
+- `TaskDeliveryCapabilities.Preferences` — `source-control.merge-preference.read.v1`
+- `TaskDeliveryCapabilities.ChangePreference` — `source-control.merge-preference.change.v1`
+
+These grants permit only current assigned review work and manager-authorized decisions. They do not grant an agent direct merge authority. Scope preferences require the current manager’s retained instruction and expected revision. QA snapshot sync does not permit publication.

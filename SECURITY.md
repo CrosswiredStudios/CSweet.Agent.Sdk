@@ -176,3 +176,14 @@ requests closed. Docker inside a prepared guest image does not add host or outbo
 Personal plan creation and progress reporting are separate grant-governed capabilities. The server requires the owning installation, employee, organization, board grant, and live coordinator claim; a child ticket is not an execution grant. Plans cannot grant repository access, compute, or networking. All such operations keep their existing independent authorization.
 
 Until-release compute uses a zero requested lifetime and requires matching broker authority. SDK validation accepts this value; it never authorizes retention or network access itself.
+
+## Personal project continuation (3.50.0)
+
+`PreparePersonalGitWorkspaceRequest.SourceWorkItemId` is an optional reference to an owned completed
+personal development task. It grants no arbitrary repository or commit access. The platform verifies
+business, installation, personal-board ownership, completion, archive state and existing repository
+policy, then stores an immutable project binding and pins published source before creating a separate
+task workspace. Retry requests cannot switch source tasks. A null value retains new-project behavior.
+Deploy the matching platform before upgrading agents that send this field; older hosts may ignore it.
+
+Task review capabilities do not grant direct Git merge authority. The platform binds decisions to exact publications, verifies the current human manager and retained conversation message, and rereads active repository/team access and scoped preferences before starting a merge. QA has snapshot inspection authority without source publication authority.

@@ -8,6 +8,17 @@ namespace CSweet.Agent.SDK;
 /// </summary>
 public static class CapabilityNames
 {
+    public static class TaskDelivery
+    {
+        public const string Submit = "source-control.task-review.submit.v1";
+        public const string List = "source-control.task-review.list.v1";
+        public const string Read = "source-control.task-review.read.v1";
+        public const string Decide = "source-control.task-review.decide.v1";
+        public const string Quality = "source-control.task-review.quality.v1";
+        public const string Preferences = "source-control.merge-preference.read.v1";
+        public const string ChangePreference = "source-control.merge-preference.change.v1";
+    }
+
     public static class Compute
     {
         public const string Provision = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.Provision;
@@ -483,7 +494,8 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.PersonalTodoCancel),
             ["source-control"] = Set(
                 CapabilityNames.SourceControl.TeamRepositoryOptions,
-                CapabilityNames.SourceControl.ProvisionRepository),
+                CapabilityNames.SourceControl.ProvisionRepository,
+                CapabilityNames.TaskDelivery.Submit, CapabilityNames.TaskDelivery.List, CapabilityNames.TaskDelivery.Read, CapabilityNames.TaskDelivery.Decide, CapabilityNames.TaskDelivery.Quality, CapabilityNames.TaskDelivery.Preferences, CapabilityNames.TaskDelivery.ChangePreference),
             ["git-workspace"] = Set(
                 CapabilityNames.GitWorkspace.Sync,
                 CapabilityNames.GitWorkspace.ReservePersonal,

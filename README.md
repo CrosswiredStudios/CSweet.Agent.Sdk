@@ -2,7 +2,7 @@
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 3.48.1 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 3.50.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -19,7 +19,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.48.1
+  --SdkVersion 3.50.0
 cd ResearchAgent
 dotnet test
 ```
@@ -27,7 +27,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 3.48.1
+dotnet add package CSweet.Agent.SDK --version 3.50.0
 ```
 
 ```csharp
@@ -111,3 +111,7 @@ function-invocation loop for simple agents. Preserve all existing execution and 
 
 Use the [typed compute client](docs/compute.md) through context.Platform.Compute for Linux/Windows environment requests, lifecycle operations, guest commands, port publication, results, and durable change events. The application owns host setup and UAC; grants remain enforced by the broker.
 
+
+### Task review and merge preference clients
+
+SDK 3.50.0 adds `PreparePersonalGitWorkspaceRequest.TaskItemId` and `PlatformSourceControlClient` methods to submit/read/discover task reviews, report exact-commit QA, decide a merge from retained manager dialogue, and read/change story or epic merge preferences. `TaskDeliveryCapabilities` identifies capabilities and durable wake events. These APIs require current platform grants; events never authorize a merge. Scope changes carry the actual source message and expected revision.
