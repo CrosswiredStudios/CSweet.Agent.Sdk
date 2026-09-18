@@ -204,3 +204,7 @@ Use `Platform.PersonalTodo.CreatePlanAsync(CreatePersonalWorkPlanRequest)` from 
 Use `ReportPlanTaskAsync(ReportPersonalWorkPlanTaskRequest)` to start the next task and record completion or blocking evidence under the epic's live claim. Save the source snapshot before completing a task. The platform enforces task order and requires all tasks to finish before the epic completes. Child tickets do not receive independent execution claims. Continue through durable personal-work review scheduling; do not add polling loops.
 
 The manifest must request `work.personal-plan.create.v1` and `work.personal-plan.report-task.v1`. Both require scoped grants and the owning epic's live claim. They confer no Git, compute, or network authority.
+
+## Project intake changes
+
+`ProjectIntakeCapabilities.Changed` carries `ProjectIntakeChanged(IntakeId, Revision)`. Read current intake state before acting; duplicates and stale events confer no authority. Use `Platform.Projects.ListAsync` on reconnect, and stable intake operation keys for effects. Project setup is performed through authenticated human endpoints or the manager's governed approval path.

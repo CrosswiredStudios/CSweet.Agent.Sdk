@@ -170,7 +170,7 @@ serialized request byte count, attempt count, error category, and innermost exce
 error code). These bounded diagnostics omit payloads and exception messages so the runtime log tail
 can retain useful evidence without copying request contents or credentials.
 
-## Personal project continuation (3.50.0)
+## Personal project continuation (3.51.0)
 
 `PreparePersonalGitWorkspaceRequest.SourceWorkItemId` is an optional reference to an owned completed
 personal development task. It grants no arbitrary repository or commit access. The platform verifies
@@ -179,6 +179,16 @@ policy, then stores an immutable project binding and pins published source befor
 task workspace. Retry requests cannot switch source tasks. A null value retains new-project behavior.
 Deploy the matching platform before upgrading agents that send this field; older hosts may ignore it.
 
-## Durable task review (3.50.0)
+## Durable task review (3.51.0)
 
 `PlatformTaskDeliveryClient` exposes assignment-bound submission/read/list and exact-commit QA reports. The platform owns task Testing transitions, human merge questions, persisted story/epic settings, and merge execution. `TaskReviewChanged` is only a wake hint; reread current state. `SourceMessageId` must be the actual current human message, never model-selected context. Reconnect discovery is bounded. Merge preference changes serialize with merge start, while task approvals are invalidated when the candidate or preference revision changes. QA snapshot transfer cannot publish source.
+
+## Project prerequisites (SDK 3.51.0)
+
+`AgentRolePolicyManifest.RequiresProject` requests server enforcement of an active project and
+explicit participant assignment for delivery. It does not confer project, membership, hiring,
+or approval authority. `PlatformProjectClient` retains source-bound requests and returns opaque
+setup URLs; URL contents, model decisions and event payloads are not execution grants. Validate
+current human source messages for choices, reread current state after wake, and use stable keys.
+The platform rechecks readiness during planning, work dispatch/recovery, workspace operations,
+and compute. Rollout exceptions come only from persisted execution evidence captured by migration.

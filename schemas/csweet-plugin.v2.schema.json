@@ -166,6 +166,7 @@
             "$ref": "#/$defs/identifier"
           }
         },
+        "requiresProject": { "type": "boolean", "default": false, "description": "Require an active project and explicit agent participation before delivery operations; does not grant project creation or membership authority." },
         "specializationKeys": {
           "type": "array",
           "maxItems": 32,

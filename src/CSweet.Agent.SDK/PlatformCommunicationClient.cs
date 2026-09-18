@@ -202,6 +202,7 @@ public sealed record StartAgentCoordinationRequest(
     string IdempotencyKey,
     AgentCoordinationArtifactSubmission? Artifact = null)
 {
+    public Guid? SourceIntakeId { get; init; }
     public AgentWorkContext? WorkContext { get; init; }
 }
 

@@ -4,6 +4,31 @@ namespace CSweet.Agent.SDK.Tests;
 
 public sealed class AgentManifestLoaderTests
 {
+    [Theory]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    [InlineData(null, false)]
+    public async Task RequiresProject_is_an_optional_role_independent_policy(string? value, bool expected)
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var policy = value is null ? "" : ", \"requiresProject\":" + value;
+            await File.WriteAllTextAsync(path, $$$"""
+            {
+              "manifestVersion":"2.0", "kind":"agent", "id":"com.example.artist", "name":"Artist", "version":"1.0.0",
+              "publisher":{"id":"example","name":"Example"},
+              "rolePolicy":{"profile":"individual-contributor.v1","declaredRoleKeys":["artist"]{{{policy}}}},
+              "runtime":{"type":"dotnet-project","projectPath":"src/Artist.csproj","targetFramework":"net10.0","defaultActivationMode":"OnDemand"},
+              "protocol":{"minimumVersion":"2.0","maximumVersion":"2.x"}, "provides":[], "requires":[], "events":{"subscribes":[]}
+            }
+            """);
+            var manifest = await AgentManifestLoader.LoadAsync(path, CancellationToken.None);
+            Assert.Equal(expected, manifest.RolePolicy!.RequiresProject);
+        }
+        finally { File.Delete(path); }
+    }
+
     [Fact]
     public async Task LoadAsync_ReadsRequiredWorkItemTypes()
     {

@@ -177,7 +177,7 @@ Personal plan creation and progress reporting are separate grant-governed capabi
 
 Until-release compute uses a zero requested lifetime and requires matching broker authority. SDK validation accepts this value; it never authorizes retention or network access itself.
 
-## Personal project continuation (3.50.0)
+## Personal project continuation (3.51.0)
 
 `PreparePersonalGitWorkspaceRequest.SourceWorkItemId` is an optional reference to an owned completed
 personal development task. It grants no arbitrary repository or commit access. The platform verifies
@@ -187,3 +187,13 @@ task workspace. Retry requests cannot switch source tasks. A null value retains 
 Deploy the matching platform before upgrading agents that send this field; older hosts may ignore it.
 
 Task review capabilities do not grant direct Git merge authority. The platform binds decisions to exact publications, verifies the current human manager and retained conversation message, and rereads active repository/team access and scoped preferences before starting a merge. QA has snapshot inspection authority without source publication authority.
+
+## Project prerequisites (SDK 3.51.0)
+
+`AgentRolePolicyManifest.RequiresProject` requests server enforcement of an active project and
+explicit participant assignment for delivery. It does not confer project, membership, hiring,
+or approval authority. `PlatformProjectClient` retains source-bound requests and returns opaque
+setup URLs; URL contents, model decisions and event payloads are not execution grants. Validate
+current human source messages for choices, reread current state after wake, and use stable keys.
+The platform rechecks readiness during planning, work dispatch/recovery, workspace operations,
+and compute. Rollout exceptions come only from persisted execution evidence captured by migration.

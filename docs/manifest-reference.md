@@ -221,3 +221,19 @@ show `publisher.name`; no separate company-name field is required. An omitted ac
 uses the default marketplace accent, and an omitted long description uses `summary`.
 Legacy `iconUrls` remain independent icons; they are not assumed to be portraits or
 publisher logos. Artwork never controls availability, trust, or permissions.
+
+## Project requirement
+
+`rolePolicy.requiresProject` is an optional boolean, defaulting to `false` for compatibility.
+Set it to `true` for any role that needs an assigned project before delivery work, such as a
+developer, artist, or designer. It is independent of `declaredRoleKeys` and grants no authority.
+The platform checks the active Workstream, explicit participation, matching board/team, and
+current grants at delivery boundaries and on execution recovery. Configuration, conversation,
+and setup coordination remain available before a project exists.
+
+Use `context.Platform.Projects` to retain a human request, discover eligible projects, record
+an authenticated human choice, read its current state/setup URL, and resume agent-owned ticket
+planning after readiness. These operations cannot create a project, assign membership, or approve
+hiring. Subscribe to `ProjectIntakeCapabilities.Changed`; events are wake hints, so reread the intake.
+Use `ListAsync` for bounded reconnect recovery. Chief/manager assistance operations require separate
+grants and assignment checks. Creation and membership are authenticated human setup operations.

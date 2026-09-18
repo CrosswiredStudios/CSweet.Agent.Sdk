@@ -35,6 +35,9 @@ public sealed class PlatformComputeClient
     public Task<ComputeDefaults> GetDefaultsAsync(CancellationToken token = default) =>
         _platform.InvokeAsync<object, ComputeDefaults>(ComputeCapabilities.Read, new { defaults = true }, token);
 
+    public Task<ComputeDefaults> GetProjectDefaultsAsync(Guid projectId, CancellationToken token = default) =>
+        _platform.InvokeAsync<object, ComputeDefaults>(ComputeCapabilities.Read, new { defaults = true, workstreamId = projectId }, token);
+
     public Task<ComputeEnvironment> ReadAsync(Guid environmentId, CancellationToken token = default)
     {
         Id(environmentId);

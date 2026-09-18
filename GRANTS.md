@@ -382,7 +382,7 @@ The typed compute client uses compute.provision/read/list/start/stop/restart/des
 
 Transfer requires the sync declaration plus existing preparation/publication authority for the exact assignment. No repository coordinates or credentials are accepted. Limits are 512 KiB compressed per snapshot, 16 MiB content and 4,096 files. Git metadata, redirected paths and traversal are rejected; local `.csweet` control files are excluded from uploads. An uploaded snapshot does not itself publish a commit.
 
-## Task delivery and merge preferences (3.50.0)
+## Task delivery and merge preferences (3.51.0)
 
 - `TaskDeliveryCapabilities.Submit` — `source-control.task-review.submit.v1`
 - `TaskDeliveryCapabilities.List` — `source-control.task-review.list.v1`
@@ -393,3 +393,20 @@ Transfer requires the sync declaration plus existing preparation/publication aut
 - `TaskDeliveryCapabilities.ChangePreference` — `source-control.merge-preference.change.v1`
 
 These grants permit only current assigned review work and manager-authorized decisions. They do not grant an agent direct merge authority. Scope preferences require the current manager’s retained instruction and expected revision. QA snapshot sync does not permit publication.
+
+## Project intake
+
+Project intake operations do not grant project creation, membership changes, or hiring approval.
+
+| Capability | Scope |
+| --- | --- |
+| `work.project-intake.retain.v1` | Agent's own source-bound human request |
+| `work.project-intake.read.v1` | Agent's own source-bound human request |
+| `work.project-intake.list.v1` | Agent's own source-bound human request |
+| `work.project-intake.discover.v1` | Agent's own source-bound human request |
+| `work.project-intake.choose.v1` | Agent's own source-bound human request |
+| `work.project-intake.start.v1` | Agent's own source-bound human request |
+| `work.project-intake.manager-request.v1` | Agent's own source-bound human request |
+| `work.project-intake.staffing.v1` | Assigned Chief of Staff or project manager |
+| `work.project-intake.assistance-list.v1` | Assigned Chief of Staff or project manager |
+| `work.project-intake.manager-setup.v1` | Assigned Chief of Staff or project manager |

@@ -2,7 +2,7 @@
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 3.50.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 3.51.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -19,7 +19,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.50.0
+  --SdkVersion 3.51.0
 cd ResearchAgent
 dotnet test
 ```
@@ -27,7 +27,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 3.50.0
+dotnet add package CSweet.Agent.SDK --version 3.51.0
 ```
 
 ```csharp
@@ -115,3 +115,10 @@ Use the [typed compute client](docs/compute.md) through context.Platform.Compute
 ### Task review and merge preference clients
 
 SDK 3.50.0 adds `PreparePersonalGitWorkspaceRequest.TaskItemId` and `PlatformSourceControlClient` methods to submit/read/discover task reviews, report exact-commit QA, decide a merge from retained manager dialogue, and read/change story or epic merge preferences. `TaskDeliveryCapabilities` identifies capabilities and durable wake events. These APIs require current platform grants; events never authorize a merge. Scope changes carry the actual source message and expected revision.
+
+
+### Project prerequisites (3.51.0)
+
+Set `rolePolicy.requiresProject` to `true` for any contributor role whose delivery work needs an active project and explicit membership. The default is `false` for existing packages. This declares a prerequisite; it gives no project-creation, membership-management, or hiring authority.
+
+Use `context.Platform.Projects` for durable intake, eligible-project discovery, human choices, setup links, readiness reads, and typed manager assistance. Read current state after `ProjectIntakeCapabilities.Changed` and discover pending requests on reconnect. See [the project policy](docs/manifest-reference.md#project-requirement) and [authoring guidance](AGENT_AUTHORING.md) for enforcement and recovery rules.

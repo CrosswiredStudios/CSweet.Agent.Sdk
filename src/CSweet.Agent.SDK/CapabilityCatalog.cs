@@ -8,6 +8,20 @@ namespace CSweet.Agent.SDK;
 /// </summary>
 public static class CapabilityNames
 {
+    public static class ProjectIntake
+    {
+        public const string Retain = "work.project-intake.retain.v1";
+        public const string Read = "work.project-intake.read.v1";
+        public const string List = "work.project-intake.list.v1";
+        public const string Discover = "work.project-intake.discover.v1";
+        public const string Choose = "work.project-intake.choose.v1";
+        public const string Start = "work.project-intake.start.v1";
+        public const string Manager = "work.project-intake.manager-request.v1";
+        public const string Staffing = "work.project-intake.staffing.v1";
+        public const string AssistanceList = "work.project-intake.assistance-list.v1";
+        public const string ManagerSetup = "work.project-intake.manager-setup.v1";
+    }
+
     public static class TaskDelivery
     {
         public const string Submit = "source-control.task-review.submit.v1";
@@ -492,6 +506,7 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.PersonalTodoArchive,
                 CapabilityNames.WorkManagement.PersonalTodoRestore,
                 CapabilityNames.WorkManagement.PersonalTodoCancel),
+            ["project-intake"] = Set(ProjectIntakeCapabilities.All),
             ["source-control"] = Set(
                 CapabilityNames.SourceControl.TeamRepositoryOptions,
                 CapabilityNames.SourceControl.ProvisionRepository,
