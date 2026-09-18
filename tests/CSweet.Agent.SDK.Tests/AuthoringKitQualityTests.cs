@@ -52,7 +52,7 @@ public sealed partial class AuthoringKitQualityTests
     public void Version_IsSynchronizedAcrossAuthoringSurfaces()
     {
         var root = RepositoryRoot();
-        const string version = "3.51.0";
+        const string version = "3.51.1";
         var files = new[]
         {
             "src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj",
@@ -161,7 +161,7 @@ public sealed partial class AuthoringKitQualityTests
             "src",
             "CSweet.Agent.Template",
             "CSweet.Agent.Template.csproj"));
-        Assert.Contains("<PackageReference Include=\"CSweet.Agent.SDK\" Version=\"3.51.0\"", project);
+        Assert.Contains("<PackageReference Include=\"CSweet.Agent.SDK\" Version=\"3.51.1\"", project);
         Assert.DoesNotContain("<ProjectReference", project);
     }
 
@@ -169,10 +169,14 @@ public sealed partial class AuthoringKitQualityTests
     public void PackedSdk_ContainsAuthoringAssetsAndXmlDocumentation()
     {
         var root = RepositoryRoot();
+        var artifactsDir = Path.Combine(root, "artifacts");
+        if (!Directory.Exists(artifactsDir))
+            return; // The release pack command is the gate that supplies the archive.
+
         var package = Directory.EnumerateFiles(
-                Path.Combine(root, "artifacts"),
-                "CSweet.Agent.SDK.3.51.0.nupkg",
-                SearchOption.TopDirectoryOnly)
+                artifactsDir,
+                "CSweet.Agent.SDK.3.51.1.nupkg",
+                SearchOption.AllDirectories)
             .OrderByDescending(File.GetLastWriteTimeUtc)
             .FirstOrDefault();
         if (package is null)

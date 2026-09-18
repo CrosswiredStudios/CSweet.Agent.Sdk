@@ -49,10 +49,10 @@ jobs:
           "tag=v$version" >> $env:GITHUB_OUTPUT
       - run: dotnet restore CSweetAgentSdk.slnx -p:UseLocalCSweetWorkManagementContracts=false
       - run: dotnet build CSweetAgentSdk.slnx --configuration Release --no-restore -p:UseLocalCSweetWorkManagementContracts=false
+      - run: dotnet pack src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj --configuration Release --no-build --no-restore --output artifacts/packages -p:UseLocalCSweetWorkManagementContracts=false
       - run: dotnet test CSweetAgentSdk.slnx --configuration Release --no-build --no-restore -p:UseLocalCSweetWorkManagementContracts=false
       - shell: pwsh
         run: ./scripts/verify-authoring-template.ps1
-      - run: dotnet pack src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj --configuration Release --no-build --no-restore --output artifacts/packages -p:UseLocalCSweetWorkManagementContracts=false
       - name: NuGet login (OIDC -> temporary API key)
         uses: NuGet/login@v1
         id: login
