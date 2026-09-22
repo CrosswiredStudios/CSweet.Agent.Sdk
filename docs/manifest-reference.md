@@ -185,7 +185,9 @@ only while it is visible.
 
 Every agent manifest declares a `rolePolicy`. `declaredRoleKeys` contains the stable, high-level role categories the agent can fill, such as `software-architect` or `software-developer`. These keys—not display names or job titles—control role eligibility.
 
-`specializationKeys` contains optional strengths such as `game-development`, `distributed-systems`, or `realtime-3d`. Specializations may improve catalog ranking for a staffing preference, but they never make an agent ineligible for a matching high-level role category.
+`specializationKeys` contains strengths such as `game-development`, `distributed-systems`, or `realtime-3d`. A staffing preference ranks matching specializations higher without excluding other agents in the same core role. A work item may separately declare a genuinely required specialization; that explicit requirement remains an eligibility gate.
+
+`RoleTaxonomy.CoreRoleKey` treats the domain labels `game-engineer` and `game-quality-assurance` as the `software-developer` and `software-qa` core roles. A candidate declaring either label in a family can fill that family's work when its required capabilities and any explicit required specializations match. The job title and preferred specializations preserve the game-specific intent.
 
 ```json
 "rolePolicy": {

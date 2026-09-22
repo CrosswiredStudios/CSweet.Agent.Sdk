@@ -12,9 +12,23 @@ public static partial class RoleTaxonomy
     public static bool IsCanonicalKey(string? value) =>
         !string.IsNullOrWhiteSpace(value) && value.Length <= 160 && CanonicalKeyPattern().IsMatch(value);
 
+    /// <summary>Return the stable core role behind a domain-specific role label.</summary>
+    public static string CoreRoleKey(string roleKey) => roleKey switch
+    {
+        "game-engineer" => "software-developer",
+        "game-quality-assurance" => "software-qa",
+        _ => roleKey
+    };
+
+    /// <summary>Match a requested role against declared roles in the same core family.</summary>
+    public static bool SatisfiesRole(IEnumerable<string?> declaredRoleKeys, string requiredRoleKey) =>
+        IsCanonicalKey(requiredRoleKey) && declaredRoleKeys.Any(declared =>
+            IsCanonicalKey(declared) &&
+            string.Equals(CoreRoleKey(declared!), CoreRoleKey(requiredRoleKey), StringComparison.Ordinal));
+
     public static bool CanFill(ResourceChangeRole role, AgentTeammate teammate) =>
         IsCanonicalKey(role.RoleCategoryKey) &&
-        teammate.DeclaredRoleKeys.Contains(role.RoleCategoryKey, StringComparer.Ordinal);
+        SatisfiesRole(teammate.DeclaredRoleKeys, role.RoleCategoryKey);
 
     public static int PreferredSpecializationScore(ResourceChangeRole role, AgentTeammate teammate) =>
         role.PreferredSpecializationKeys.Count == 0
@@ -28,7 +42,7 @@ public static partial class RoleTaxonomy
     {
         if (!teammate.IsAvailable || teammate.AgentInstallationId is null ||
             !string.Equals(teammate.RuntimeEligibility, "Eligible", StringComparison.OrdinalIgnoreCase) ||
-            !teammate.DeclaredRoleKeys.Contains(requirements.RequiredRoleKey, StringComparer.Ordinal))
+            !SatisfiesRole(teammate.DeclaredRoleKeys, requirements.RequiredRoleKey))
             return false;
 
         return requirements.RequiredSpecializationKeys.All(key =>

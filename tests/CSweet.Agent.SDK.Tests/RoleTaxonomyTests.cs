@@ -24,8 +24,36 @@ public sealed class RoleTaxonomyTests
         Assert.Equal(0, RoleTaxonomy.PreferredSpecializationScore(role, teammate));
     }
 
+    [Theory]
+    [InlineData("game-engineer", "software-developer", true)]
+    [InlineData("software-developer", "game-engineer", true)]
+    [InlineData("game-quality-assurance", "software-qa", true)]
+    [InlineData("game-engineer", "software-architect", false)]
+    public void DomainRoleMatchesItsCoreFamilyOnly(string required, string declared, bool expected)
+    {
+        Assert.Equal(expected, RoleTaxonomy.SatisfiesRole([declared], required));
+    }
+
     [Fact]
-    public void SelectAssignment_RequiresExactRoleAndSkills_ThenUsesPreferredWipAndStableId()
+    public void GeneralDeveloperCanTakeGameEngineeringWorkWhenSkillsArePreferred()
+    {
+        var developer = new AgentTeammate(Guid.NewGuid().ToString("D"), "Developer", "Agent",
+            "Software Developer", "Game Engineer", "TeamMember", "Active")
+        {
+            AgentInstallationId = Guid.NewGuid(), RuntimeEligibility = "Eligible",
+            DeclaredRoleKeys = ["software-developer"],
+            EffectiveCapabilities = ["work.execution.run.v1"]
+        };
+        var preferred = new CSweet.WorkManagement.Contracts.WorkAssignmentRequirements(
+            "game-engineer", [], ["gameplay-programming"], ["work.execution.run.v1"]);
+        var required = preferred with { RequiredSpecializationKeys = ["gameplay-programming"] };
+
+        Assert.True(RoleTaxonomy.IsEligible(developer, preferred));
+        Assert.False(RoleTaxonomy.IsEligible(developer, required));
+    }
+
+    [Fact]
+    public void SelectAssignment_RequiresCompatibleRoleAndSkills_ThenUsesPreferredWipAndStableId()
     {
         var firstId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         var secondId = Guid.Parse("00000000-0000-0000-0000-000000000002");
