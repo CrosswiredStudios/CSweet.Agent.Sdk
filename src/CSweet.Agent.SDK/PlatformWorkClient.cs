@@ -110,6 +110,11 @@ public sealed class PlatformWorkClient
         InvokeAsync<TransitionWorkItemRequest, WorkItem>(
             WorkItemCapabilities.Complete, request, cancellationToken);
 
+    public Task<WorkItem> CancelItemAsync(
+        TransitionWorkItemRequest request, CancellationToken cancellationToken = default) =>
+        InvokeAsync<TransitionWorkItemRequest, WorkItem>(
+            WorkItemCapabilities.Cancel, request, cancellationToken);
+
     public Task<WorkItem> ReopenItemAsync(
         TransitionWorkItemRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<TransitionWorkItemRequest, WorkItem>(

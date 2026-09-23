@@ -195,4 +195,32 @@ public sealed class PlatformWorkClientTests
         Assert.Equal("Backlog", Assert.Single(board.Columns).Name);
         Assert.Equal(columnId, item.ColumnId);
     }
+
+    [Fact]
+    public async Task CancelItemAsync_UsesTheDedicatedRecoverableTransition()
+    {
+        var boardId = Guid.NewGuid();
+        var itemId = Guid.NewGuid();
+        TransitionWorkItemRequest? captured = null;
+        var runtime = new AgentTestRuntime()
+            .RegisterCapability<TransitionWorkItemRequest, WorkItem>(
+                WorkItemCapabilities.Cancel,
+                (request, _) =>
+                {
+                    captured = request;
+                    return Task.FromResult(new WorkItem(
+                        request.ItemId, Guid.NewGuid(), null, null, WorkItemKinds.Epic,
+                        "Superseded plan", "", WorkStatuses.Cancelled, WorkPriorities.High,
+                        null, 1024, request.ExpectedRevision + 1, null));
+                });
+
+        var result = await runtime.CreateContext().Platform.Work.CancelItemAsync(
+            new TransitionWorkItemRequest(boardId, itemId, 7, "supersede-plan"));
+
+        Assert.Equal(WorkStatuses.Cancelled, result.Status);
+        Assert.Equal(boardId, captured!.BoardId);
+        Assert.Equal(itemId, captured.ItemId);
+        Assert.Equal(7, captured.ExpectedRevision);
+        Assert.Equal("supersede-plan", captured.IdempotencyKey);
+    }
 }

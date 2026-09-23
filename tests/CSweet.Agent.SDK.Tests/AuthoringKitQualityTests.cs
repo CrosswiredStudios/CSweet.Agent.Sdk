@@ -52,7 +52,7 @@ public sealed partial class AuthoringKitQualityTests
     public void Version_IsSynchronizedAcrossAuthoringSurfaces()
     {
         var root = RepositoryRoot();
-        const string version = "3.52.0";
+        const string version = "3.53.0";
         var files = new[]
         {
             "src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj",
@@ -161,7 +161,7 @@ public sealed partial class AuthoringKitQualityTests
             "src",
             "CSweet.Agent.Template",
             "CSweet.Agent.Template.csproj"));
-        Assert.Contains("<PackageReference Include=\"CSweet.Agent.SDK\" Version=\"3.52.0\"", project);
+        Assert.Contains("<PackageReference Include=\"CSweet.Agent.SDK\" Version=\"3.53.0\"", project);
         Assert.DoesNotContain("<ProjectReference", project);
     }
 
@@ -175,7 +175,7 @@ public sealed partial class AuthoringKitQualityTests
 
         var package = Directory.EnumerateFiles(
                 artifactsDir,
-                "CSweet.Agent.SDK.3.52.0.nupkg",
+                "CSweet.Agent.SDK.3.53.0.nupkg",
                 SearchOption.AllDirectories)
             .OrderByDescending(File.GetLastWriteTimeUtc)
             .FirstOrDefault();
