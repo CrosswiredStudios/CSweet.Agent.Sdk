@@ -47,6 +47,7 @@ public static class PlatformCapabilities
     public const string HiringWorkflowStage = CapabilityNames.Platform.HiringWorkflowStage;
     public const string UserActionSuggest = CapabilityNames.Platform.UserActionSuggest;
     public const string TeamRosterRead = CapabilityNames.Platform.TeamRosterRead;
+    public const string ProjectAssignmentRead = CapabilityNames.ProjectAssignment.Read;
     public const string AgentOperatingStateRead = CapabilityNames.Platform.AgentOperatingStateRead;
     public const string AgentOperatingStateWrite = CapabilityNames.Platform.AgentOperatingStateWrite;
     public const string StaffingReplenishmentPropose = CapabilityNames.Platform.StaffingReplenishmentPropose;
@@ -111,7 +112,8 @@ public static class PlatformCapabilities
         BuildHeartbeat, BuildReport, BuildCancel, ValidationRead, PreviewCreate, PreviewRead,
         MediaProviderCatalogRead, MediaJobRequest, MediaJobRead, MediaJobCancel, MediaAssetReference,
         EvaluationPlan, EvaluationRead, EvaluationReport,
-        ReleaseReadinessRead, ReleaseReadinessSubmit, PublicationPropose
+        ReleaseReadinessRead, ReleaseReadinessSubmit, PublicationPropose,
+        ProjectAssignmentRead
     };
 }
 

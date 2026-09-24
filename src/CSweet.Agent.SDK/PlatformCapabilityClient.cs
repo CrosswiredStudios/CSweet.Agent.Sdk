@@ -215,6 +215,18 @@ public sealed class PlatformCapabilityClient
             request ?? new TeamRosterRequest(),
             token);
 
+    /// <summary>
+    /// Reads this agent employee's single project assignment, or <see langword="null"/>
+    /// when unassigned. The server resolves the caller; no IDs are required.
+    /// </summary>
+    public async Task<AssignedProjectContext?> ReadProjectAssignmentAsync(
+        CancellationToken token = default)
+    {
+        var response = await InvokeAsync<object, ProjectAssignmentResponse>(
+            PlatformCapabilities.ProjectAssignmentRead, new { }, token);
+        return response.Assignment;
+    }
+
     public Task<TeamRosterV2Response> ReadTeamRosterAsync(
         TeamRosterV2Request request,
         CancellationToken token = default) =>

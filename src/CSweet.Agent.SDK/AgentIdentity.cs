@@ -18,8 +18,28 @@ public sealed record AgentIdentity(
     string? ManagerDisplayName)
 {
     public AgentTeamContext? TeamContext { get; init; }
+    /// <summary>
+    /// The single project (workstream) this agent is currently assigned to, or
+    /// <see langword="null"/> when unassigned. The platform guarantees at most one
+    /// active project assignment per agent; use <see cref="ManagedWorkstreams"/>
+    /// for supervision, not membership.
+    /// </summary>
+    public AssignedProjectContext? AssignedProject { get; init; }
     public IReadOnlyList<PortfolioSupervisionAssignment> ManagedWorkstreams { get; init; } = [];
 }
+
+/// <summary>
+/// Snapshot of the single project assignment for an agent employee.
+/// A <see langword="null"/> snapshot means the agent is not assigned to a project.
+/// </summary>
+public sealed record AssignedProjectContext(
+    Guid WorkstreamId,
+    string ProjectName,
+    Guid? TeamId,
+    Guid? BoardId,
+    string? Role,
+    long Revision,
+    DateTimeOffset AssignedAt);
 
 public sealed record AgentTeamContext(
     string TeamId,
@@ -59,3 +79,6 @@ public sealed record TeamRosterRequest(int Page = 1, int PageSize = 50);
 public sealed record TeamRosterResponse(AgentTeamContext? Team);
 
 public sealed record TeamRosterV2Response(AgentTeamContext? Team, Guid? WorkstreamId);
+
+/// <summary>Response for the caller's single project assignment read; null means unassigned.</summary>
+public sealed record ProjectAssignmentResponse(AssignedProjectContext? Assignment);

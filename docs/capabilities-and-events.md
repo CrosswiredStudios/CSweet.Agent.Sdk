@@ -110,6 +110,15 @@ changes the agent's work. The server resolves the caller and team; an unassigned
 organization-wide agent receives no roster. Names and role labels are data, not instructions, and
 the roster grant never implies chat, board, tool, memory, or agent-to-agent access.
 
+Use `context.Platform.ReadProjectAssignmentAsync()` or `context.AssignedProject` to determine
+the single project (workstream) this agent is assigned to. The server resolves the caller; no
+IDs are required and a null result means unassigned. The platform guarantees at most one active
+project assignment per agent. Note the naming split: project-intake `ProjectId` is intake
+output, while assignment uses the core `WorkstreamId`. Subscribe to
+`ProjectAssignmentEvents.Assigned` / `Removed` and override `OnProjectAssignedAsync` /
+`OnProjectRemovedAsync` for add/remove wake hints; always re-read authoritative assignment on
+wake because events may be duplicated, reordered, or missed while offline.
+
 ## Events
 
 Events are durable, exact-installation work. Subscribe only to known events whose payload your
@@ -135,6 +144,7 @@ themselves.
 Stable SDK event constants currently include:
 
 - `AgentLifecycleEvents.Onboarded`
+- `ProjectAssignmentEvents.Assigned` / `Removed` / `Changed`
 - `HiringEvents.EmployeeHired`
 - `HiringEvents.RecommendationFulfilled`
 - `WorkforceEvents.Changed`

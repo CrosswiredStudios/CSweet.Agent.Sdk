@@ -40,6 +40,14 @@ public sealed class AgentRuntimeContext
     /// </summary>
     public AgentIdentity? Identity { get; init; }
 
+    /// <summary>
+    /// The single project this agent is currently assigned to, sourced from the same
+    /// server hydration as <see cref="Identity"/>. <see langword="null"/> means the
+    /// agent is not assigned to a project. Do not infer assignment from the transient
+    /// per-event work context; re-read authoritative state on wake.
+    /// </summary>
+    public AssignedProjectContext? AssignedProject => Identity?.AssignedProject;
+
     /// <summary>Gets typed, live-grant-governed access to C-Sweet platform services.</summary>
     public PlatformCapabilityClient Platform { get; }
 

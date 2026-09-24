@@ -122,6 +122,14 @@ team roles, relationship, presence, and complete role-coverage counts. It never 
 application-user IDs, installation or package identity, permissions, credentials, costs, prompts,
 memory, or unrelated employees. Team membership does not grant any other authority.
 
+- `PlatformCapabilities.ProjectAssignmentRead` — `platform.project-assignment.read.v1`
+
+`ProjectAssignmentRead` is resolved from the authenticated installation to its active agent
+employee and single assigned project (workstream). It returns the workstream, team, board, role,
+and revision, or null when unassigned. The platform guarantees at most one active project
+assignment per agent. Assignment never implies chat, board, tool, memory, or agent-to-agent
+access beyond the caller's scoped grants.
+
 ### Documents and design packages
 
 - `PlatformCapabilities.ArtifactDecideV2` â€” `platform.artifact.decide.v2`

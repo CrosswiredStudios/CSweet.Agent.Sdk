@@ -42,6 +42,46 @@ public abstract class CSweetAgentBase : ICSweetAgent
     public virtual Task HandleEventAsync(
         AgentEventEnvelope message,
         AgentRuntimeContext context,
+        CancellationToken cancellationToken)
+    {
+        if (message.EventType is ProjectAssignmentEvents.Assigned or ProjectAssignmentEvents.Changed)
+        {
+            var change = DeserializePayload<ProjectAssignmentChangedEvent>(message.Data);
+            if (change is not null)
+                return OnProjectAssignedAsync(change, message, context, cancellationToken);
+            return Task.CompletedTask;
+        }
+
+        if (message.EventType is ProjectAssignmentEvents.Removed)
+        {
+            var change = DeserializePayload<ProjectAssignmentChangedEvent>(message.Data);
+            if (change is not null)
+                return OnProjectRemovedAsync(change, message, context, cancellationToken);
+            return Task.CompletedTask;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Handles assignment to a project. The event is a wake hint; re-read authoritative
+    /// assignment before advancing work. The default implementation ignores the event.
+    /// </summary>
+    protected virtual Task OnProjectAssignedAsync(
+        ProjectAssignmentChangedEvent change,
+        AgentEventEnvelope message,
+        AgentRuntimeContext context,
+        CancellationToken cancellationToken) =>
+        Task.CompletedTask;
+
+    /// <summary>
+    /// Handles removal from a project. The event is a wake hint; re-read authoritative
+    /// assignment before advancing work. The default implementation ignores the event.
+    /// </summary>
+    protected virtual Task OnProjectRemovedAsync(
+        ProjectAssignmentChangedEvent change,
+        AgentEventEnvelope message,
+        AgentRuntimeContext context,
         CancellationToken cancellationToken) =>
         Task.CompletedTask;
 

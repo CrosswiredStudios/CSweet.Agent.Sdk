@@ -22,6 +22,11 @@ public static class CapabilityNames
         public const string ManagerSetup = "work.project-intake.manager-setup.v1";
     }
 
+    public static class ProjectAssignment
+    {
+        public const string Read = "platform.project-assignment.read.v1";
+    }
+
     public static class TaskDelivery
     {
         public const string Submit = "source-control.task-review.submit.v1";
@@ -423,7 +428,8 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.EvaluationReport,
                 CapabilityNames.Platform.ReleaseReadinessRead,
                 CapabilityNames.Platform.ReleaseReadinessSubmit,
-                CapabilityNames.Platform.PublicationPropose),
+                CapabilityNames.Platform.PublicationPropose,
+                CapabilityNames.ProjectAssignment.Read),
             ["memory"] = Set(
                 CapabilityNames.Memory.BusinessRead,
                 CapabilityNames.Memory.BusinessPropose,

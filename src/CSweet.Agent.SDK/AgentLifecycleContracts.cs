@@ -61,3 +61,24 @@ public sealed class PlatformAgentLifecycleClient
                 "The platform returned an empty onboarding completion response.");
     }
 }
+
+/// <summary>Stable project-assignment events emitted by the C-Sweet platform.</summary>
+public static class ProjectAssignmentEvents
+{
+    public const string Changed = "com.csweet.project-assignment.changed.v1";
+    public const string Assigned = "com.csweet.project-assignment.assigned.v1";
+    public const string Removed = "com.csweet.project-assignment.removed.v1";
+}
+
+/// <summary>
+/// Payload delivered when the caller's project assignment changes. Agents must re-read
+/// authoritative assignment on wake; the event is a wake hint, not a snapshot grant.
+/// </summary>
+public sealed record ProjectAssignmentChangedEvent(
+    Guid OrganizationId,
+    Guid WorkstreamId,
+    Guid? TeamId,
+    Guid? BoardId,
+    string ChangeKind,
+    long Revision,
+    DateTimeOffset OccurredAt);
