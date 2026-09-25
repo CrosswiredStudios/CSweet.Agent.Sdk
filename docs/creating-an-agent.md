@@ -40,7 +40,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.54.0
+  --SdkVersion 3.55.0
 cd ResearchAgent
 dotnet test
 ```
@@ -95,7 +95,10 @@ domain idempotency key for every downstream action. Mutation request contracts e
 
 ## 3. Handle events and activation
 
-Subscribe in the manifest and override `HandleEventAsync`:
+Subscribe in the manifest and prefer the typed `On...Async` hooks on `CSweetAgentBase` over
+comparing `message.EventType` yourself. Override `HandleEventAsync` only for agent-specific
+events, and fall through to `base.HandleEventAsync` for everything else so SDK-dispatched hooks
+(project assignment, onboarding) keep running:
 
 ```csharp
 public override Task HandleEventAsync(
@@ -106,12 +109,14 @@ public override Task HandleEventAsync(
     cancellationToken.ThrowIfCancellationRequested();
     return message.EventType == ManagementEvents.ReviewDue
         ? context.ReportProgressAsync(new { stage = "review-received" }, cancellationToken)
-        : Task.CompletedTask;
+        : base.HandleEventAsync(message, context, cancellationToken);
 }
 ```
 
 Events are durable work and can be delivered again after a failed attempt. Event callbacks must be
-idempotent. `IAgentActivationHandler` is optional and is appropriate for initialization tied to an
+idempotent. See [Lifecycle events](capabilities-and-events.md#lifecycle-events) for the
+onboarding dispatch contract (`OnOnboardedAsync`), idempotency-key guidance, and the
+acknowledge-after-send ordering. `IAgentActivationHandler` is optional and is appropriate for initialization tied to an
 interactive, scheduled, manual, or always-on activation. `IAgentConnectedService` is only for
 services that genuinely need to run while the SDK session is connected.
 

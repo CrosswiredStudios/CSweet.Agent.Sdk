@@ -60,6 +60,14 @@ public abstract class CSweetAgentBase : ICSweetAgent
             return Task.CompletedTask;
         }
 
+        if (message.EventType is AgentLifecycleEvents.Onboarded)
+        {
+            var onboarded = DeserializePayload<AgentOnboardedEvent>(message.Data);
+            if (onboarded is not null)
+                return OnOnboardedAsync(onboarded, message, context, cancellationToken);
+            return Task.CompletedTask;
+        }
+
         return Task.CompletedTask;
     }
 
@@ -80,6 +88,17 @@ public abstract class CSweetAgentBase : ICSweetAgent
     /// </summary>
     protected virtual Task OnProjectRemovedAsync(
         ProjectAssignmentChangedEvent change,
+        AgentEventEnvelope message,
+        AgentRuntimeContext context,
+        CancellationToken cancellationToken) =>
+        Task.CompletedTask;
+
+    /// <summary>
+    /// Handles installation onboarding. The event is a wake hint; re-read authoritative
+    /// identity before advancing work. The default implementation ignores the event.
+    /// </summary>
+    protected virtual Task OnOnboardedAsync(
+        AgentOnboardedEvent onboarded,
         AgentEventEnvelope message,
         AgentRuntimeContext context,
         CancellationToken cancellationToken) =>

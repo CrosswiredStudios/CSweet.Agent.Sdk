@@ -135,15 +135,49 @@ delivered elsewhere. `message.EventId` is the authoritative, stable identity of 
 event and must be used for domain idempotency. The platform supplies both values; agents must
 never derive one from the other.
 
-Agent onboarding uses the SDK-owned `AgentLifecycleEvents.Onboarded` and
-`AgentOnboardedEvent` contracts. After completing the first-message workflow, acknowledge it with
-`context.Platform.Lifecycle.CompleteOnboardingAsync(message, cancellationToken)`. This typed
-operation always uses `message.EventId`; agents must not construct the completion request
-themselves.
+## Lifecycle events
+
+Lifecycle events describe installation-level transitions owned by the platform, not work an agent
+requested. `CSweetAgentBase.HandleEventAsync` dispatches each known lifecycle event to a typed
+`On...Async` hook; unknown events are ignored safely. Overrides that also implement
+`HandleEventAsync` must fall through to `base.HandleEventAsync` for event types they do not
+handle, otherwise SDK-dispatched hooks never run. Treat every lifecycle event as a wake hint:
+re-read authoritative identity, assignment, or resource state before acting, because deliveries
+may be duplicated, reordered, or missed while offline.
+
+### Onboarded (`com.csweet.agent.onboarded.v1`)
+
+The platform emits `AgentLifecycleEvents.Onboarded` once per installed employee identity when the
+installation is hired. The typed payload is `AgentOnboardedEvent` (organization, agent user,
+hiring user, hiring conversation, occurrence time). `CSweetAgentBase` deserializes it and calls:
+
+```csharp
+protected override Task OnOnboardedAsync(
+    AgentOnboardedEvent onboarded,
+    AgentEventEnvelope message,
+    AgentRuntimeContext context,
+    CancellationToken cancellationToken)
+```
+
+The SDK owns delivery, typed deserialization, and the acknowledgement contract. It never decides
+role policy: whether a manager is required, who receives the introduction, what readiness means,
+or which checks gate acknowledgement. Each agent owns those decisions in its override.
+
+A typical override:
+
+1. Resolve role-required prerequisites from authoritative runtime state (for example, the current
+   `context.Identity` reporting line — never the hiring conversation as a substitute).
+2. Send exactly one introduction or readiness report with a stable domain idempotency key derived
+   from `message.EventId` (for example, `$"my-agent-onboarding:{message.EventId:N}"`).
+3. Acknowledge with `context.Platform.Lifecycle.CompleteOnboardingAsync(message, cancellationToken)`,
+   which always uses `message.EventId`. Never construct the completion request manually.
+4. If a required prerequisite is missing, fail closed without sending or acknowledging so the
+   durable onboarding flow retries after the relationship is corrected.
+
+Subscribe to `AgentLifecycleEvents.Onboarded` in the manifest only when the agent has an
+onboarding procedure. A capability-only agent with no first-message workflow should not subscribe.
 
 Stable SDK event constants currently include:
-
-- `AgentLifecycleEvents.Onboarded`
 - `ProjectAssignmentEvents.Assigned` / `Removed` / `Changed`
 - `HiringEvents.EmployeeHired`
 - `HiringEvents.RecommendationFulfilled`

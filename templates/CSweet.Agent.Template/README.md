@@ -27,7 +27,7 @@ Keep `csweet-plugin.json` at the repository root. Import a reviewed GitHub commi
 clone this repository as an immediate child of C-Sweet's configured local agent catalog. Review
 the exact manifest, grants, activation mode, and source before approving installation.
 
-Built with `CSweet.Agent.SDK` 3.54.0.
+Built with `CSweet.Agent.SDK` 3.55.0.
 
 ## Business calendars
 
