@@ -252,3 +252,27 @@ The manifest must request `work.personal-plan.create.v1` and `work.personal-plan
 ## Project intake changes
 
 `ProjectIntakeCapabilities.Changed` carries `ProjectIntakeChanged(IntakeId, Revision)`. Read current intake state before acting; duplicates and stale events confer no authority. Use `Platform.Projects.ListAsync` on reconnect, and stable intake operation keys for effects. Project setup is performed through authenticated human endpoints or the manager's governed approval path.
+
+## Lightweight project delivery
+
+`Platform.Projects.PrepareDeliveryAsync` (SDK 3.56.0) connects an approved manager-owned project to
+approved existing staffing and creates its delivery board and participant grants atomically. This
+operation does not approve a project, hire employees or move anyone between teams. Use stable keys,
+read current state after notifications and rediscover accountable projects with `ReadPortfolioAsync`.
+
+`ProjectDeliveryPlanning` defines `project.delivery.plan-request.v1` and `project.delivery.plan.v1`.
+A technical authority returns architecture, testable tickets, estimates, dependencies and ordered
+sprints. The producer validates project/board context, current approved scope and the artifact digest
+before publishing work. Planner models receive no mutation tools. Neither this proposal nor a model
+response is proof that work started; use the result of `StartSprintExecutionAsync` after preflight.
+
+`GitMergeReview.ImplementationEvidence` contains actual commands from the developer's publication.
+It is distinct from `QualityEvidence`. Lightweight technical reviewers inspect that evidence and the
+exact patch, record actionable rework as a ticket comment, and never claim they reran those tests.
+The producer requests merge authorization only after independent review and acceptance. The trusted
+platform action retains its exact-SHA, quality, team-policy and administrator-approval checks.
+
+`SourceControlEvents.RepositoryProvisioningChanged` is targeted to the requesting installation when
+repository provisioning completes, fails, or is quarantined. The request transition and outbox entry
+commit in the same save. Treat the payload's request ID and revision as a wake hint and replay the
+original authorized provisioning request for current status; duplicates do not grant new authority.

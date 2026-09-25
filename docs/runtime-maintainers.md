@@ -192,3 +192,14 @@ setup URLs; URL contents, model decisions and event payloads are not execution g
 current human source messages for choices, reread current state after wake, and use stable keys.
 The platform rechecks readiness during planning, work dispatch/recovery, workspace operations,
 and compute. Rollout exceptions come only from persisted execution evidence captured by migration.
+
+## Lightweight project delivery callbacks
+
+`PlatformProjectClient.PrepareDeliveryAsync` uses `work.project-delivery.prepare.v1` through the
+normal capability broker. The host owns setup serialization, current authorization and the atomic
+state/outbox transaction. `ProjectDeliveryPlanning` validates bounded proposals, and
+`ProjectDeliveryReview` consumes exact-candidate review data using the existing assignment-scoped
+source-control operations. `GitMergeReview.ImplementationEvidence` preserves developer command
+provenance; a model review must not be represented as an independently executed test. The broker
+separately enforces current review and merge authorization. `SourceControlEvents.RepositoryProvisioningChanged`
+is a durable wake hint; the agent must read the current provisioning result before progressing.

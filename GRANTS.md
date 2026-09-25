@@ -418,3 +418,14 @@ Project intake operations do not grant project creation, membership changes, or 
 | `work.project-intake.staffing.v1` | Assigned Chief of Staff or project manager |
 | `work.project-intake.assistance-list.v1` | Assigned Chief of Staff or project manager |
 | `work.project-intake.manager-setup.v1` | Assigned Chief of Staff or project manager |
+
+### Approved project delivery setup (3.56.0)
+
+`work.project-delivery.prepare.v1` (`ProjectDeliveryCapabilities.Prepare`) attaches existing approved
+staffing to an already approved project. Use `Platform.Projects.PrepareDeliveryAsync` with the current
+project revision, staffing approval, explicit participant IDs and a stable project setup key. The host
+revalidates the current installation grant, accountable manager, unexpired routine-staffing authority,
+approved team, active memberships and removals. It never hires or moves employees. Setup, board-scoped
+grants and assignment event outbox records commit together. Replay returns current setup without
+restoring revoked participants or grants. The response includes an available profile reference; this
+is discovery only, and a profile upgrade still uses the separate governed workstream change proposal.

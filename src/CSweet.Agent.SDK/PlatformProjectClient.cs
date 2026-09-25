@@ -45,7 +45,7 @@ public sealed record ProjectStaffingResult(ProjectIntakeSummary Intake, IReadOnl
     Guid? HiringRecommendationId);
 public sealed record ProjectManagerCandidate(Guid Id, string Name, Guid? TeamId);
 
-/// <summary>Project prerequisites; never creates projects, assigns members or approves hiring.</summary>
+/// <summary>Project prerequisites and attachment of previously approved staffing.</summary>
 public sealed class PlatformProjectClient
 {
     private readonly IPlatformToolInvoker tools;
@@ -61,6 +61,7 @@ public sealed class PlatformProjectClient
     public Task<IReadOnlyList<ProjectIntakeSummary>> ListAssistanceAsync(CancellationToken ct = default) => Call<object, IReadOnlyList<ProjectIntakeSummary>>(ProjectIntakeCapabilities.AssistanceList, new { }, ct);
     public Task<ProjectStaffingResult> StaffAsync(ProjectStaffingRequest request, CancellationToken ct = default) => Call<ProjectStaffingRequest, ProjectStaffingResult>(ProjectIntakeCapabilities.Staffing, request, ct);
     public Task<ProjectIntakeSummary> ReadManagerSetupAsync(Guid id, CancellationToken ct = default) => Call<ProjectIntakeReference, ProjectIntakeSummary>(ProjectIntakeCapabilities.ManagerSetup, new(id), ct);
+    public Task<PreparedProjectDelivery> PrepareDeliveryAsync(PrepareProjectDeliveryRequest request, CancellationToken ct = default) => Call<PrepareProjectDeliveryRequest, PreparedProjectDelivery>(ProjectDeliveryCapabilities.Prepare, request, ct);
     private async Task<TResponse> Call<TRequest,TResponse>(string capability,TRequest request,CancellationToken ct) =>
         (await tools.InvokeAsync(capability,JsonSerializer.SerializeToElement(request,Json),ct)).Deserialize<TResponse>(Json)
         ?? throw new PlatformCapabilityException(capability,PlatformCapabilityErrorCode.ValidationFailed,"Project intake returned no result.");

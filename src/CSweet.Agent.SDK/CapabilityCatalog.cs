@@ -8,6 +8,11 @@ namespace CSweet.Agent.SDK;
 /// </summary>
 public static class CapabilityNames
 {
+    public static class ProjectDelivery
+    {
+        public const string Prepare = "work.project-delivery.prepare.v1";
+    }
+
     public static class ProjectIntake
     {
         public const string Retain = "work.project-intake.retain.v1";
@@ -513,6 +518,7 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.PersonalTodoRestore,
                 CapabilityNames.WorkManagement.PersonalTodoCancel),
             ["project-intake"] = Set(ProjectIntakeCapabilities.All),
+            ["project-delivery"] = Set(ProjectDeliveryCapabilities.All),
             ["source-control"] = Set(
                 CapabilityNames.SourceControl.TeamRepositoryOptions,
                 CapabilityNames.SourceControl.ProvisionRepository,

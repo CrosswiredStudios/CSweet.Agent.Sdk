@@ -93,7 +93,11 @@ public sealed record GitMergeReview(
     string DiffSummary,
     IReadOnlyList<GitValidationResult> QualityEvidence,
     IReadOnlyList<string> RequiredChecks,
-    string Status);
+    string Status)
+{
+    /// <summary>Commands actually executed by the publishing developer, distinct from independent quality evidence.</summary>
+    public IReadOnlyList<GitValidationResult> ImplementationEvidence { get; init; } = [];
+}
 
 public static class GitMergeDecisions
 {

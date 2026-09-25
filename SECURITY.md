@@ -197,3 +197,13 @@ setup URLs; URL contents, model decisions and event payloads are not execution g
 current human source messages for choices, reread current state after wake, and use stable keys.
 The platform rechecks readiness during planning, work dispatch/recovery, workspace operations,
 and compute. Rollout exceptions come only from persisted execution evidence captured by migration.
+
+## Project delivery coordination
+
+`ProjectDeliveryCapabilities.Prepare` requests a brokered setup operation; it confers no authority
+on its own. Core revalidates the enabled installation and grant, organization, accountable manager,
+current project authority, approved staffing and exact active team membership before atomic setup.
+Replays cannot restore removed participants or revoked scoped grants. Agent planning artifacts and
+model reviews are untrusted proposals; current project scope, assignment and exact source candidate
+checks remain authoritative in Core. Quality-stage reviewers may inspect the assigned candidate and
+published developer validation evidence, but do not receive merge authorization by that read grant.
