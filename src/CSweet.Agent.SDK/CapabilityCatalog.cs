@@ -8,6 +8,14 @@ namespace CSweet.Agent.SDK;
 /// </summary>
 public static class CapabilityNames
 {
+    public static class ProjectHealth
+    {
+        public const string Read = "platform.project-health.read.v1";
+        public const string Diagnostics = "platform.project-health.diagnostics.read.v1";
+        public const string Incidents = "platform.management.incident.read.v1";
+        public const string Report = "platform.management.incident.report.v1";
+        public const string Forward = "platform.management.incident.forward.v1";
+    }
     public static class ProjectDelivery
     {
         public const string Prepare = "work.project-delivery.prepare.v1";
@@ -337,6 +345,8 @@ public static class CapabilityCatalog
     public static IReadOnlyDictionary<string, IReadOnlySet<string>> ByService { get; } =
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
         {
+            ["project-health"] = Set(ProjectHealthCapabilities.Read, ProjectHealthCapabilities.Diagnostics, ProjectHealthCapabilities.Incidents,
+                ProjectHealthCapabilities.Report, ProjectHealthCapabilities.Forward),
             ["compute"] = Set(CapabilityNames.Compute.Provision, CapabilityNames.Compute.Read, CapabilityNames.Compute.List,
                 CapabilityNames.Compute.Start, CapabilityNames.Compute.Stop, CapabilityNames.Compute.Restart, CapabilityNames.Compute.Destroy,
                 CapabilityNames.Compute.Execute, CapabilityNames.Compute.Inbound, CapabilityNames.Compute.PublishPort),

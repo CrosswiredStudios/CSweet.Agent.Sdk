@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 3.56.0
+     --SdkVersion 3.58.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed
@@ -197,3 +197,10 @@ Use context.Platform.Compute and the request/result types in CSweet.Agent.SDK.Co
 Set `rolePolicy.requiresProject` to `true` for contributors whose delivery work must belong to an active project. This policy is independent of role names. The platform checks explicit participation, team/board consistency and current grants at planning, dispatch, workspace and compute boundaries. It does not grant project creation, membership management or hiring authority.
 
 Use `context.Platform.Projects` to retain the human request before creating delivery tickets, discover authorized projects, record a human project choice, and obtain the returned `SetupUrl`. Subscribe to `ProjectIntakeCapabilities.Changed`, reread current intake state on wake, and call `ListAsync` during bounded reconnect recovery. Only call `StartAsync` for a Ready intake whose human chose agent-created tickets. Use stable operation keys. Keep clarification and setup conversation available while waiting. Manager assistance uses the typed durable coordination path; a response or a hire is not proof of readiness.
+
+
+## Manager base type
+
+Declare `rolePolicy.baseType: "manager"` with `profile: "manager.v1"` and derive from
+`CSweetManagerAgentBase`. Product management and game production are specialized manager roles.
+See [manager authoring](docs/manager-agents.md) for shared monitoring, assessment, recovery hooks and required grants.

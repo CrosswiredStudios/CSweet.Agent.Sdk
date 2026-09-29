@@ -255,7 +255,7 @@ The manifest must request `work.personal-plan.create.v1` and `work.personal-plan
 
 ## Lightweight project delivery
 
-`Platform.Projects.PrepareDeliveryAsync` (SDK 3.56.0) connects an approved manager-owned project to
+`Platform.Projects.PrepareDeliveryAsync` (SDK 3.58.0) connects an approved manager-owned project to
 approved existing staffing and creates its delivery board and participant grants atomically. This
 operation does not approve a project, hire employees or move anyone between teams. Use stable keys,
 read current state after notifications and rediscover accountable projects with `ReadPortfolioAsync`.
@@ -276,3 +276,12 @@ platform action retains its exact-SHA, quality, team-policy and administrator-ap
 repository provisioning completes, fails, or is quarantined. The request transition and outbox entry
 commit in the same save. Treat the payload's request ID and revision as a wake hint and replay the
 original authorized provisioning request for current status; duplicates do not grant new authority.
+
+## Project health
+
+`ProjectHealthEvents.ReviewDue` (`com.csweet.project-health.review-due.v1`) requests an independent diagnostic review.
+`ProjectHealthEvents.IncidentChanged` (`com.csweet.management.incident.changed.v1`) wakes a manager for escalation.
+Both contain incident/project identifiers and a revision; always read authoritative state before acting.
+`ProjectIncidentReview.HandleAsync` supplies deterministic, bounded diagnosis and responsibility-aware forwarding.
+`ProjectIncidentReview.RecoverAsync` discovers one bounded page during attention/reconnect recovery. Diagnosis
+uses persisted evidence without a model call. Unknown causes and missing evidence remain explicit.

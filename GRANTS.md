@@ -419,7 +419,7 @@ Project intake operations do not grant project creation, membership changes, or 
 | `work.project-intake.assistance-list.v1` | Assigned Chief of Staff or project manager |
 | `work.project-intake.manager-setup.v1` | Assigned Chief of Staff or project manager |
 
-### Approved project delivery setup (3.56.0)
+### Approved project delivery setup (3.58.0)
 
 `work.project-delivery.prepare.v1` (`ProjectDeliveryCapabilities.Prepare`) attaches existing approved
 staffing to an already approved project. Use `Platform.Projects.PrepareDeliveryAsync` with the current
@@ -429,3 +429,15 @@ approved team, active memberships and removals. It never hires or moves employee
 grants and assignment event outbox records commit together. Replay returns current setup without
 restoring revoked participants or grants. The response includes an available profile reference; this
 is discovery only, and a profile upgrade still uses the separate governed workstream change proposal.
+
+## Project health and incidents (SDK 3.58.0)
+
+- `platform.project-health.read.v1`: current health of an assigned project.
+- `platform.project-health.diagnostics.read.v1`: bounded, sanitized incident evidence within current reporting authority.
+- `platform.management.incident.read.v1`: discover pending incidents or read an authorized incident.
+- `platform.management.incident.report.v1`: record a diagnosis and atomically route it to the reporter's manager.
+- `platform.management.incident.forward.v1`: forward an incident outside the current recipient's responsibility.
+
+Use `context.Platform.ProjectHealth`. Grants are independently reviewed; manifests never grant access.
+Report and forward require the current revision and a stable idempotency key. No endpoint permits repairs,
+caller-selected recipients, or resolving an incident by acknowledgement.

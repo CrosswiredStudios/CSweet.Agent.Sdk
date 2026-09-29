@@ -158,6 +158,10 @@
             "executive-advisor.v1"
           ]
         },
+        "baseType": {
+          "enum": ["manager", "individual-contributor", "independent-reviewer", "executive-advisor"],
+          "description": "Common behavioral family. Must match profile; declaredRoleKeys describes specialized jobs. Does not grant authority."
+        },
         "declaredRoleKeys": {
           "type": "array",
           "minItems": 1,

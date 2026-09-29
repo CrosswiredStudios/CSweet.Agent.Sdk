@@ -207,3 +207,16 @@ Replays cannot restore removed participants or revoked scoped grants. Agent plan
 model reviews are untrusted proposals; current project scope, assignment and exact source candidate
 checks remain authoritative in Core. Quality-stage reviewers may inspect the assigned candidate and
 published developer validation evidence, but do not receive merge authorization by that read grant.
+
+## Project diagnostic boundary
+
+Project-health reads require current approved capabilities and project/reporting authority. They expose only
+sanitized, exactly correlated work evidence. The human-only employee timeline boundary is unchanged.
+Incident events are wake hints. The platform retains escalation deadlines, detects stale recipients, and
+routes through the current hierarchy; SDK callbacks cannot choose arbitrary recipients or gain repair access.
+
+
+Manager base types declare potential, not authority. Validate explicit baseType/profile consistency.
+A manager needs a current project assignment and approved diagnostic/report grants. Custom recovery
+hooks use existing authorized clients with stable incident/action keys; follow-up reports cannot extend
+escalation deadlines or assert resolution. The platform alone confirms recovery.

@@ -59,6 +59,11 @@ public sealed record AgentRolePolicyManifest
     /// <summary>Delivery requires an active project, explicit participation and scoped grants. Setup and clarification remain available.</summary>
     public bool RequiresProject { get; init; }
     public string Profile { get; init; } = string.Empty;
+    /// <summary>The common behavioral family; declared role keys retain the agent's specialized jobs.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? BaseType { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? EffectiveBaseType => BaseType ?? CSweet.Agent.SDK.AgentBaseTypes.FromPolicyProfile(Profile);
     /// <summary>Stable high-level role categories, for example software-architect.</summary>
     public IReadOnlyList<string> DeclaredRoleKeys { get; init; } = [];
     /// <summary>Optional domain strengths used to rank otherwise eligible agents.</summary>

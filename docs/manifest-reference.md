@@ -239,3 +239,10 @@ planning after readiness. These operations cannot create a project, assign membe
 hiring. Subscribe to `ProjectIntakeCapabilities.Changed`; events are wake hints, so reread the intake.
 Use `ListAsync` for bounded reconnect recovery. Chief/manager assistance operations require separate
 grants and assignment checks. Creation and membership are authenticated human setup operations.
+
+
+## Manager base type
+
+Declare `rolePolicy.baseType: "manager"` with `profile: "manager.v1"` and derive from
+`CSweetManagerAgentBase`. Product management and game production are specialized manager roles.
+See [manager authoring](manager-agents.md) for shared monitoring, assessment, recovery hooks and required grants.

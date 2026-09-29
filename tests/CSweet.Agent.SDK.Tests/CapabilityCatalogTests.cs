@@ -44,6 +44,7 @@ public sealed class CapabilityCatalogTests
                 "plugin",
                 "product-management",
                 "project-delivery",
+                "project-health",
                 "project-intake",
                 "source-control",
                 "web",

@@ -40,7 +40,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.56.0
+  --SdkVersion 3.58.0
 cd ResearchAgent
 dotnet test
 ```
@@ -329,3 +329,10 @@ and [Testing and release](testing-and-release.md) for the review checklists.
 ## Reusable collaboration
 
 See [agent collaboration](collaboration.md) for typed documentation requests, read sharing, clarification, review, exact-revision handoffs, and durable dependency waits in SDK 3.46.1.
+
+
+## Manager base type
+
+Declare `rolePolicy.baseType: "manager"` with `profile: "manager.v1"` and derive from
+`CSweetManagerAgentBase`. Product management and game production are specialized manager roles.
+See [manager authoring](manager-agents.md) for shared monitoring, assessment, recovery hooks and required grants.

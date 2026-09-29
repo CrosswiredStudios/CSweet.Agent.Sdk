@@ -203,3 +203,16 @@ source-control operations. `GitMergeReview.ImplementationEvidence` preserves dev
 provenance; a model review must not be represented as an independently executed test. The broker
 separately enforces current review and merge authorization. `SourceControlEvents.RepositoryProvisioningChanged`
 is a durable wake hint; the agent must read the current provisioning result before progressing.
+
+## Project diagnostic boundary
+
+Project-health reads require current approved capabilities and project/reporting authority. They expose only
+sanitized, exactly correlated work evidence. The human-only employee timeline boundary is unchanged.
+Incident events are wake hints. The platform retains escalation deadlines, detects stale recipients, and
+routes through the current hierarchy; SDK callbacks cannot choose arbitrary recipients or gain repair access.
+
+
+Manager base types declare potential, not authority. Validate explicit baseType/profile consistency.
+A manager needs a current project assignment and approved diagnostic/report grants. Custom recovery
+hooks use existing authorized clients with stable incident/action keys; follow-up reports cannot extend
+escalation deadlines or assert resolution. The platform alone confirms recovery.

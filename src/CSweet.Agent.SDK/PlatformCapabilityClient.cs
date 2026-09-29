@@ -27,6 +27,7 @@ public sealed class PlatformCapabilityClient
         Infrastructure = new PlatformInfrastructureClient(tools);
         Communication = new PlatformCommunicationClient(this);
         Connectors = new PlatformConnectorClient(this);
+        ProjectHealth = new PlatformProjectHealthClient(this);
     }
 
     internal IPlatformToolInvoker Tools => _tools;
@@ -44,6 +45,7 @@ public sealed class PlatformCapabilityClient
     public PlatformInfrastructureClient Infrastructure { get; }
     public PlatformCommunicationClient Communication { get; }
     public PlatformConnectorClient Connectors { get; }
+    public PlatformProjectHealthClient ProjectHealth { get; }
 
     public Task<BusinessProfileResponse> ReadBusinessProfileAsync(CancellationToken token = default) =>
         InvokeAsync<object, BusinessProfileResponse>(PlatformCapabilities.BusinessProfileRead, new { }, token);

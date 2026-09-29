@@ -352,6 +352,8 @@ public static class AgentManifestLoader
             return;
         if (!AgentRolePolicyProfiles.All.Contains(manifest.RolePolicy.Profile))
             errors.Add("rolePolicy.profile must name a supported platform policy profile.");
+        if (manifest.RolePolicy.BaseType is { } baseType && baseType != AgentBaseTypes.FromPolicyProfile(manifest.RolePolicy.Profile))
+            errors.Add("rolePolicy.baseType must match the behavioral family of rolePolicy.profile.");
         ValidateRoleTokens(manifest.RolePolicy.DeclaredRoleKeys, "rolePolicy.declaredRoleKeys", required: true, errors);
         ValidateRoleTokens(manifest.RolePolicy.SpecializationKeys, "rolePolicy.specializationKeys", required: false, errors);
     }
