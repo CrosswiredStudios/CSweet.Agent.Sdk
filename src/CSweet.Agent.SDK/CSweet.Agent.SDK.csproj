@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <PackageId>CSweet.Agent.SDK</PackageId>
-    <Version>3.58.0</Version>
+    <Version>3.59.0</Version>
     <PackageVersion Condition="'$(CSweetAgentSdkPackageVersion)' != ''">$(CSweetAgentSdkPackageVersion)</PackageVersion>
     <Authors>C-Sweet</Authors>
     <Company>C-Sweet</Company>
@@ -23,7 +23,7 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CSweet.WorkManagement.Contracts" Version="3.24.0" Condition="'$(UseLocalCSweetWorkManagementContracts)' != 'true'" />
+    <PackageReference Include="CSweet.WorkManagement.Contracts" Version="3.25.0" Condition="'$(UseLocalCSweetWorkManagementContracts)' != 'true'" />
     <ProjectReference Include="$(CSweetWorkManagementContractsRepositoryRoot)\src\CSweet.WorkManagement.Contracts\CSweet.WorkManagement.Contracts.csproj" Condition="'$(UseLocalCSweetWorkManagementContracts)' == 'true'" />
   </ItemGroup>
   <ItemGroup>
@@ -45,6 +45,7 @@
     <None Include="..\..\docs\capabilities-and-events.md" Pack="true" PackagePath="docs\" />
     <None Include="..\..\docs\testing-and-release.md" Pack="true" PackagePath="docs\" />
     <None Include="..\..\docs\agent-operating-contract.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\docs\hierarchical-delivery.md" Pack="true" PackagePath="docs\" />
     <None Include="..\..\docs\migrating-to-2.0.md" Pack="true" PackagePath="docs\" />
     <None Include="..\..\schemas\csweet-plugin.v2.schema.json" Pack="true" PackagePath="schemas\" />
   </ItemGroup>

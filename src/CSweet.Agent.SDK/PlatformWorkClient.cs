@@ -11,6 +11,21 @@ public sealed class PlatformWorkClient
 
     internal PlatformWorkClient(IPlatformToolInvoker tools) => _tools = tools;
 
+    public Task<IReadOnlyList<WorkDeliveryPlanResponse>> ReadDeliveryPlansAsync(ReadWorkDeliveryPlansRequest request, CancellationToken ct = default) =>
+        InvokeAsync<ReadWorkDeliveryPlansRequest, IReadOnlyList<WorkDeliveryPlanResponse>>(WorkDeliveryCapabilities.Read, request, ct);
+    public Task<WorkDeliveryPlanResponse> ConfigureDeliveryPlanAsync(ConfigureWorkDeliveryPlanRequest request, CancellationToken ct = default) =>
+        InvokeAsync<ConfigureWorkDeliveryPlanRequest, WorkDeliveryPlanResponse>(WorkDeliveryCapabilities.Configure, request, ct);
+    public Task<WorkDeliveryPlanResponse> ControlDeliveryPlanAsync(ControlWorkDeliveryPlanRequest request, CancellationToken ct = default) =>
+        InvokeAsync<ControlWorkDeliveryPlanRequest, WorkDeliveryPlanResponse>(WorkDeliveryCapabilities.Control, request, ct);
+    public Task<WorkDeliveryPlanResponse> AcceptDeliveryAsync(DecideWorkDeliveryAcceptanceRequest request, CancellationToken ct = default) =>
+        InvokeAsync<DecideWorkDeliveryAcceptanceRequest, WorkDeliveryPlanResponse>(WorkDeliveryCapabilities.Accept, request, ct);
+    public Task<WorkDeliveryPlanResponse> RecoverDeliveryAsync(RecoverWorkDeliveryRequest request, CancellationToken ct = default) =>
+        InvokeAsync<RecoverWorkDeliveryRequest, WorkDeliveryPlanResponse>(WorkDeliveryCapabilities.Recover, request, ct);
+    public Task<WorkDeliveryEvidenceResponse> ReadDeliveryEvidenceAsync(ReadWorkDeliveryEvidenceRequest request, CancellationToken ct = default) =>
+        InvokeAsync<ReadWorkDeliveryEvidenceRequest, WorkDeliveryEvidenceResponse>(WorkDeliveryCapabilities.Evidence, request, ct);
+    public Task<WorkDeliveryPlanResponse> CompleteDeliveryReviewAsync(CompleteWorkDeliveryReviewRequest request, CancellationToken ct = default) =>
+        InvokeAsync<CompleteWorkDeliveryReviewRequest, WorkDeliveryPlanResponse>(WorkDeliveryCapabilities.Review, request, ct);
+
     public Task<IReadOnlyList<WorkBoardSummary>> ListBoardsAsync(
         WorkBoardListRequest? request = null,
         CancellationToken cancellationToken = default) =>

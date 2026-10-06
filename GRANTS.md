@@ -1,5 +1,25 @@
 # Generated capability reference
 
+## Hierarchical delivery (SDK 3.59.0)
+
+`work.execution.run.v2` provides scope-specific execution. Task assignments carry real sprint
+identifiers; story, epic and release assignments carry delivery-plan authority and exact candidates.
+The published V1 execution contract remains available.
+
+| Capability | Typed operation and authority |
+|---|---|
+| `work.delivery.read.v1` | Read authorized project plans with bounded discovery. |
+| `work.delivery.configure.v1` | Configure revision-pinned release scope, reviewers and branch topology. |
+| `work.delivery.control.v1` | The assigned manager activates, pauses, resumes or cancels a plan. |
+| `work.delivery.evidence.read.v1` | Read exact candidate repositories and document revisions within independent grants. |
+| `work.delivery.review.complete.v1` | The assigned human submits criterion-level QA or technical review evidence. |
+| `work.delivery.accept.v1` | The assigned manager accepts the exact epic or release candidate. |
+| `work.delivery.recover.v1` | Resume unfinished promotion; changed content requires fresh validation and acceptance. |
+
+`com.csweet.work-delivery.changed.v1` wakes subscribed managers to read current authorized state.
+An event or plan membership never grants board, artifact or repository access. Promotion does not
+authorize deployment or public release.
+
 ## Durable connector actions (SDK 3.35.0)
 
 `platform.connector.action.request.v1` creates an exact, durable proposal for a declared connector
@@ -419,7 +439,7 @@ Project intake operations do not grant project creation, membership changes, or 
 | `work.project-intake.assistance-list.v1` | Assigned Chief of Staff or project manager |
 | `work.project-intake.manager-setup.v1` | Assigned Chief of Staff or project manager |
 
-### Approved project delivery setup (3.58.0)
+### Approved project delivery setup (3.59.0)
 
 `work.project-delivery.prepare.v1` (`ProjectDeliveryCapabilities.Prepare`) attaches existing approved
 staffing to an already approved project. Use `Platform.Projects.PrepareDeliveryAsync` with the current
@@ -430,7 +450,7 @@ grants and assignment event outbox records commit together. Replay returns curre
 restoring revoked participants or grants. The response includes an available profile reference; this
 is discovery only, and a profile upgrade still uses the separate governed workstream change proposal.
 
-## Project health and incidents (SDK 3.58.0)
+## Project health and incidents (SDK 3.59.0)
 
 - `platform.project-health.read.v1`: current health of an assigned project.
 - `platform.project-health.diagnostics.read.v1`: bounded, sanitized incident evidence within current reporting authority.

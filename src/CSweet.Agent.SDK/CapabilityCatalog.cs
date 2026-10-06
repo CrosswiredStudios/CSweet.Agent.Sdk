@@ -8,6 +8,16 @@ namespace CSweet.Agent.SDK;
 /// </summary>
 public static class CapabilityNames
 {
+    public static class WorkDelivery
+    {
+        public const string Read = WorkDeliveryCapabilities.Read;
+        public const string Configure = WorkDeliveryCapabilities.Configure;
+        public const string Control = WorkDeliveryCapabilities.Control;
+        public const string Accept = WorkDeliveryCapabilities.Accept;
+        public const string Recover = WorkDeliveryCapabilities.Recover;
+        public const string Evidence = WorkDeliveryCapabilities.Evidence;
+        public const string Review = WorkDeliveryCapabilities.Review;
+    }
     public static class ProjectHealth
     {
         public const string Read = "platform.project-health.read.v1";
@@ -265,6 +275,7 @@ public static class CapabilityNames
         public const string AutomationRead = WorkManagementCapabilityNames.AutomationRead;
         public const string AutomationManage = WorkManagementCapabilityNames.AutomationManage;
         public const string ExecutionRunV1 = WorkManagementCapabilityNames.ExecutionRunV1;
+        public const string ExecutionRunV2 = WorkManagementCapabilityNames.ExecutionRunV2;
         public const string OrchestrationRead = WorkManagementCapabilityNames.OrchestrationRead;
         public const string OrchestrationPreflight = WorkManagementCapabilityNames.OrchestrationPreflight;
         public const string OrchestrationStart = WorkManagementCapabilityNames.OrchestrationStart;
@@ -513,6 +524,7 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.OrchestrationConfigureProfileV1,
                 CapabilityNames.WorkManagement.FlowMetricsReadV1,
                 CapabilityNames.WorkManagement.ExecutionRunV1,
+                CapabilityNames.WorkManagement.ExecutionRunV2,
                 CapabilityNames.WorkManagement.PersonalTodoRead,
                 CapabilityNames.WorkManagement.PersonalTodoAdd,
                 CapabilityNames.WorkManagement.PersonalTodoReorder,
@@ -528,6 +540,7 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.PersonalTodoRestore,
                 CapabilityNames.WorkManagement.PersonalTodoCancel),
             ["project-intake"] = Set(ProjectIntakeCapabilities.All),
+            ["work-delivery"] = Set(WorkDeliveryCapabilities.All.ToArray()),
             ["project-delivery"] = Set(ProjectDeliveryCapabilities.All),
             ["source-control"] = Set(
                 CapabilityNames.SourceControl.TeamRepositoryOptions,
@@ -701,6 +714,7 @@ public static class WorkOrchestrationCapabilities
         CapabilityNames.WorkManagement.OrchestrationConfigureSoftwareTemplate;
     public const string ConfigureProfile = CapabilityNames.WorkManagement.OrchestrationConfigureProfileV1;
     public const string Execute = CapabilityNames.WorkManagement.ExecutionRunV1;
+    public const string ExecuteV2 = CapabilityNames.WorkManagement.ExecutionRunV2;
 }
 
 public static class WorkFlowMetricCapabilities

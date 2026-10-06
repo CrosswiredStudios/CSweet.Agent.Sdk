@@ -216,3 +216,13 @@ Manager base types declare potential, not authority. Validate explicit baseType/
 A manager needs a current project assignment and approved diagnostic/report grants. Custom recovery
 hooks use existing authorized clients with stable incident/action keys; follow-up reports cannot extend
 escalation deadlines or assert resolution. The platform alone confirms recovery.
+
+## Delivery execution V2
+
+Dispatch `work.execution.run.v2` only with the current authorized `WorkExecutionAssignmentV2`. Preserve V1 callers.
+`CSweetAgentBase.ExecuteDeliveryScopeAsync` handles aggregate scopes; `ToTaskAssignment` rejects aggregate-to-sprint
+conversion. Share inbox leases, admission limits and bounded attempts across both execution scopes. Atomic outbox
+events wake authorized bounded discovery after reconnect. `HierarchicalProjectDelivery`, `DeliveryScopeReview`,
+`ArtifactDeliveryReview` and `DeliveryCandidateWorkspace` retain exact candidate identities and independent staffing.
+Use typed `PlatformWorkClient` operations, domain idempotency keys and authoritative promotion receipts. No agent
+polling loop, event payload or successful build grants promotion, deployment or public release approval.

@@ -255,7 +255,7 @@ The manifest must request `work.personal-plan.create.v1` and `work.personal-plan
 
 ## Lightweight project delivery
 
-`Platform.Projects.PrepareDeliveryAsync` (SDK 3.58.0) connects an approved manager-owned project to
+`Platform.Projects.PrepareDeliveryAsync` (SDK 3.59.0) connects an approved manager-owned project to
 approved existing staffing and creates its delivery board and participant grants atomically. This
 operation does not approve a project, hire employees or move anyone between teams. Use stable keys,
 read current state after notifications and rediscover accountable projects with `ReadPortfolioAsync`.

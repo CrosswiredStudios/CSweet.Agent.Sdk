@@ -220,3 +220,14 @@ Manager base types declare potential, not authority. Validate explicit baseType/
 A manager needs a current project assignment and approved diagnostic/report grants. Custom recovery
 hooks use existing authorized clients with stable incident/action keys; follow-up reports cannot extend
 escalation deadlines or assert resolution. The platform alone confirms recovery.
+
+## Hierarchical delivery authority
+
+V2 assignments carry an explicit Task/Story/Epic/Release scope, exact principal, planning and scope revisions,
+permitted outcomes and an immutable candidate. Only Task scope carries real sprint authority. Release membership
+does not grant board, artifact or repository access. Events trigger authorized current-state reads; they never
+authorize execution. Independent Technical Review permits trusted task integration into its story; task QA
+tests that exact integrated commit. Aggregate acceptance binds the complete repository/document candidate.
+Agents never obtain unrestricted merge credentials. Candidate archives are bounded, digest-checked and extracted
+only into SDK-owned temporary directories; source mutation invalidates the review. Partial promotion receipts
+survive failures and successful integrations are never automatically reverted.

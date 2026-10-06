@@ -48,6 +48,7 @@ public sealed class CapabilityCatalogTests
                 "project-intake",
                 "source-control",
                 "web",
+                "work-delivery",
                 "work-management"
             ],
             CapabilityCatalog.ByService.Keys.Order(StringComparer.Ordinal));

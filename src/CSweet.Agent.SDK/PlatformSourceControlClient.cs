@@ -97,6 +97,9 @@ public sealed record GitMergeReview(
 {
     /// <summary>Commands actually executed by the publishing developer, distinct from independent quality evidence.</summary>
     public IReadOnlyList<GitValidationResult> ImplementationEvidence { get; init; } = [];
+    /// <summary>The current assigned integration target, bound by hierarchical Technical Review.</summary>
+    public string? TargetCommitSha { get; init; }
+    public string? TargetBranch { get; init; }
 }
 
 public static class GitMergeDecisions

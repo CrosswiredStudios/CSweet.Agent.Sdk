@@ -154,8 +154,22 @@ public abstract class CSweetAgentBase : ICSweetAgent
             return UpdateConfiguration(request);
         }
 
+        if (request.Capability == WorkManagementCapabilityNames.ExecutionRunV2)
+        {
+            var assignment = DeserializePayload<WorkExecutionAssignmentV2>(request.Payload);
+            if (assignment is null) return AgentWorkResult.Failure("The V2 execution assignment is required.");
+            if (assignment.Scope == WorkExecutionScopes.Task)
+                return await ExecuteCapabilityCoreAsync(request with { Capability = WorkManagementCapabilityNames.ExecutionRunV1,
+                    Arguments = SerializePayload(assignment.ToTaskAssignment()) }, context, cancellationToken);
+            return await ExecuteDeliveryScopeAsync(assignment, context, cancellationToken);
+        }
         return await ExecuteCapabilityCoreAsync(request, context, cancellationToken);
     }
+
+    /// <summary>Executes a delivery-plan review using its real aggregate identity and exact candidate.</summary>
+    protected virtual Task<AgentWorkResult> ExecuteDeliveryScopeAsync(WorkExecutionAssignmentV2 assignment,
+        AgentRuntimeContext context, CancellationToken cancellationToken) => Task.FromResult(AgentWorkResult.Failure(
+            "This agent has no handler for the assigned aggregate review.", "delivery.unsupported_scope"));
 
     /// <summary>Implements capabilities declared by this package.</summary>
     protected virtual Task<AgentWorkResult> ExecuteCapabilityCoreAsync(
