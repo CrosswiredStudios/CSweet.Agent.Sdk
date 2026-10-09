@@ -197,7 +197,8 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         var progress = new LeaseProgressReporter(runtime, lease);
         using var inferenceScope = new InferenceExecutionScope(lease, deadline, progress);
         inferenceScope.Enter();
-        var context = CreateContext(platform, identity, progress);
+        var context = CreateContext(inferenceScope.BindPlatform(runtime), identity,
+            new WorkScopedProgressReporter(progress, inferenceScope));
         var renewal = RenewLeaseAsync(lease, deadline);
         try
         {
@@ -216,10 +217,12 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 AgentWorkKind.Shutdown => AgentWorkResult.Success(new { acknowledged = true }),
                 _ => AgentWorkResult.Failure($"Unsupported work kind '{lease.Kind}'.")
             };
+            inferenceScope.Close();
             await runtime.CompleteAsync(lease, result, runtimeCancellation);
         }
         catch (OperationCanceledException) when (deadline.IsCancellationRequested && !runtimeCancellation.IsCancellationRequested)
         {
+            inferenceScope.Close();
             try
             {
                 await runtime.FailAsync(lease, "The agent work deadline elapsed or was cancelled by the platform.", runtimeCancellation);
@@ -232,6 +235,7 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         }
         catch (Exception exception)
         {
+            inferenceScope.Close();
             if (lease.Kind == AgentWorkKind.ConfigurationUpdate)
                 _configurationRestartRequested = true;
             var diagnosticId = Guid.NewGuid();
@@ -248,6 +252,7 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         }
         finally
         {
+            inferenceScope.Close();
             await deadline.CancelAsync();
             try { await renewal; }
             catch (OperationCanceledException) when (deadline.IsCancellationRequested) { }

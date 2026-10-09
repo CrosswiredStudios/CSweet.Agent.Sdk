@@ -29,7 +29,8 @@ public sealed class PersonalTodoLeaseLifecycleTests
         var manifest = await File.ReadAllTextAsync(path);
         await File.WriteAllTextAsync(path, manifest.Replace("work.personal-todo.claim.v1", PersonalTodoCapabilities.Claim));
         await using var transport = new Transport();
-        using var worker = new AgentRuntimeWorker<TestAgent>(new TestAgent(), transport,
+        var agent = new TestAgent();
+        using var worker = new AgentRuntimeWorker<TestAgent>(agent, transport,
             new AgentPlatformAccessor(), Options.Create(new AgentRuntimeOptions { ManifestPath = path }),
             NullLogger<AgentRuntimeWorker<TestAgent>>.Instance);
         try
@@ -43,6 +44,12 @@ public sealed class PersonalTodoLeaseLifecycleTests
             Assert.Equal(1, transport.CompletedItems);
             Assert.Equal(1, transport.InferenceCalls);
             Assert.Equal(new long[] { 1, 2 }, transport.ProgressSequences);
+            var failure = await Assert.ThrowsAsync<PlatformCapabilityException>(() => agent.RetainedContext!.Platform.ReadBusinessProfileAsync());
+            Assert.Equal("agent.context_ended", failure.FailureCode);
+            Assert.False(failure.Retryable);
+            var progressFailure = await Assert.ThrowsAsync<PlatformCapabilityException>(() => agent.RetainedContext!.ReportProgressAsync(new { late = true }));
+            Assert.Equal("agent.context_ended", progressFailure.FailureCode);
+            Assert.Equal(new long[] { 1, 2 }, transport.ProgressSequences);
         }
         finally
         {
@@ -53,11 +60,13 @@ public sealed class PersonalTodoLeaseLifecycleTests
 
     private sealed class TestAgent : CSweetAgentBase
     {
+        public AgentRuntimeContext? RetainedContext;
         public override string AgentId => "com.example.recovery";
         public override string Version => "1.0.0";
         public override async Task<PersonalTodoResult> HandlePersonalTodoAsync(
             PersonalTodoItem item, AgentRuntimeContext context, CancellationToken cancellationToken)
         {
+            RetainedContext = context;
             await context.ReportProgressAsync(new { stage = "coding" }, cancellationToken);
             using var client = context.CreateChatClient(new(Guid.NewGuid(), "test-model"));
             var response = await client.GetResponseAsync("Build the application", cancellationToken: cancellationToken);

@@ -1,5 +1,27 @@
 # Runtime maintainer guide
 
+## Work callback lifetime (SDK 3.59.1)
+
+`AgentRuntimeWorker.ProcessLeaseAsync` creates a separate `PlatformCapabilityClient` through
+`InferenceExecutionScope.BindPlatform`. `WorkScopedToolInvoker` binds tool invocation, descriptor
+lookup and model streaming to that scope. `WorkScopedProgressReporter` binds agent progress and turn-stream writers to the same lifetime. `RequireActive` rejects closed/cancelled scopes with
+`agent.context_ended` and cross-callback use with `agent.context_mismatch`, both nonretryable.
+`AgentPlatformAccessor.Current` selects the bound client in a work flow. Activation/connected
+services retain their session client; they do not acquire a work lease through this mechanism.
+
+Close the scope before sending completion/failure acknowledgements, and also in cleanup. Closing
+cancels outstanding SDK calls; validate again before releasing a result, descriptor list or chunk.
+AsyncLocal restoration alone is insufficient: a detached task inherits the scope reference, which
+must remain permanently closed. A retained client outside its original flow must also fail closed.
+Nested/concurrent scopes cannot reuse each other's clients. Cancellation does not undo an already
+committed external effect, and late-response withholding does not establish transport rollback.
+
+This boundary does not clear arbitrary agent fields or model histories. Server-owned task context
+identity/generation, authoritative dispatch/effect fences, verified context disposal, reconnect
+recovery and authorized instruction handoffs remain separate work. Keep the existing process
+reset fallback until those requirements are implemented and verified; no context-clear protocol
+or memory-receipt deletion is introduced here.
+
 SDK 3.46.1 adds `ConnectorHttpOperation.IfMatchInput` for protocol 2.3. Its pointer must select a
 required string with `maxLength` between 3 and 256. Only non-bootstrap, non-media PUT/PATCH/DELETE
 mutations may declare it. Use `ConnectorEntityTag.RequireStrong` to reject wildcard, weak, list,

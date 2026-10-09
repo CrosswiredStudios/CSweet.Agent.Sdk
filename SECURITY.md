@@ -1,5 +1,18 @@
 # Security Policy
 
+## Callback lifetime boundary (SDK 3.59.1)
+
+The worker binds platform clients, memory access, model tools and model clients to the exact
+callback's private SDK scope. Completion/failure closes that scope before its acknowledgement,
+cancels outstanding SDK calls, and fences retained references and inherited async flows. An old
+client cannot be substituted into another callback, even while both callbacks are active.
+The platform accessor selects the current bound client. Late responses/chunks are not released.
+
+This is cooperative SDK execution fencing, not evidence of prompt/history disposal in an untrusted
+agent process. Do not delete host memory receipts or disable runtime rotation on this basis.
+The host still authorizes current leases, memory audiences and effects. A mutation already sent
+before cancellation may have committed; reconcile durable state and never blindly replay it.
+
 SDK 3.46.1 adds protocol-2.3 exact `If-Match` preconditions for non-media mutations.
 
 Workspace snapshot size and file-count limits are injected by the trusted runtime and enforced by

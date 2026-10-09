@@ -13,6 +13,7 @@ public sealed class PlatformCapabilityClient
 
     internal PlatformCapabilityClient(IPlatformToolInvoker tools)
     {
+        if (tools is not WorkScopedToolInvoker) tools = new FlowScopedToolInvoker(tools);
         _tools = tools;
         Lifecycle = new PlatformAgentLifecycleClient(tools);
         Memory = new PlatformMemoryClient(tools);
@@ -476,9 +477,19 @@ public sealed class AgentPlatformAccessor
 {
     private PlatformCapabilityClient? _current;
 
-    public PlatformCapabilityClient Current =>
-        Volatile.Read(ref _current)
-        ?? throw new InvalidOperationException("The agent runtime has not established a platform session.");
+    public PlatformCapabilityClient Current
+    {
+        get
+        {
+            if (InferenceExecutionScope.Current is { } work)
+            {
+                work.RequireActive("platform.access");
+                if (work.Platform is { } bound) return bound;
+            }
+            return Volatile.Read(ref _current)
+                ?? throw new InvalidOperationException("The agent runtime has not established a platform session.");
+        }
+    }
 
     internal void SetCurrent(PlatformCapabilityClient platform) =>
         Volatile.Write(ref _current, platform);
