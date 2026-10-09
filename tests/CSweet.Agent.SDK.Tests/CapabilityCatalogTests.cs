@@ -20,6 +20,7 @@ public sealed class CapabilityCatalogTests
         Assert.All(CapabilityCatalog.All, capability => Assert.Contains(capability, constants));
         Assert.Contains(WorkManagementCapabilityNames.ItemMove, CapabilityCatalog.All);
         Assert.Contains(PlatformCapabilities.ArtifactRead, CapabilityCatalog.All);
+        Assert.Contains(CapabilityNames.Management.StatusReport, CapabilityCatalog.All);
         Assert.Contains(PlatformCapabilities.ArtifactPackageDecide, CapabilityCatalog.All);
         Assert.DoesNotContain(WorkManagementCapabilityNames.AutomationManage, CapabilityCatalog.All);
     }

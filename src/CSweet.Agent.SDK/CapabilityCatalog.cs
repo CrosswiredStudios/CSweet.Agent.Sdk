@@ -227,6 +227,7 @@ public static class CapabilityNames
 
     public static class Management
     {
+        public const string StatusReport = "platform.management.status-report.v1";
         public const string CheckIn = "management.check-in.v1";
         public const string ProductRoleBrief = "management.product-role-brief.v1";
         public const string ProductPlanReview = "management.product-plan.review.v1";
@@ -481,6 +482,7 @@ public static class CapabilityCatalog
                 CapabilityNames.Communication.CoordinationResume,
                 CapabilityNames.Communication.CoordinationCancel),
             ["management"] = Set(
+                CapabilityNames.Management.StatusReport,
                 CapabilityNames.Management.CheckIn,
                 CapabilityNames.Management.ProductRoleBrief,
                 CapabilityNames.Management.ProductPlanReview,

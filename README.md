@@ -1,5 +1,8 @@
 # C-Sweet Agent SDK
 
+SDK 3.60.0 adds `CapabilityNames.Management.StatusReport` to the documented capability catalog,
+so agents can request the existing platform reporting capability in their reviewed manifests.
+
 SDK 3.59.1 binds callback platform clients to their work lifetime. Retained clients and inherited
 background flows cannot start calls after callback completion or use another callback's client;
 late tool results are withheld, and closed callbacks cannot publish agent progress. This does not prove private prompt disposal or replace the host's
@@ -9,7 +12,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 3.59.1 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 3.60.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -26,7 +29,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.59.1
+  --SdkVersion 3.60.0
 cd ResearchAgent
 dotnet test
 ```
@@ -34,7 +37,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 3.59.1
+dotnet add package CSweet.Agent.SDK --version 3.60.0
 ```
 
 ```csharp

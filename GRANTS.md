@@ -224,6 +224,8 @@ document content.
 
 ## Management and product leadership
 
+- `CapabilityNames.Management.StatusReport` — `platform.management.status-report.v1`: submit the caller's report for an authorized management review. A manifest request requires installation approval; it does not grant reporting authority by itself.
+
 - `ManagementCapabilities.CheckIn` â€” `management.check-in.v1`
 - `ProductManagementCapabilities.RoleBrief` â€” `management.product-role-brief.v1`
 - `ProductManagementCapabilities.PlanReview` â€” `management.product-plan.review.v1`
