@@ -5,6 +5,17 @@ namespace CSweet.Agent.SDK.Tests;
 
 public sealed class HiringAutonomyContractTests
 {
+    [Theory]
+    [InlineData("platform.hiring-policy.read.v1")]
+    [InlineData("platform.hiring-policy.capture-decision.v1")]
+    [InlineData("platform.hiring-candidate.select.v1")]
+    [InlineData("platform.hiring-delegation.submit.v1")]
+    public void HiringCapabilitiesAreRegisteredInPlatformCatalog(string capability)
+    {
+        Assert.Contains(capability, CapabilityCatalog.ByService["platform"]);
+        Assert.Contains(capability, CapabilityCatalog.All);
+    }
+
     [Fact]
     public void DefaultsRequireHumanHireConfirmationAndPreferFirstParty()
     {
