@@ -248,3 +248,5 @@ events wake authorized bounded discovery after reconnect. `HierarchicalProjectDe
 `ArtifactDeliveryReview` and `DeliveryCandidateWorkspace` retain exact candidate identities and independent staffing.
 Use typed `PlatformWorkClient` operations, domain idempotency keys and authoritative promotion receipts. No agent
 polling loop, event payload or successful build grants promotion, deployment or public release approval.
+
+QA evidence Artifact ownership is distinct from product authorship. Aggregate QA may author reports only when their task has a separate board-manager review. Exact artifact revisions, criteria evidence, task self-review rejection and product-author independence remain enforced by the host.

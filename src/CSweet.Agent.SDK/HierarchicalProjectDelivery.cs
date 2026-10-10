@@ -53,7 +53,7 @@ public static class HierarchicalProjectDelivery
         board = await context.Platform.Work.ReadBoardAsync(boardId, ct);
         tasks = board.Items.Where(x => x.ExecutionMode == WorkItemExecutionModes.Executable &&
             x.ParentItemId.HasValue && scopedStories.Contains(x.ParentItemId.Value)).ToArray();
-        var selected = new Dictionary<Guid, (WorkStageAssignment Author, WorkStageAssignment Qa, WorkStageAssignment? Technical, bool Code)>();
+        var selected = new Dictionary<Guid, (WorkStageAssignment Author, WorkStageAssignment Qa, WorkStageAssignment? Technical, bool Code, bool QaEvidence)>();
         var qaRole = software ? "software-qa" : "game-quality-assurance";
         var technicalRole = technicalRoleOverride ?? (software ? "software-architect" : "game-technical-director");
         foreach (var task in tasks)
@@ -65,11 +65,17 @@ public static class HierarchicalProjectDelivery
                 (software ? "software-developer" : "game-engineer");
             var author = Select(authorKey, authorRole, [], prior?.AgentInstallationId);
             var code = task.Delivery?.DeliveryKind != "Artifact" && task.Planning.DeliveryKind != "Artifact" && authorRole is "software-developer" or "game-engineer";
-            var qa = Select("quality", qaRole, [author.OrganizationUserId!.Value]);
+            var qaEvidence = DeliveryReviewIndependence.IsQaEvidenceArtifact(task.Delivery?.DeliveryKind ?? task.Planning.DeliveryKind, authorRole);
+            // QA owns test plans/reports; the board manager checks their evidence. This is
+            // distinct from independent QA of the implementation under test.
+            var qa = qaEvidence
+                ? Select("quality", "manager", [author.OrganizationUserId!.Value], requiredEmployee: managerId, subject: task.Title)
+                : Select("quality", qaRole, [author.OrganizationUserId!.Value], subject: task.Title);
             var technical = code ? Select("technical-review", technicalRole, [author.OrganizationUserId!.Value]) : null;
-            selected.Add(task.Id, (author, qa, technical, code));
+            selected.Add(task.Id, (author, qa, technical, code, qaEvidence));
         }
-        var authors = selected.Values.Select(x => x.Author.OrganizationUserId!.Value).Distinct().ToArray();
+        var productAuthors = selected.Values.Where(x => !x.QaEvidence).Select(x => x.Author.OrganizationUserId!.Value).Distinct().ToArray();
+        var codeAuthors = selected.Values.Where(x => x.Code).Select(x => x.Author.OrganizationUserId!.Value).Distinct().ToArray();
         var scopes = new List<WorkDeliveryScopeAssignment>();
         var branches = new List<WorkDeliveryBranchBinding>();
         var releaseScopeKey = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("|", scopedEpics.Order()))))[..16];
@@ -78,14 +84,14 @@ public static class HierarchicalProjectDelivery
         {
             var childIds = tasks.Where(x => x.ParentItemId == story.Id).Select(x => x.Id).ToArray();
             scopes.Add(new(WorkExecutionScopes.Story, story.Id, boardId,
-                [Select("quality", qaRole, childIds.Select(x => selected[x].Author.OrganizationUserId!.Value).ToArray())]));
+                [Select("quality", qaRole, childIds.Where(x => !selected[x].QaEvidence).Select(x => selected[x].Author.OrganizationUserId!.Value).ToArray())]));
             if (childIds.Any(id => selected[id].Code)) branches.Add(new(repositoryId, WorkExecutionScopes.Story, story.Id,
                 $"codex/story/{story.Id:N}", releaseBranch));
         }
         var epics = board.Items.Where(x => scopedEpics.Contains(x.Id)).ToArray();
         foreach (var epic in epics) scopes.Add(new(WorkExecutionScopes.Epic, epic.Id, boardId,
-            [Select("technical-review", technicalRole, authors)]));
-        var releaseStages = new List<WorkStageAssignment> { Select("quality", qaRole, authors), Select("technical-review", technicalRole, authors) };
+            [Select("technical-review", technicalRole, codeAuthors)]));
+        var releaseStages = new List<WorkStageAssignment> { Select("quality", qaRole, productAuthors), Select("technical-review", technicalRole, codeAuthors) };
         if (!software && branches.Count > 0) releaseStages.Add(Select("build-readiness", "game-build-release-engineer", []));
         scopes.Add(new(WorkExecutionScopes.Release, null, boardId, releaseStages));
         if (branches.Count > 0)
@@ -133,13 +139,13 @@ public static class HierarchicalProjectDelivery
         plan = (await context.Platform.Work.ReadDeliveryPlansAsync(new(projectId, plan.Id), ct)).Single();
         return await context.Platform.Work.ControlDeliveryPlanAsync(new(plan.Id, plan.Revision, "activate", $"delivery-activate:{plan.Id:N}:{plan.Revision}"), ct);
 
-        WorkStageAssignment Select(string stage, string role, IReadOnlyList<Guid> excluded, Guid? preferred = null)
+        WorkStageAssignment Select(string stage, string role, IReadOnlyList<Guid> excluded, Guid? preferred = null, Guid? requiredEmployee = null, string? subject = null)
         {
             var requirements = new WorkAssignmentRequirements(role, [], [], [WorkManagementCapabilityNames.ExecutionRunV2]);
-            var eligible = roster.Members.Where(x => Guid.TryParse(x.EmployeeId, out var employee) && !excluded.Contains(employee)).ToArray();
+            var eligible = roster.Members.Where(x => Guid.TryParse(x.EmployeeId, out var employee) && !excluded.Contains(employee) && (!requiredEmployee.HasValue || employee == requiredEmployee)).ToArray();
             var candidate = preferred.HasValue ? RoleTaxonomy.SelectAssignment(eligible.Where(x => x.AgentInstallationId == preferred), requirements)?.Teammate : null;
             candidate ??= RoleTaxonomy.SelectAssignment(eligible, requirements)?.Teammate
-                ?? throw new InvalidOperationException($"Staff an independent {role} with V2 execution for {stage}; QA cannot be skipped.");
+                ?? throw new DeliveryStaffingException($"Staffing needs attention for {subject ?? stage}: assign an eligible {role} with V2 execution to {stage}, independent of the deliverable author. Required review cannot be skipped.");
             var fingerprint = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"{projectId:N}|{stage}|{role}|{candidate.AgentInstallationId}|{roster.Revision}|{profileDigest}")));
             return new(stage, "AgentInstallation", Guid.Parse(candidate.EmployeeId), candidate.AgentInstallationId)
             {

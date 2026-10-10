@@ -244,3 +244,5 @@ tests that exact integrated commit. Aggregate acceptance binds the complete repo
 Agents never obtain unrestricted merge credentials. Candidate archives are bounded, digest-checked and extracted
 only into SDK-owned temporary directories; source mutation invalidates the review. Partial promotion receipts
 survive failures and successful integrations are never automatically reverted.
+
+QA evidence Artifact ownership is distinct from product authorship. Aggregate QA may author reports only when their task has a separate board-manager review. Exact artifact revisions, criteria evidence, task self-review rejection and product-author independence remain enforced by the host.
