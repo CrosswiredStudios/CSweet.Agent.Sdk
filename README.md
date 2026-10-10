@@ -139,3 +139,5 @@ Use `context.Platform.Projects` for durable intake, eligible-project discovery, 
 Declare `rolePolicy.baseType: "manager"` with `profile: "manager.v1"` and derive from
 `CSweetManagerAgentBase`. Product management and game production are specialized manager roles.
 See [manager authoring](docs/manager-agents.md) for shared monitoring, assessment, recovery hooks and required grants.
+
+`HiringAutonomyContracts` defines per-Chief owner hiring preferences, publisher selection, and authenticated decision capture and delegated submission. Platform services enforce the current policy and approved-plan binding; memory cannot grant hiring authority.

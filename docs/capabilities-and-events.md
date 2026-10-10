@@ -285,3 +285,7 @@ Both contain incident/project identifiers and a revision; always read authoritat
 `ProjectIncidentReview.HandleAsync` supplies deterministic, bounded diagnosis and responsibility-aware forwarding.
 `ProjectIncidentReview.RecoverAsync` discovers one bounded page during attention/reconnect recovery. Diagnosis
 uses persisted evidence without a model call. Unknown causes and missing evidence remain explicit.
+
+## Owner-controlled hiring delegation
+
+`HiringAutonomyCapabilities` exposes policy reads, capture of authenticated owner decision answers, candidate selection, and delegated submission. `HiringPolicySettings` separates selection mode, automatic authority level, and publisher preference. Manifest grants only allow invoking these operations; the platform validates active Chief identity, organization, approved plan binding, current policy, package digest, cost, headcount, grants, and configuration before installation and employee creation. Agent memory cannot grant authority. Third-party publisher names are not first-party provenance. Delegated work must remain idempotent across retries and revalidate authority after an asynchronous package build.

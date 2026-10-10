@@ -2,10 +2,10 @@ namespace CSweet.Agent.SDK;
 
 public static class HiringAutonomyCapabilities
 {
-    public const string Read = "platform.hiring-policy.read.v1";
-    public const string CaptureDecision = "platform.hiring-policy.capture-decision.v1";
-    public const string SelectCandidate = "platform.hiring-candidate.select.v1";
-    public const string Submit = "platform.hiring-delegation.submit.v1";
+    public const string Read = CapabilityNames.Platform.HiringPolicyRead;
+    public const string CaptureDecision = CapabilityNames.Platform.HiringPolicyCaptureDecision;
+    public const string SelectCandidate = CapabilityNames.Platform.HiringCandidateSelect;
+    public const string Submit = CapabilityNames.Platform.HiringDelegationSubmit;
 }
 public enum HiringSelectionMode { RecommendCandidates, ChooseCandidates, Automatic }
 public enum AutomaticHiringLevel { ApprovedPackages, WithinLimits, BroadDelegation }

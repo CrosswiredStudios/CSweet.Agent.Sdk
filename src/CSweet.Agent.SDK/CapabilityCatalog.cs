@@ -154,6 +154,10 @@ public static class CapabilityNames
         public const string InfrastructureFileTransfer = InfrastructureCapabilityNames.FileTransfer;
         public const string ManagementCycleRead = "platform.management-cycle.read.v1";
         public const string UserInputRequest = "platform.user-input.request.v1";
+        public const string HiringPolicyRead = "platform.hiring-policy.read.v1";
+        public const string HiringPolicyCaptureDecision = "platform.hiring-policy.capture-decision.v1";
+        public const string HiringCandidateSelect = "platform.hiring-candidate.select.v1";
+        public const string HiringDelegationSubmit = "platform.hiring-delegation.submit.v1";
         public const string HiringRecommendationList = "platform.hiring-recommendation.list.v1";
         public const string HiringRecommendationUpsert = "platform.hiring-recommendation.upsert.v1";
         public const string HiringRecommendationResolve = "platform.hiring-recommendation.resolve.v1";
@@ -408,6 +412,10 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.InfrastructureFileTransfer,
                 CapabilityNames.Platform.ManagementCycleRead,
                 CapabilityNames.Platform.UserInputRequest,
+                CapabilityNames.Platform.HiringPolicyRead,
+                CapabilityNames.Platform.HiringPolicyCaptureDecision,
+                CapabilityNames.Platform.HiringCandidateSelect,
+                CapabilityNames.Platform.HiringDelegationSubmit,
                 CapabilityNames.Platform.HiringRecommendationList,
                 CapabilityNames.Platform.HiringRecommendationUpsert,
                 CapabilityNames.Platform.HiringRecommendationResolve,

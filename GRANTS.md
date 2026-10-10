@@ -463,3 +463,14 @@ is discovery only, and a profile upgrade still uses the separate governed workst
 Use `context.Platform.ProjectHealth`. Grants are independently reviewed; manifests never grant access.
 Report and forward require the current revision and a stable idempotency key. No endpoint permits repairs,
 caller-selected recipients, or resolving an incident by acknowledgement.
+
+## Owner-controlled Chief hiring delegation
+
+| Capability | Authority |
+|---|---|
+| `platform.hiring-policy.read.v1` | Read this active Chief’s authoritative owner preferences. |
+| `platform.hiring-policy.capture-decision.v1` | Capture an immutable owner answer bound to this Chief and business. |
+| `platform.hiring-candidate.select.v1` | Select an eligible candidate for this Chief’s recommendation; does not grant installation authority. |
+| `platform.hiring-delegation.submit.v1` | Fill approved roles only under the owner’s plan-bound delegation and current limits. |
+
+Policy changes cannot expand authority on old plans without an explicit owner action. Memory and events are context and wake hints; they are never execution grants.
