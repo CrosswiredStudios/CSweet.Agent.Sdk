@@ -154,10 +154,13 @@ public abstract class CSweetAgentBase : ICSweetAgent
             return UpdateConfiguration(request);
         }
 
-        if (request.Capability == WorkManagementCapabilityNames.ExecutionRunV2)
+        if (request.Capability == WorkManagementCapabilityNames.ExecutionRunV2 || request.Capability == DeliveryBuildReadiness.ExecutionCapability)
         {
             var assignment = DeserializePayload<WorkExecutionAssignmentV2>(request.Payload);
             if (assignment is null) return AgentWorkResult.Failure("The V2 execution assignment is required.");
+            if (request.Capability == DeliveryBuildReadiness.ExecutionCapability &&
+                (assignment.Scope != WorkExecutionScopes.Release || assignment.StageKey != "build-readiness"))
+                return AgentWorkResult.Failure("Build readiness requires its assigned release scope.");
             if (assignment.Scope == WorkExecutionScopes.Task)
                 return await ExecuteCapabilityCoreAsync(request with { Capability = WorkManagementCapabilityNames.ExecutionRunV1,
                     Arguments = SerializePayload(assignment.ToTaskAssignment()) }, context, cancellationToken);

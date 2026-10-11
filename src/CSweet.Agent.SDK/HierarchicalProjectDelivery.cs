@@ -7,6 +7,15 @@ namespace CSweet.Agent.SDK;
 /// <summary>Manager-owned setup of a revision-pinned hierarchy, independent staffing and shared release branches.</summary>
 public static class HierarchicalProjectDelivery
 {
+    internal static WorkAssignmentRequirements BuildReadinessRequirements(string role) => new(role, [], [],
+        role == "game-build-release-engineer" ? [WorkManagementCapabilityNames.ExecutionRunV2] :
+            [WorkManagementCapabilityNames.ExecutionRunV2, DeliveryBuildReadiness.ExecutionCapability]);
+
+    internal static string SelectBuildReadinessRole(AgentTeamContext roster) =>
+        new[] { "game-build-release-engineer", "game-technical-director", "software-developer" }
+            .FirstOrDefault(role => RoleTaxonomy.SelectAssignment(roster.Members, BuildReadinessRequirements(role)) is not null)
+        ?? throw new DeliveryStaffingException("Build readiness needs an eligible Build Release Engineer, Technical Director, or Developer with V2 execution and build-readiness support. Certified build evidence is still required.");
+
     public static async Task<WorkDeliveryPlanResponse> PrepareAsync(Guid projectId, Guid boardId,
         Guid managerId, AgentTeamContext roster, Guid repositoryId, string defaultBranch,
         string profileDigest, bool software, AgentRuntimeContext context, CancellationToken ct, string? technicalRoleOverride = null)
@@ -92,7 +101,14 @@ public static class HierarchicalProjectDelivery
         foreach (var epic in epics) scopes.Add(new(WorkExecutionScopes.Epic, epic.Id, boardId,
             [Select("technical-review", technicalRole, codeAuthors)]));
         var releaseStages = new List<WorkStageAssignment> { Select("quality", qaRole, productAuthors), Select("technical-review", technicalRole, codeAuthors) };
-        if (!software && branches.Count > 0) releaseStages.Add(Select("build-readiness", "game-build-release-engineer", []));
+        if (!software && branches.Count > 0)
+        {
+            // Certified builds are mechanical evidence, not independent product review.
+            // Prefer the release specialist; updated technical/development agents can own this gate too.
+            var role = SelectBuildReadinessRole(roster);
+            releaseStages.Add(Select("build-readiness", role, [], additionalCapabilities:
+                role == "game-build-release-engineer" ? [] : [DeliveryBuildReadiness.ExecutionCapability]));
+        }
         scopes.Add(new(WorkExecutionScopes.Release, null, boardId, releaseStages));
         if (branches.Count > 0)
         {
@@ -139,9 +155,9 @@ public static class HierarchicalProjectDelivery
         plan = (await context.Platform.Work.ReadDeliveryPlansAsync(new(projectId, plan.Id), ct)).Single();
         return await context.Platform.Work.ControlDeliveryPlanAsync(new(plan.Id, plan.Revision, "activate", $"delivery-activate:{plan.Id:N}:{plan.Revision}"), ct);
 
-        WorkStageAssignment Select(string stage, string role, IReadOnlyList<Guid> excluded, Guid? preferred = null, Guid? requiredEmployee = null, string? subject = null)
+        WorkStageAssignment Select(string stage, string role, IReadOnlyList<Guid> excluded, Guid? preferred = null, Guid? requiredEmployee = null, string? subject = null, IReadOnlyList<string>? additionalCapabilities = null)
         {
-            var requirements = new WorkAssignmentRequirements(role, [], [], [WorkManagementCapabilityNames.ExecutionRunV2]);
+            var requirements = new WorkAssignmentRequirements(role, [], [], [WorkManagementCapabilityNames.ExecutionRunV2, .. additionalCapabilities ?? []]);
             var eligible = roster.Members.Where(x => Guid.TryParse(x.EmployeeId, out var employee) && !excluded.Contains(employee) && (!requiredEmployee.HasValue || employee == requiredEmployee)).ToArray();
             var candidate = preferred.HasValue ? RoleTaxonomy.SelectAssignment(eligible.Where(x => x.AgentInstallationId == preferred), requirements)?.Teammate : null;
             candidate ??= RoleTaxonomy.SelectAssignment(eligible, requirements)?.Teammate

@@ -1,5 +1,14 @@
 # Security Policy
 
+## Certified build-readiness (SDK 3.63.0)
+
+`DeliveryBuildReadiness` runs only an assigned Release build-readiness stage. It re-reads the
+active plan, candidate and exact stage principal before calling the granted build-request
+capability. A Developer or Technical Director needs explicit handler support and existing
+project/repository/build grants. Source authors may request certified builds; product QA,
+technical review, promotion and manager acceptance retain their independent authorization.
+No shell, host build tools, secrets, deployment or release publication is granted by this handler.
+
 ## Callback lifetime boundary (SDK 3.59.1)
 
 The worker binds platform clients, memory access, model tools and model clients to the exact

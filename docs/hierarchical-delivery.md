@@ -10,6 +10,16 @@ Use typed `PlatformWorkClient` delivery read/configure/control/evidence/review/a
 
 Build IDs bind certified provider/recipe/target/configuration and source revision. `WorkDeliveryBuildPending` returns durable pending identities; platform reconciliation resumes readiness without agent polling loops. `WorkDeliveryFindingResolution` links QA-verified remediation to rejected findings. Domain keys and per-repository receipts protect retries and partial recovery.
 
+SDK 3.63.0 supplies `DeliveryBuildReadiness.ExecuteAsync` for Release `build-readiness`.
+`HierarchicalProjectDelivery.SelectBuildReadinessRole` prefers an eligible Build Release Engineer,
+then a Technical Director or Developer (including Game Engineer) with V2 execution and explicit
+`work.execution.build-readiness.v1` support. Legacy developers without the handler are excluded.
+The selected role and capabilities are pinned as assignment requirements. The handler re-reads
+the active plan, stage principal and exact candidate before requesting each configured certified
+build. Source authors may request these mechanical builds; independent product QA and technical
+review still exclude authors under their existing rules. Pending identities remain event-driven.
+No host build tools, candidate promotion, deployment or public release permission is added.
+
 Run SDK tests and package/template verification. Synchronize downstream manifests, package pins, self-tests and version-matched release notes. V1 contracts/historical profiles remain supported.
 
 ## QA evidence ownership (3.62.0)

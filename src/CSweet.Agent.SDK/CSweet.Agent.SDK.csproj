@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <PackageId>CSweet.Agent.SDK</PackageId>
-    <Version>3.62.2</Version>
+    <Version>3.63.0</Version>
     <PackageVersion Condition="'$(CSweetAgentSdkPackageVersion)' != ''">$(CSweetAgentSdkPackageVersion)</PackageVersion>
     <Authors>C-Sweet</Authors>
     <Company>C-Sweet</Company>
@@ -27,6 +27,7 @@
     <ProjectReference Include="$(CSweetWorkManagementContractsRepositoryRoot)\src\CSweet.WorkManagement.Contracts\CSweet.WorkManagement.Contracts.csproj" Condition="'$(UseLocalCSweetWorkManagementContracts)' == 'true'" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="CSweet.Agent.SDK.Tests" />
     <PackageReference Include="Microsoft.Extensions.AI" Version="10.10.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />

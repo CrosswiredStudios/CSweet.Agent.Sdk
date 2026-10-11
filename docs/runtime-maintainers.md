@@ -1,5 +1,16 @@
 # Runtime maintainer guide
 
+## Release build-readiness (SDK 3.63.0)
+
+`CSweetAgentBase.ExecuteCapabilityAsync` routes V2 aggregate work and the explicit
+`DeliveryBuildReadiness.ExecutionCapability` to the agent's scoped callback. The latter rejects
+Task/non-build assignments. `HierarchicalProjectDelivery.SelectBuildReadinessRole` only selects
+fallback developers/directors advertising both stage support and V2; legacy release specialists
+remain eligible. `DeliveryBuildReadiness.ExecuteAsync` uses authoritative stage identity and
+candidate-bound certified build recipes with stable per-execution/repository/digest keys.
+Pending build IDs return `awaiting-build` for durable host reconciliation; they do not create
+agent polling loops. A successful build supplies build evidence only, never product acceptance.
+
 ## Work callback lifetime (SDK 3.59.1)
 
 `AgentRuntimeWorker.ProcessLeaseAsync` creates a separate `PlatformCapabilityClient` through
