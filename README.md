@@ -1,6 +1,6 @@
 # C-Sweet Agent SDK
 
-SDK 3.62.1 ships the four hiring-autonomy capability registrations used by Chief of Staff 2.11.1.
+SDK 3.62.2 preserves typed MCP capability failures so operating-state conflicts reach agent reread-and-merge recovery. It accepts legacy enum names and current platform failure codes while preserving retry metadata.
 Publish this package before releasing that Chief version; existing NuGet versions cannot be replaced.
 
 SDK 3.62.0 adds `CapabilityNames.Management.StatusReport` to the documented capability catalog,
@@ -15,7 +15,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 3.62.1 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 3.62.2 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -32,7 +32,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.62.1
+  --SdkVersion 3.62.2
 cd ResearchAgent
 dotnet test
 ```
@@ -40,7 +40,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 3.62.1
+dotnet add package CSweet.Agent.SDK --version 3.62.2
 ```
 
 ```csharp

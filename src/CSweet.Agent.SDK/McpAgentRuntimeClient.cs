@@ -222,7 +222,7 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
             var failure = ReadFailureMetadata(result);
             throw new PlatformCapabilityException(
                 capability,
-                PlatformCapabilityErrorCode.Unavailable,
+                CapabilityErrorCode(failure.Code, result),
                 ReadToolText(result) ?? $"Capability '{capability}' failed.",
                 failureCode: failure.Code,
                 retryable: failure.Retryable);
@@ -316,7 +316,7 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
             {
                 throw new PlatformCapabilityException(
                     capability,
-                    PlatformCapabilityErrorCode.Unavailable,
+                    CapabilityErrorCode(root.TryGetProperty("failureCode", out var streamCode) ? streamCode.GetString() : null, root),
                     root.TryGetProperty("error", out var error) ? error.GetString() ?? "The streaming capability failed." : "The streaming capability failed.",
                     failureCode: root.TryGetProperty("failureCode", out var failureCode) ? failureCode.GetString() : null,
                     retryable: root.TryGetProperty("retryable", out var retryable) &&
@@ -419,7 +419,8 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
     }
 
     internal static PlatformCapabilityException InferenceFailure(JsonElement result) => new(
-        PlatformCapabilities.LlmChatStream, PlatformCapabilityErrorCode.Unavailable,
+        PlatformCapabilities.LlmChatStream,
+        CapabilityErrorCode(result.TryGetProperty("failureCode", out var failureCode) ? failureCode.GetString() : null, result),
         result.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.String
             ? error.GetString()! : "Inference failed.",
         failureCode: result.TryGetProperty("failureCode", out var code) && code.ValueKind == JsonValueKind.String
@@ -703,6 +704,29 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
             .TryGetProperty("text", out var text)
             ? text.GetString()
             : null;
+    }
+
+    private static PlatformCapabilityErrorCode CapabilityErrorCode(string? failureCode, JsonElement result)
+    {
+        // Hosts have emitted both enum names and platform.capability.* metadata.
+        // Preserve domain failures so author callbacks can reread and merge conflicts.
+        var code = failureCode;
+        if (string.IsNullOrWhiteSpace(code) &&
+            result.TryGetProperty("structuredContent", out var payload) && payload.ValueKind == JsonValueKind.Object &&
+            payload.TryGetProperty("code", out var payloadCode) && payloadCode.ValueKind == JsonValueKind.String)
+            code = payloadCode.GetString();
+        return code switch
+        {
+            "Denied" or "platform.capability.denied" => PlatformCapabilityErrorCode.Denied,
+            "Unavailable" or "platform.capability.unavailable" => PlatformCapabilityErrorCode.Unavailable,
+            "NotFound" or "platform.capability.not_found" => PlatformCapabilityErrorCode.NotFound,
+            "Conflict" or "platform.capability.conflict" => PlatformCapabilityErrorCode.Conflict,
+            "ValidationFailed" or "platform.capability.validation_failed" => PlatformCapabilityErrorCode.ValidationFailed,
+            "ApprovalRequired" or "platform.capability.approval_required" => PlatformCapabilityErrorCode.ApprovalRequired,
+            "BudgetExceeded" or "platform.capability.budget_exceeded" => PlatformCapabilityErrorCode.BudgetExceeded,
+            "Unknown" or "platform.capability.unknown" => PlatformCapabilityErrorCode.Unknown,
+            _ => PlatformCapabilityErrorCode.Unavailable
+        };
     }
 
     private static (string? Code, bool? Retryable) ReadFailureMetadata(JsonElement result)

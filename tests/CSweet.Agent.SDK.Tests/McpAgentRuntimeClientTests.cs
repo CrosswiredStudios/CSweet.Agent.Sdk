@@ -9,6 +9,65 @@ namespace CSweet.Agent.SDK.Tests;
 
 public sealed class McpAgentRuntimeClientTests
 {
+    [Theory]
+    [InlineData("Conflict", PlatformCapabilityErrorCode.Conflict)]
+    [InlineData("platform.capability.conflict", PlatformCapabilityErrorCode.Conflict)]
+    [InlineData("Denied", PlatformCapabilityErrorCode.Denied)]
+    [InlineData("platform.capability.denied", PlatformCapabilityErrorCode.Denied)]
+    [InlineData("NotFound", PlatformCapabilityErrorCode.NotFound)]
+    [InlineData("platform.capability.not_found", PlatformCapabilityErrorCode.NotFound)]
+    [InlineData("ValidationFailed", PlatformCapabilityErrorCode.ValidationFailed)]
+    [InlineData("platform.capability.validation_failed", PlatformCapabilityErrorCode.ValidationFailed)]
+    [InlineData("ApprovalRequired", PlatformCapabilityErrorCode.ApprovalRequired)]
+    [InlineData("platform.capability.approval_required", PlatformCapabilityErrorCode.ApprovalRequired)]
+    [InlineData("BudgetExceeded", PlatformCapabilityErrorCode.BudgetExceeded)]
+    [InlineData("platform.capability.budget_exceeded", PlatformCapabilityErrorCode.BudgetExceeded)]
+    [InlineData("platform.capability.unavailable", PlatformCapabilityErrorCode.Unavailable)]
+    [InlineData("custom.failure", PlatformCapabilityErrorCode.Unavailable)]
+    [InlineData(null, PlatformCapabilityErrorCode.Unavailable)]
+    public async Task InvokeAsync_PreservesTypedFailuresAndRetryMetadata(string? code, PlatformCapabilityErrorCode expected)
+    {
+        var result = new { isError = true, content = new[] { new { type = "text", text = "State changed." } },
+            _meta = new { csweet = new { failureCode = code, retryable = false } } };
+        await using var fixture = await StreamingFixture.CreateAsync(null, result);
+        var error = await Assert.ThrowsAsync<PlatformCapabilityException>(() =>
+            fixture.Client.InvokeAsync("test.stream.v1", JsonSerializer.SerializeToElement(new { })));
+        Assert.Equal(expected, error.Code);
+        Assert.Equal(code, error.FailureCode);
+        Assert.False(error.Retryable);
+        Assert.Equal("State changed.", error.Message);
+        Assert.Equal(1, fixture.Handler.NonStreamingCalls);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_LegacyPayloadConflictReachesAuthorRecoveryCatch()
+    {
+        await using var fixture = await StreamingFixture.CreateAsync(null,
+            new { isError = true, structuredContent = new { code = "Conflict", message = "State changed." } });
+        var recovered = false;
+        try { await fixture.Client.InvokeAsync("test.stream.v1", JsonSerializer.SerializeToElement(new { })); }
+        catch (PlatformCapabilityException error) when (error.Code == PlatformCapabilityErrorCode.Conflict)
+        { recovered = true; }
+        Assert.True(recovered);
+    }
+
+    [Theory]
+    [InlineData("Conflict")]
+    [InlineData("platform.capability.conflict")]
+    public async Task InvokeStreamingAsync_PreservesTypedConflict(string code)
+    {
+        var frame = JsonSerializer.Serialize(new { sequence = 0, isError = true, hasMore = false,
+            error = "State changed.", failureCode = code, retryable = false });
+        await using var fixture = await StreamingFixture.CreateAsync($"data: {frame}\n\n");
+        var error = await Assert.ThrowsAsync<PlatformCapabilityException>(async () =>
+        {
+            await foreach (var _ in fixture.Client.InvokeStreamingAsync("test.stream.v1", JsonSerializer.SerializeToElement(new { }))) { }
+        });
+        Assert.Equal(PlatformCapabilityErrorCode.Conflict, error.Code);
+        Assert.Equal(code, error.FailureCode);
+        Assert.False(error.Retryable);
+    }
+
     [Fact]
     public async Task InitializeAsync_HungBrokerRequestFailsWithinConfiguredBoundary()
     {
@@ -254,11 +313,11 @@ public sealed class McpAgentRuntimeClientTests
         public McpAgentRuntimeClient Client { get; }
         public ScriptedHandler Handler { get; }
 
-        public static async Task<StreamingFixture> CreateAsync(string? streamBody)
+        public static async Task<StreamingFixture> CreateAsync(string? streamBody, object? toolResult = null)
         {
             var tokenPath = Path.GetTempFileName();
             await File.WriteAllTextAsync(tokenPath, "workload-token");
-            var handler = new ScriptedHandler(streamBody);
+            var handler = new ScriptedHandler(streamBody, toolResult);
             var http = new HttpClient(handler);
             var client = new McpAgentRuntimeClient(
                 http,
@@ -286,7 +345,7 @@ public sealed class McpAgentRuntimeClientTests
         }
     }
 
-    private sealed class ScriptedHandler(string? streamBody) : HttpMessageHandler
+    private sealed class ScriptedHandler(string? streamBody, object? toolResult = null) : HttpMessageHandler
     {
         public int NonStreamingCalls { get; private set; }
 
@@ -350,7 +409,7 @@ public sealed class McpAgentRuntimeClientTests
                 {
                     jsonrpc = "2.0",
                     id = 1,
-                    result = new { isError = false, structuredContent = new { text = "fallback" } }
+                    result = toolResult ?? new { isError = false, structuredContent = new { text = "fallback" } }
                 });
             }
             throw new InvalidOperationException($"Unexpected MCP method {method}.");
