@@ -55,6 +55,6 @@ Transfer requires the sync declaration plus existing preparation/publication aut
 
 SDK 3.46.1 accepts `LifetimeSeconds: 0` for compute retained until the requester calls `DestroyAsync` with the current generation and a stable idempotency key. The broker must explicitly grant this lifetime. A positive duration continues to request timed expiry. `LeaseExpiresAt == DateTimeOffset.MaxValue` means until released. Compute retention grants do not imply network access; publishing still requires an explicit instance-specific grant. Do not destroy a delivered test instance merely because its build task completed: retain it until the user is done testing.
 
-## Compute test readiness (3.64.0)
+## Compute test readiness (3.64.1)
 
 DeliveryComputeTest supports compute-test release bindings without certified packaging. It discovers application-managed project compute options and selects a compatible Docker or static recipe from the immutable source archive. All commands execute inside owned guest compute through existing grants. Source hash, exact command, exit status, HTTP marker, environment generation and provider URL receipts are validated by the platform. Pending operations and authority/setup waits retain durable state; wake hints and five-minute bounded discovery resume progress. Unknown results never authorize replacement command keys. Independent QA and technical review remain required. No host shell, provider credential, automatic network grant or public deployment is added.

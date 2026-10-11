@@ -1,6 +1,6 @@
 # Runtime maintainer guide
 
-## Release build-readiness (SDK 3.64.0)
+## Release build-readiness (SDK 3.64.1)
 
 `CSweetAgentBase.ExecuteCapabilityAsync` routes V2 aggregate work and the explicit
 `DeliveryBuildReadiness.ExecutionCapability` to the agent's scoped callback. The latter rejects
@@ -266,6 +266,6 @@ QA evidence Artifact ownership is distinct from product authorship. Aggregate QA
 
 `HiringAutonomyCapabilities` exposes policy reads, capture of authenticated owner decision answers, candidate selection, and delegated submission. `HiringPolicySettings` separates selection mode, automatic authority level, and publisher preference. Manifest grants only allow invoking these operations; the platform validates active Chief identity, organization, approved plan binding, current policy, package digest, cost, headcount, grants, and configuration before installation and employee creation. Agent memory cannot grant authority. Third-party publisher names are not first-party provenance. Delegated work must remain idempotent across retries and revalidate authority after an asynchronous package build.
 
-## Compute test readiness (3.64.0)
+## Compute test readiness (3.64.1)
 
 DeliveryComputeTest supports compute-test release bindings without certified packaging. It discovers application-managed project compute options and selects a compatible Docker or static recipe from the immutable source archive. All commands execute inside owned guest compute through existing grants. Source hash, exact command, exit status, HTTP marker, environment generation and provider URL receipts are validated by the platform. Pending operations and authority/setup waits retain durable state; wake hints and five-minute bounded discovery resume progress. Unknown results never authorize replacement command keys. Independent QA and technical review remain required. No host shell, provider credential, automatic network grant or public deployment is added.

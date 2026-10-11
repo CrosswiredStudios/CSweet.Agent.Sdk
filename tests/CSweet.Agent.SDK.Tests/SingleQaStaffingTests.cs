@@ -14,6 +14,8 @@ public sealed class SingleQaStaffingTests
         var plan = await f.Prepare();
         Assert.Equal("Active", plan.Status);
         var report = f.Finalizations.Single(x => x.ItemId == f.Report.Id);
+        var proposal = Assert.Single(f.Configuration!.TaskAssignments, x => x.ItemId == f.Report.Id);
+        Assert.Equal(JsonSerializer.Serialize(report.StageAssignments), JsonSerializer.Serialize(proposal.Stages));
         Assert.Equal(f.Qa.AgentInstallationId, report.StageAssignments.Single(x => x.StageKey == f.AuthorStage).AgentInstallationId);
         Assert.Equal(f.Manager.AgentInstallationId, report.StageAssignments.Single(x => x.StageKey == "quality").AgentInstallationId);
         var product = f.Finalizations.Single(x => x.ItemId == f.Product.Id);
@@ -28,6 +30,19 @@ public sealed class SingleQaStaffingTests
         await f.Prepare(); Assert.Equal(3, f.Finalizations.Count);
     }
 
+    [Theory]
+    [InlineData("work.delivery.configure.v1", true)]
+    [InlineData("work.delivery.control.v1", true)]
+    [InlineData("work.item.delivery.finalize", true)]
+    [InlineData("platform.llm.chat", false)]
+    public void OnlyDeliveryPlanningConflictsBecomeActionableStaffingWaits(string capability, bool handled)
+    {
+        var error = new PlatformCapabilityException(capability, PlatformCapabilityErrorCode.Unavailable,
+            "{\"code\":\"Conflict\",\"message\":\"QA report requires manager review\"}");
+        Assert.Equal(handled ? "QA report requires manager review" : null, HierarchicalProjectDelivery.DeliveryConflictReason(error));
+        Assert.Null(HierarchicalProjectDelivery.DeliveryConflictReason(new(capability, PlatformCapabilityErrorCode.Denied, "No grant")));
+    }
+
     [Fact]
     public async Task MissingManagerReviewProducesActionableTaskGapBeforeAnyDeliveryIsConfigured()
     {
@@ -35,6 +50,22 @@ public sealed class SingleQaStaffingTests
         var error = await Assert.ThrowsAsync<DeliveryStaffingException>(f.Prepare);
         Assert.Contains("QA report", error.Message); Assert.Contains("manager", error.Message);
         Assert.Null(f.Configuration); Assert.Empty(f.Finalizations);
+    }
+
+    [Fact]
+    public async Task RejectedDraftRetainsActionableReasonAndCanResumeAfterThePlatformCorrection()
+    {
+        var f = new Fixture(false);
+        f.ConfigureError = new(WorkDeliveryCapabilities.Configure, PlatformCapabilityErrorCode.Conflict,
+            "QA report: finalize its independent manager review before activation");
+        var error = await Assert.ThrowsAsync<DeliveryStaffingException>(f.Prepare);
+        Assert.Contains("QA report", error.Message); Assert.Contains("manager review", error.Message);
+        Assert.Empty(f.Finalizations);
+        f.ConfigureError = null;
+        Assert.Equal("Active", (await f.Prepare()).Status);
+        var count = f.Finalizations.Count;
+        await f.Prepare();
+        Assert.Equal(count, f.Finalizations.Count);
     }
 
     [Fact]
@@ -70,6 +101,7 @@ public sealed class SingleQaStaffingTests
         public readonly List<WorkItem> Items = [];
         public readonly List<FinalizeWorkItemDeliveryRequest> Finalizations = [];
         public ConfigureWorkDeliveryPlanRequest? Configuration;
+        public PlatformCapabilityException? ConfigureError;
         private WorkDeliveryPlanResponse? plan;
         private readonly AgentRuntimeContext context;
         private readonly bool software;
@@ -99,6 +131,7 @@ public sealed class SingleQaStaffingTests
                         : new WorkBoardDetail(new(BoardId, "TEST", "Test", false, false, 1, []), [], Items)))
                 .RegisterCapability<ConfigureWorkDeliveryPlanRequest, WorkDeliveryPlanResponse>(WorkDeliveryCapabilities.Configure, (r, _) =>
                 {
+                    if (ConfigureError is not null) throw ConfigureError;
                     Configuration = r; plan = new(Guid.NewGuid(), Project, "Release", Guid.Parse(Manager.EmployeeId), "Draft", 1, 1,
                         [EpicId], r.Branches, [], [], DateTimeOffset.UtcNow, DateTimeOffset.UtcNow); return Task.FromResult(plan);
                 })

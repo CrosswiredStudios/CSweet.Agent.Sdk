@@ -20,6 +20,40 @@ public static class HierarchicalProjectDelivery
         Guid managerId, AgentTeamContext roster, Guid repositoryId, string defaultBranch,
         string profileDigest, bool software, AgentRuntimeContext context, CancellationToken ct, string? technicalRoleOverride = null)
     {
+        try
+        {
+            return await PrepareCoreAsync(projectId, boardId, managerId, roster, repositoryId, defaultBranch,
+                profileDigest, software, context, ct, technicalRoleOverride);
+        }
+        catch (PlatformCapabilityException error) when (DeliveryConflictReason(error) is not null)
+        {
+            throw new DeliveryStaffingException("Delivery planning needs attention: " + DeliveryConflictReason(error));
+        }
+    }
+
+    internal static string? DeliveryConflictReason(PlatformCapabilityException error)
+    {
+        if (error.Capability is not (WorkDeliveryCapabilities.Configure or WorkDeliveryCapabilities.Control or WorkManagementCapabilityNames.ItemFinalizeDelivery)) return null;
+        var reason = error.Message;
+        var conflict = error.Code == PlatformCapabilityErrorCode.Conflict;
+        if (reason.TrimStart().StartsWith('{'))
+        {
+            try
+            {
+                using var envelope = System.Text.Json.JsonDocument.Parse(reason);
+                conflict |= envelope.RootElement.TryGetProperty("code", out var code) && code.GetString() == "Conflict";
+                if (envelope.RootElement.TryGetProperty("message", out var message) && message.ValueKind == System.Text.Json.JsonValueKind.String)
+                    reason = message.GetString()!;
+            }
+            catch (System.Text.Json.JsonException) { }
+        }
+        return conflict ? reason[..Math.Min(reason.Length, 2000)] : null;
+    }
+
+    private static async Task<WorkDeliveryPlanResponse> PrepareCoreAsync(Guid projectId, Guid boardId,
+        Guid managerId, AgentTeamContext roster, Guid repositoryId, string defaultBranch,
+        string profileDigest, bool software, AgentRuntimeContext context, CancellationToken ct, string? technicalRoleOverride)
+    {
         if (profileDigest.Length != 64 || profileDigest.Any(x => !Uri.IsHexDigit(x)))
             profileDigest = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(profileDigest)));
         var allPlans = await context.Platform.Work.ReadDeliveryPlansAsync(new(projectId), ct);
@@ -132,7 +166,11 @@ public static class HierarchicalProjectDelivery
         }
         var draft = existing.SingleOrDefault();
         var plan = draft ?? await context.Platform.Work.ConfigureDeliveryPlanAsync(new(projectId, "Initial release", managerId,
-            epics.Select(x => x.Id).ToArray(), branches, scopes, $"delivery-plan:{projectId:N}:{releaseScopeKey}:{profileDigest}"), ct);
+            epics.Select(x => x.Id).ToArray(), branches, scopes, $"delivery-plan:{projectId:N}:{releaseScopeKey}:{profileDigest}")
+            {
+                TaskAssignments = tasks.Select(task => new WorkDeliveryTaskAssignment(task.Id,
+                    new[] { selected[task.Id].Author, selected[task.Id].Qa })).ToArray()
+            }, ct);
         foreach (var task in tasks)
         {
             if (task.Delivery?.DeliveryPlanId == plan.Id) continue;

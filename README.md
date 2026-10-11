@@ -1,6 +1,6 @@
 # C-Sweet Agent SDK
 
-SDK 3.64.0 adds `DeliveryBuildReadiness` for certified exact-candidate release builds. Hierarchical staffing prefers the Build Release Engineer when available, then permits a Technical Director or Developer explicitly advertising `work.execution.build-readiness.v1` alongside V2 execution. Build-readiness does not grant deployment, release publication, or independent product approval. Publish this SDK before the consuming agent releases.
+SDK 3.64.1 adds `DeliveryBuildReadiness` for certified exact-candidate release builds. Hierarchical staffing prefers the Build Release Engineer when available, then permits a Technical Director or Developer explicitly advertising `work.execution.build-readiness.v1` alongside V2 execution. Build-readiness does not grant deployment, release publication, or independent product approval. Publish this SDK before the consuming agent releases.
 
 SDK 3.62.0 adds `CapabilityNames.Management.StatusReport` to the documented capability catalog,
 so agents can request the existing platform reporting capability in their reviewed manifests.
@@ -14,7 +14,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 3.64.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 3.64.1 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -31,7 +31,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.64.0
+  --SdkVersion 3.64.1
 cd ResearchAgent
 dotnet test
 ```
@@ -39,7 +39,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 3.64.0
+dotnet add package CSweet.Agent.SDK --version 3.64.1
 ```
 
 ```csharp
