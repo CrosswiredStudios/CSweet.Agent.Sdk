@@ -100,31 +100,35 @@ public static class HierarchicalProjectDelivery
         var epics = board.Items.Where(x => scopedEpics.Contains(x.Id)).ToArray();
         foreach (var epic in epics) scopes.Add(new(WorkExecutionScopes.Epic, epic.Id, boardId,
             [Select("technical-review", technicalRole, codeAuthors)]));
+        var computeReviewer = RoleTaxonomy.SelectAssignment(roster.Members,
+            new WorkAssignmentRequirements("game-technical-director", [], [],
+                [WorkManagementCapabilityNames.ExecutionRunV2, DeliveryComputeTest.ExecutionCapability]))?.Teammate;
+        var useComputeTest = !software && branches.Count > 0 && computeReviewer is not null;
         var releaseStages = new List<WorkStageAssignment> { Select("quality", qaRole, productAuthors), Select("technical-review", technicalRole, codeAuthors) };
         if (!software && branches.Count > 0)
         {
             // Certified builds are mechanical evidence, not independent product review.
             // Prefer the release specialist; updated technical/development agents can own this gate too.
-            var role = SelectBuildReadinessRole(roster);
+            var role = useComputeTest ? "game-technical-director" : SelectBuildReadinessRole(roster);
             releaseStages.Add(Select("build-readiness", role, [], additionalCapabilities:
-                role == "game-build-release-engineer" ? [] : [DeliveryBuildReadiness.ExecutionCapability]));
+                useComputeTest ? [DeliveryComputeTest.ExecutionCapability] : role == "game-build-release-engineer" ? [] : [DeliveryBuildReadiness.ExecutionCapability]));
         }
         scopes.Add(new(WorkExecutionScopes.Release, null, boardId, releaseStages));
         if (branches.Count > 0)
         {
             if (repositoryId == Guid.Empty || string.IsNullOrWhiteSpace(defaultBranch)) throw new InvalidOperationException("Code delivery needs an authorized repository and default branch.");
             WorkDeliveryBuildSpecification? build = null;
-            if (!software)
+            if (!software && !useComputeTest)
             {
                 var adapters = await context.Platform.ReadEligibleToolchainsAsync(new(RequiredOperations: ["build"]), ct);
                 var recipes = adapters.Where(a => a.Eligibility.ExpiresAt > DateTimeOffset.UtcNow && a.Eligibility.CompatibleCapacityOnline)
                     .SelectMany(a => a.Definition.Recipes.Where(r => r.Operations.Contains("build")).SelectMany(r => r.TargetKeys.Select(t =>
                         new WorkDeliveryBuildSpecification(a.Definition.Id, a.Eligibility.ProviderInstallationId, r.Key, t,
                             System.Text.Json.JsonSerializer.SerializeToElement(new { }))))).ToArray();
-                if (recipes.Length != 1) throw new InvalidOperationException("The architect must select an explicit certified build recipe, provider, configuration and target before activating game release delivery.");
+                if (recipes.Length != 1) throw new DeliveryStaffingException("Delivery readiness needs either a Technical Director with compute-test support or an explicitly selected certified build recipe, provider, configuration and target. Sprint setup will resume after the available option is selected.");
                 build = recipes[0];
             }
-            branches.Add(new(repositoryId, WorkExecutionScopes.Release, null, releaseBranch, defaultBranch) { Build = build });
+            branches.Add(new(repositoryId, WorkExecutionScopes.Release, null, releaseBranch, defaultBranch) { Build = build, ReadinessMode = useComputeTest ? "compute-test" : "certified-build" });
         }
         var draft = existing.SingleOrDefault();
         var plan = draft ?? await context.Platform.Work.ConfigureDeliveryPlanAsync(new(projectId, "Initial release", managerId,

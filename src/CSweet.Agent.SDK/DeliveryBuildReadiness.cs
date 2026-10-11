@@ -26,6 +26,8 @@ public static class DeliveryBuildReadiness
                 stage.AgentInstallationId != assignment.AgentInstallationId || stage.OrganizationUserId != assignment.OrganizationUserId ||
                 stage.AgentInstallationId.ToString() != context.InstallationId || plan.WorkstreamId != assignment.WorkstreamId)
                 throw new UnauthorizedAccessException("The build assignment or candidate changed.");
+            if (plan.Branches.Where(x => x.Scope == WorkExecutionScopes.Release).All(x => x.ReadinessMode == "compute-test"))
+                return await DeliveryComputeTest.ExecuteAuthorizedAsync(assignment, plan, context, ct);
             var builds = new List<DeliveryBuildV2>();
             foreach (var repository in candidate.Repositories)
             {

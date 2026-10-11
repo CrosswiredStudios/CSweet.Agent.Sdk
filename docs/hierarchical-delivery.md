@@ -10,7 +10,7 @@ Use typed `PlatformWorkClient` delivery read/configure/control/evidence/review/a
 
 Build IDs bind certified provider/recipe/target/configuration and source revision. `WorkDeliveryBuildPending` returns durable pending identities; platform reconciliation resumes readiness without agent polling loops. `WorkDeliveryFindingResolution` links QA-verified remediation to rejected findings. Domain keys and per-repository receipts protect retries and partial recovery.
 
-SDK 3.63.0 supplies `DeliveryBuildReadiness.ExecuteAsync` for Release `build-readiness`.
+SDK 3.64.0 supplies `DeliveryBuildReadiness.ExecuteAsync` for Release `build-readiness`.
 `HierarchicalProjectDelivery.SelectBuildReadinessRole` prefers an eligible Build Release Engineer,
 then a Technical Director or Developer (including Game Engineer) with V2 execution and explicit
 `work.execution.build-readiness.v1` support. Legacy developers without the handler are excluded.
@@ -25,3 +25,7 @@ Run SDK tests and package/template verification. Synchronize downstream manifest
 ## QA evidence ownership (3.62.0)
 
 QA may author its own Artifact test plan/report and remain the product's aggregate QA reviewer. The board manager independently reviews that exact evidence artifact against all criteria; task-level self-review is still rejected. QA cannot review any implementation or non-QA artifact it authored. Aggregate technical review excludes code authors rather than authors of architecture documents. Missing reviewers raise DeliveryStaffingException so managers can surface the task/stage/role gap without crashing.
+
+## Compute test readiness (3.64.0)
+
+DeliveryComputeTest supports compute-test release bindings without certified packaging. It discovers application-managed project compute options and selects a compatible Docker or static recipe from the immutable source archive. All commands execute inside owned guest compute through existing grants. Source hash, exact command, exit status, HTTP marker, environment generation and provider URL receipts are validated by the platform. Pending operations and authority/setup waits retain durable state; wake hints and five-minute bounded discovery resume progress. Unknown results never authorize replacement command keys. Independent QA and technical review remain required. No host shell, provider credential, automatic network grant or public deployment is added.

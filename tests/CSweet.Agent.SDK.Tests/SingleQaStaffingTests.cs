@@ -47,6 +47,19 @@ public sealed class SingleQaStaffingTests
         Assert.Null(f.Configuration);
     }
 
+    [Fact]
+    public async Task GameSprintCanActivateWithComputeTestAndNoCertifiedCatalog()
+    {
+        var f = new Fixture(false, true);
+        await f.Prepare();
+        var release = f.Configuration!.Branches.Single(x => x.Scope == "Release");
+        Assert.Equal("compute-test", release.ReadinessMode); Assert.Null(release.Build);
+        Assert.Equal(f.Technical.AgentInstallationId, f.Configuration.Assignments.Single(x => x.Scope == "Release")
+            .Stages.Single(x => x.StageKey == "build-readiness").AgentInstallationId);
+        Assert.Contains(f.Configuration.Assignments.Single(x => x.Scope == "Release").Stages, x => x.StageKey == "quality");
+        Assert.Contains(f.Configuration.Assignments.Single(x => x.Scope == "Release").Stages, x => x.StageKey == "technical-review");
+    }
+
     private sealed class Fixture
     {
         public readonly Guid Project = Guid.NewGuid(), BoardId = Guid.NewGuid(), EpicId = Guid.NewGuid(), StoryId = Guid.NewGuid();
@@ -60,12 +73,15 @@ public sealed class SingleQaStaffingTests
         private WorkDeliveryPlanResponse? plan;
         private readonly AgentRuntimeContext context;
         private readonly bool software;
-        public Fixture(bool software)
+        private readonly bool computeTest;
+        public Fixture(bool software, bool computeTest = false)
         {
-            this.software = software; AuthorStage = software ? "development" : "specialist-execution";
+            this.software = software; this.computeTest = computeTest; AuthorStage = software ? "development" : "specialist-execution";
             Manager = Member("manager"); Qa = Member(software ? "software-qa" : "game-quality-assurance");
             Developer = Member(software ? "software-developer" : "game-engineer");
             Technical = Member(software ? "software-architect" : "game-technical-director");
+            if (computeTest) Technical = Technical with { EffectiveCapabilities =
+                [WorkManagementCapabilityNames.ExecutionRunV2, DeliveryBuildReadiness.ExecutionCapability, DeliveryComputeTest.ExecutionCapability] };
             Members = [Manager, Qa, Developer, Technical];
             var epic = Item(EpicId, null, "Epic", "Release", null);
             var story = Item(StoryId, EpicId, "Story", "Story", null);
@@ -73,6 +89,7 @@ public sealed class SingleQaStaffingTests
             Report = Item(Guid.NewGuid(), StoryId, "Task", "QA report", Qa.DeclaredRoleKeys[0]);
             var architecture = Item(Guid.NewGuid(), StoryId, "Task", "Architecture plan", Technical.DeclaredRoleKeys[0]);
             Items.AddRange([epic, story, Product, Report, architecture]);
+            if (computeTest) Items[Items.IndexOf(Product)] = Product with { Planning = Product.Planning! with { DeliveryKind = "Code" } };
             var runtime = new AgentTestRuntime()
                 .RegisterCapability<ReadWorkDeliveryPlansRequest, IReadOnlyList<WorkDeliveryPlanResponse>>(WorkDeliveryCapabilities.Read,
                     (_, _) => Task.FromResult<IReadOnlyList<WorkDeliveryPlanResponse>>(plan is null ? [] : [plan]))
@@ -83,7 +100,7 @@ public sealed class SingleQaStaffingTests
                 .RegisterCapability<ConfigureWorkDeliveryPlanRequest, WorkDeliveryPlanResponse>(WorkDeliveryCapabilities.Configure, (r, _) =>
                 {
                     Configuration = r; plan = new(Guid.NewGuid(), Project, "Release", Guid.Parse(Manager.EmployeeId), "Draft", 1, 1,
-                        [EpicId], [], [], [], DateTimeOffset.UtcNow, DateTimeOffset.UtcNow); return Task.FromResult(plan);
+                        [EpicId], r.Branches, [], [], DateTimeOffset.UtcNow, DateTimeOffset.UtcNow); return Task.FromResult(plan);
                 })
                 .RegisterCapability<FinalizeWorkItemDeliveryRequest, WorkItem>(WorkItemCapabilities.FinalizeDelivery, (r, _) =>
                 {
@@ -96,7 +113,7 @@ public sealed class SingleQaStaffingTests
         }
         public Task<WorkDeliveryPlanResponse> Prepare() => HierarchicalProjectDelivery.PrepareAsync(Project, BoardId,
             Guid.Parse(Manager.EmployeeId), new(Guid.NewGuid().ToString(), "team", "Team", 1, Manager.EmployeeId, "Manager", Members, [], Members.Count, false),
-            Guid.Empty, "", new string('a', 64), software, context, default);
+            computeTest ? Project : Guid.Empty, computeTest ? "main" : "", new string('a', 64), software, context, default);
         private WorkItem Item(Guid id, Guid? parent, string kind, string title, string? role) =>
             new(id, BoardId, parent, null, kind, title, "", "Ready", "High", null, 0, 1, null)
             { ExecutionMode = kind == "Task" ? WorkItemExecutionModes.Executable : WorkItemExecutionModes.Container,

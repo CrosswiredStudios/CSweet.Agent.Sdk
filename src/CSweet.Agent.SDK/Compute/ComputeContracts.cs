@@ -79,4 +79,11 @@ public sealed record ComputeCommandResult(Guid RequestId, int? ExitCode, bool Ti
 }
 
 /// <summary>Platform-selected scope. Pending/Running means setup continues; Ready supplies usable request defaults.</summary>
-public sealed record ComputeDefaults(string State, Guid? WorkstreamId, string? TemplateId, string? ErrorCode);
+public sealed record ComputeDefaults(string State, Guid? WorkstreamId, string? TemplateId, string? ErrorCode)
+{
+    /// <summary>Available application-managed option; absence means the older host has not reported its features.</summary>
+    public IReadOnlyList<string> Features { get; init; } = [];
+    public IReadOnlyList<string> CachedImages { get; init; } = [];
+    public string LinkReachability { get; init; } = "unavailable";
+    public int MaximumLifetimeSeconds { get; init; }
+}
