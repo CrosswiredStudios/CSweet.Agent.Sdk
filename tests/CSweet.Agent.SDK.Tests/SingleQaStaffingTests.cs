@@ -91,6 +91,63 @@ public sealed class SingleQaStaffingTests
         Assert.Contains(f.Configuration.Assignments.Single(x => x.Scope == "Release").Stages, x => x.StageKey == "technical-review");
     }
 
+    [Fact]
+    public async Task DraftRecoveryRefreshesOnlyChangedPlanningAndRetainsIdentity()
+    {
+        var f = new Fixture(false) { ControlError = new(WorkDeliveryCapabilities.Control, PlatformCapabilityErrorCode.Conflict, "preflight unavailable") };
+        await Assert.ThrowsAsync<DeliveryStaffingException>(f.Prepare);
+        var draft = f.plan!;
+        Assert.Equal(3, f.Finalizations.Count);
+        await Assert.ThrowsAsync<DeliveryStaffingException>(f.Prepare);
+        Assert.Equal(1, f.ConfigurationCount);
+        Assert.Equal(3, f.Finalizations.Count);
+        var index = f.Items.FindIndex(x => x.Id == f.Product.Id);
+        var task = f.Items[index];
+        f.Items[index] = task with { PlanningRevision = task.PlanningRevision + 1, Revision = task.Revision + 1,
+            Planning = task.Planning! with { AcceptanceCriteria = ["Updated criterion"] } };
+        f.ControlError = null;
+        var active = await f.Prepare();
+        Assert.Equal(draft.Id, active.Id);
+        Assert.Equal(draft.Id, f.Configuration!.PlanId);
+        Assert.Equal(draft.Revision, f.Configuration.ExpectedRevision);
+        Assert.Equal(2, f.ConfigurationCount);
+        Assert.Equal(4, f.Finalizations.Count);
+        Assert.Equal("Updated criterion", Assert.Single(f.Finalizations.Last().Delivery.AcceptanceCriteria));
+        await f.Prepare();
+        Assert.Equal(4, f.Finalizations.Count);
+    }
+
+    [Fact]
+    public async Task InterruptedTaskFinalizationResumesWithoutReplacingCompletedSteps()
+    {
+        var f = new Fixture(false) { FinalizeFailure = true };
+        await Assert.ThrowsAsync<DeliveryStaffingException>(f.Prepare);
+        Assert.Single(f.Finalizations); var draftId = f.plan!.Id;
+        f.FinalizeFailure = false;
+        Assert.Equal(draftId, (await f.Prepare()).Id);
+        Assert.Equal(1, f.ConfigurationCount); Assert.Equal(3, f.Finalizations.Count);
+        Assert.Equal(3, f.Finalizations.Select(x => x.ItemId).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task AddedChildRefreshesDraftScopeAndRetainsExplicitBranchBindings()
+    {
+        var f = new Fixture(false, true) { ControlError = new(WorkDeliveryCapabilities.Control, PlatformCapabilityErrorCode.Conflict, "preflight unavailable") };
+        await Assert.ThrowsAsync<DeliveryStaffingException>(f.Prepare);
+        var original = f.plan!;
+        var release = original.Branches.Single(x => x.Scope == "Release") with { SourceBranch = "codex/release/custom" };
+        var story = original.Branches.Single(x => x.Scope == "Story") with { TargetBranch = release.SourceBranch };
+        f.plan = original with { Branches = [story, release] };
+        f.Items.Add(f.Items.Single(x => x.Id == f.Report.Id) with { Id = Guid.NewGuid(), Delivery = null, StageAssignments = [], Title = "Additional report" });
+        f.ControlError = null;
+        var active = await f.Prepare();
+        Assert.Equal(original.Id, active.Id); Assert.Equal(2, f.ConfigurationCount);
+        Assert.Equal(release, f.Configuration!.Branches.Single(x => x.Scope == "Release"));
+        Assert.Equal(story, f.Configuration.Branches.Single(x => x.Scope == "Story"));
+        Assert.Equal(4, active.Scopes.Single(x => x.Scope == "Story").ChildIds.Count);
+        Assert.Equal(4, f.Finalizations.Count);
+    }
+
     private sealed class Fixture
     {
         public readonly Guid Project = Guid.NewGuid(), BoardId = Guid.NewGuid(), EpicId = Guid.NewGuid(), StoryId = Guid.NewGuid();
@@ -102,7 +159,10 @@ public sealed class SingleQaStaffingTests
         public readonly List<FinalizeWorkItemDeliveryRequest> Finalizations = [];
         public ConfigureWorkDeliveryPlanRequest? Configuration;
         public PlatformCapabilityException? ConfigureError;
-        private WorkDeliveryPlanResponse? plan;
+        public WorkDeliveryPlanResponse? plan;
+        public PlatformCapabilityException? ControlError;
+        public int ConfigurationCount;
+        public bool FinalizeFailure;
         private readonly AgentRuntimeContext context;
         private readonly bool software;
         private readonly bool computeTest;
@@ -132,16 +192,32 @@ public sealed class SingleQaStaffingTests
                 .RegisterCapability<ConfigureWorkDeliveryPlanRequest, WorkDeliveryPlanResponse>(WorkDeliveryCapabilities.Configure, (r, _) =>
                 {
                     if (ConfigureError is not null) throw ConfigureError;
-                    Configuration = r; plan = new(Guid.NewGuid(), Project, "Release", Guid.Parse(Manager.EmployeeId), "Draft", 1, 1,
-                        [EpicId], r.Branches, [], [], DateTimeOffset.UtcNow, DateTimeOffset.UtcNow); return Task.FromResult(plan);
+                    if (r.PlanId.HasValue) { Assert.Equal(plan!.Id, r.PlanId); Assert.Equal(plan.Revision, r.ExpectedRevision); }
+                    Configuration = r; ConfigurationCount++;
+                    var snapshots = r.Assignments.Select(a => {
+                        var parent = Items.SingleOrDefault(x => x.Id == a.ItemId);
+                        var children = Items.Where(x => a.Scope == "Release" ? x.Id == EpicId : x.ParentItemId == a.ItemId).ToArray();
+                        return new WorkDeliveryScopeSnapshot(a.Scope, a.ItemId, BoardId, parent?.PlanningRevision ?? 1,
+                            children.Select(x => x.Id).ToArray(), parent?.Planning ?? new(["Requirement"], ["Verified"]), a.Stages)
+                            { ChildPlanningRevisions = children.ToDictionary(x => x.Id, x => x.PlanningRevision) };
+                    }).ToArray();
+                    plan = new(r.PlanId ?? Guid.NewGuid(), Project, "Release", Guid.Parse(Manager.EmployeeId), "Draft", (plan?.Revision ?? 0) + 1, 1,
+                        [EpicId], r.Branches, snapshots, [], DateTimeOffset.UtcNow, DateTimeOffset.UtcNow); return Task.FromResult(plan);
                 })
                 .RegisterCapability<FinalizeWorkItemDeliveryRequest, WorkItem>(WorkItemCapabilities.FinalizeDelivery, (r, _) =>
                 {
+                    if (FinalizeFailure && Finalizations.Count == 1)
+                        throw new PlatformCapabilityException(WorkManagementCapabilityNames.ItemFinalizeDelivery, PlatformCapabilityErrorCode.Conflict, "temporary finalization conflict");
                     Finalizations.Add(r); var i = Items.FindIndex(x => x.Id == r.ItemId);
                     Items[i] = Items[i] with { Delivery = r.Delivery, StageAssignments = r.StageAssignments }; return Task.FromResult(Items[i]);
                 })
                 .RegisterCapability<ControlWorkDeliveryPlanRequest, WorkDeliveryPlanResponse>(WorkDeliveryCapabilities.Control, (_, _) =>
-                { plan = plan! with { Status = "Active" }; return Task.FromResult(plan); });
+                {
+                    if (ControlError is not null) throw ControlError;
+                    Assert.All(plan!.Scopes, scope => Assert.All(scope.ChildPlanningRevisions, child =>
+                        Assert.Equal(child.Value, Items.Single(x => x.Id == child.Key).PlanningRevision)));
+                    plan = plan with { Status = "Active" }; return Task.FromResult(plan);
+                });
             context = runtime.CreateContext();
         }
         public Task<WorkDeliveryPlanResponse> Prepare() => HierarchicalProjectDelivery.PrepareAsync(Project, BoardId,

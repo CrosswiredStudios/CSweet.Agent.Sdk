@@ -50,6 +50,14 @@ public static class HierarchicalProjectDelivery
         return conflict ? reason[..Math.Min(reason.Length, 2000)] : null;
     }
 
+    private static bool Same(object? left, object? right)
+    {
+        object? Stable(object? value) => value is IEnumerable<WorkStageAssignment> stages
+            ? stages.Select(stage => stage with { SelectionEvidence = stage.SelectionEvidence is { } evidence
+                ? evidence with { SelectedAt = DateTimeOffset.UnixEpoch } : null }).ToArray() : value;
+        return System.Text.Json.JsonSerializer.Serialize(Stable(left)) == System.Text.Json.JsonSerializer.Serialize(Stable(right));
+    }
+
     private static async Task<WorkDeliveryPlanResponse> PrepareCoreAsync(Guid projectId, Guid boardId,
         Guid managerId, AgentTeamContext roster, Guid repositoryId, string defaultBranch,
         string profileDigest, bool software, AgentRuntimeContext context, CancellationToken ct, string? technicalRoleOverride)
@@ -61,6 +69,9 @@ public static class HierarchicalProjectDelivery
             .Where(x => x.Status is not ("Cancelled" or "Completed")).ToArray();
         if (existing.Length > 1) throw new InvalidOperationException("Select the existing release explicitly; project setup cannot choose between multiple delivery plans.");
         if (existing.SingleOrDefault() is { Status: "Active" or "Paused" } active) return active;
+        var draft = existing.SingleOrDefault();
+        if (draft is not null && (draft.ManagerOrganizationUserId != managerId || draft.Scopes.Any(x => x.BoardId != boardId) || draft.Branches.Any(x => x.RepositoryId != repositoryId)))
+            throw new DeliveryStaffingException("The existing draft belongs to another manager or board; reconcile its scope explicitly.");
         var board = await context.Platform.Work.ReadBoardAsync(boardId, ct);
         if (board.Items.Where(x => x.ExecutionMode == WorkItemExecutionModes.Executable && x.Status != "Cancelled")
             .All(x => x.Status is "Done" or "Completed") && allPlans.Where(x => x.Status == "Completed")
@@ -106,7 +117,9 @@ public static class HierarchicalProjectDelivery
             var prior = task.StageAssignments.FirstOrDefault(x => x.StageKey == authorKey);
             var authorRole = recommendation?.RequiredRoleKey ?? prior?.Requirements?.RequiredRoleKey ??
                 (software ? "software-developer" : "game-engineer");
-            var author = Select(authorKey, authorRole, [], prior?.AgentInstallationId);
+            var authorRequirements = recommendation is null ? prior?.Requirements : new WorkAssignmentRequirements(authorRole,
+                recommendation.RequiredSpecializationKeys, recommendation.PreferredSpecializationKeys, recommendation.RequiredCapabilityKeys);
+            var author = Select(authorKey, authorRole, [], prior?.AgentInstallationId, requestedRequirements: authorRequirements);
             var code = task.Delivery?.DeliveryKind != "Artifact" && task.Planning.DeliveryKind != "Artifact" && authorRole is "software-developer" or "game-engineer";
             var qaEvidence = DeliveryReviewIndependence.IsQaEvidenceArtifact(task.Delivery?.DeliveryKind ?? task.Planning.DeliveryKind, authorRole);
             // QA owns test plans/reports; the board manager checks their evidence. This is
@@ -137,7 +150,9 @@ public static class HierarchicalProjectDelivery
         var computeReviewer = RoleTaxonomy.SelectAssignment(roster.Members,
             new WorkAssignmentRequirements("game-technical-director", [], [],
                 [WorkManagementCapabilityNames.ExecutionRunV2, DeliveryComputeTest.ExecutionCapability]))?.Teammate;
-        var useComputeTest = !software && branches.Count > 0 && computeReviewer is not null;
+        var retainedRelease = draft?.Branches.SingleOrDefault(x => x.Scope == WorkExecutionScopes.Release);
+        var useComputeTest = !software && branches.Count > 0 && (retainedRelease is not null
+            ? retainedRelease.ReadinessMode == "compute-test" : computeReviewer is not null);
         var releaseStages = new List<WorkStageAssignment> { Select("quality", qaRole, productAuthors), Select("technical-review", technicalRole, codeAuthors) };
         if (!software && branches.Count > 0)
         {
@@ -151,8 +166,8 @@ public static class HierarchicalProjectDelivery
         if (branches.Count > 0)
         {
             if (repositoryId == Guid.Empty || string.IsNullOrWhiteSpace(defaultBranch)) throw new InvalidOperationException("Code delivery needs an authorized repository and default branch.");
-            WorkDeliveryBuildSpecification? build = null;
-            if (!software && !useComputeTest)
+            WorkDeliveryBuildSpecification? build = retainedRelease?.Build;
+            if (!software && !useComputeTest && build is null)
             {
                 var adapters = await context.Platform.ReadEligibleToolchainsAsync(new(RequiredOperations: ["build"]), ct);
                 var recipes = adapters.Where(a => a.Eligibility.ExpiresAt > DateTimeOffset.UtcNow && a.Eligibility.CompatibleCapacityOnline)
@@ -164,16 +179,27 @@ public static class HierarchicalProjectDelivery
             }
             branches.Add(new(repositoryId, WorkExecutionScopes.Release, null, releaseBranch, defaultBranch) { Build = build, ReadinessMode = useComputeTest ? "compute-test" : "certified-build" });
         }
-        var draft = existing.SingleOrDefault();
-        var plan = draft ?? await context.Platform.Work.ConfigureDeliveryPlanAsync(new(projectId, "Initial release", managerId,
-            epics.Select(x => x.Id).ToArray(), branches, scopes, $"delivery-plan:{projectId:N}:{releaseScopeKey}:{profileDigest}")
+        // Retain explicitly selected branch/build topology when refreshing a draft.
+        if (draft is not null)
+            branches = branches.Select(branch => draft.Branches.SingleOrDefault(x => x.Scope == branch.Scope &&
+                x.ItemId == branch.ItemId && x.RepositoryId == branch.RepositoryId) ?? branch).ToList();
+        var scopeChanged = draft is not null && draft.Scopes.Any(scope =>
+            scope.ItemId is { } itemId && board.Items.SingleOrDefault(x => x.Id == itemId)?.PlanningRevision != scope.PlanningRevision ||
+            scope.ChildPlanningRevisions.Any(child => board.Items.SingleOrDefault(x => x.Id == child.Key)?.PlanningRevision != child.Value) ||
+            !scope.ChildIds.Order().SequenceEqual((scope.Scope == WorkExecutionScopes.Release ? epics.Select(x => x.Id) :
+                board.Items.Where(x => x.ParentItemId == scope.ItemId).Select(x => x.Id)).Order()));
+        var assignmentsChanged = draft is not null && scopes.Any(scope => !draft.Scopes.Any(x =>
+            x.Scope == scope.Scope && x.ItemId == scope.ItemId && Same(x.Stages, scope.Stages)));
+        var plan = draft is not null && !scopeChanged && !assignmentsChanged ? draft : await context.Platform.Work.ConfigureDeliveryPlanAsync(new(projectId, draft?.Name ?? "Initial release", managerId,
+            epics.Select(x => x.Id).ToArray(), branches, scopes, $"delivery-plan:{projectId:N}:{releaseScopeKey}:{profileDigest}:{draft?.Revision ?? 0}:{roster.Revision}")
             {
+                PlanId = draft?.Id, ExpectedRevision = draft?.Revision ?? 0,
+                ReleasePlanning = draft?.Scopes.SingleOrDefault(x => x.Scope == WorkExecutionScopes.Release)?.Planning,
                 TaskAssignments = tasks.Select(task => new WorkDeliveryTaskAssignment(task.Id,
                     new[] { selected[task.Id].Author, selected[task.Id].Qa })).ToArray()
             }, ct);
         foreach (var task in tasks)
         {
-            if (task.Delivery?.DeliveryPlanId == plan.Id) continue;
             var assignment = selected[task.Id];
             var stages = new List<WorkStageAssignment> { assignment.Author, assignment.Qa };
             if (assignment.Technical is not null)
@@ -190,25 +216,36 @@ public static class HierarchicalProjectDelivery
                 DependencyItemIds = planning.DependencyItemIds
             };
             var current = await context.Platform.Work.ReadItemAsync(new(boardId, task.Id), ct);
+            if (Same(current.Delivery, delivery) && Same(current.StageAssignments, stages)) continue;
             await context.Platform.Work.FinalizeItemDeliveryAsync(new(boardId, task.Id, delivery,
                 assignment.Author.OrganizationUserId!.Value, stages, current.Revision,
-                $"delivery-task:{plan.Id:N}:{task.Id:N}:{task.PlanningRevision}:{roster.Revision}"), ct);
+                $"delivery-task:{plan.Id:N}:{task.Id:N}:{task.PlanningRevision}:{roster.Revision}:{current.Revision}"), ct);
         }
         plan = (await context.Platform.Work.ReadDeliveryPlansAsync(new(projectId, plan.Id), ct)).Single();
         return await context.Platform.Work.ControlDeliveryPlanAsync(new(plan.Id, plan.Revision, "activate", $"delivery-activate:{plan.Id:N}:{plan.Revision}"), ct);
 
-        WorkStageAssignment Select(string stage, string role, IReadOnlyList<Guid> excluded, Guid? preferred = null, Guid? requiredEmployee = null, string? subject = null, IReadOnlyList<string>? additionalCapabilities = null)
+        WorkStageAssignment Select(string stage, string role, IReadOnlyList<Guid> excluded, Guid? preferred = null, Guid? requiredEmployee = null, string? subject = null, IReadOnlyList<string>? additionalCapabilities = null, WorkAssignmentRequirements? requestedRequirements = null)
         {
-            var requirements = new WorkAssignmentRequirements(role, [], [], [WorkManagementCapabilityNames.ExecutionRunV2, .. additionalCapabilities ?? []]);
+            var requirements = new WorkAssignmentRequirements(role, requestedRequirements?.RequiredSpecializationKeys ?? [],
+                requestedRequirements?.PreferredSpecializationKeys ?? [],
+                [.. (requestedRequirements?.RequiredCapabilityKeys ?? []).Concat([WorkManagementCapabilityNames.ExecutionRunV2])
+                    .Concat(additionalCapabilities ?? []).Distinct(StringComparer.Ordinal)]);
             var eligible = roster.Members.Where(x => Guid.TryParse(x.EmployeeId, out var employee) && !excluded.Contains(employee) && (!requiredEmployee.HasValue || employee == requiredEmployee)).ToArray();
             var candidate = preferred.HasValue ? RoleTaxonomy.SelectAssignment(eligible.Where(x => x.AgentInstallationId == preferred), requirements)?.Teammate : null;
             candidate ??= RoleTaxonomy.SelectAssignment(eligible, requirements)?.Teammate
                 ?? throw new DeliveryStaffingException($"Staffing needs attention for {subject ?? stage}: assign an eligible {role} with V2 execution to {stage}, independent of the deliverable author. Required review cannot be skipped.");
-            var fingerprint = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"{projectId:N}|{stage}|{role}|{candidate.AgentInstallationId}|{roster.Revision}|{profileDigest}")));
+            var matched = requirements.RequiredSpecializationKeys.Concat(requirements.PreferredSpecializationKeys
+                .Where(x => candidate.SpecializationKeys.Contains(x, StringComparer.Ordinal))).Distinct().Order(StringComparer.Ordinal).ToArray();
+            var fingerprint = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"{projectId:N}|{stage}|{role}|{candidate.AgentInstallationId}|{roster.Revision}|{profileDigest}|{System.Text.Json.JsonSerializer.Serialize(requirements)}")));
+            var retained = tasks.SelectMany(x => x.StageAssignments).Concat(draft?.Scopes.SelectMany(x => x.Stages) ?? [])
+                .FirstOrDefault(x => x.StageKey == stage && x.AgentInstallationId == candidate.AgentInstallationId &&
+                    x.OrganizationUserId == Guid.Parse(candidate.EmployeeId) && Same(x.Requirements, requirements) &&
+                    x.SelectionEvidence?.DecisionFingerprint == fingerprint);
+            if (retained is not null) return retained;
             return new(stage, "AgentInstallation", Guid.Parse(candidate.EmployeeId), candidate.AgentInstallationId)
             {
                 Requirements = requirements,
-                SelectionEvidence = new(candidate.AgentInstallationId!.Value, roster.Revision, profileDigest, [], fingerprint, DateTimeOffset.UtcNow)
+                SelectionEvidence = new(candidate.AgentInstallationId!.Value, roster.Revision, profileDigest, matched, fingerprint, DateTimeOffset.UtcNow)
             };
         }
     }
