@@ -29,6 +29,8 @@ public sealed class PlatformCapabilityClient
         Communication = new PlatformCommunicationClient(this);
         Connectors = new PlatformConnectorClient(this);
         ProjectHealth = new PlatformProjectHealthClient(this);
+        Delegation = new PlatformDelegationClient(this);
+        WorkTracking = new PlatformWorkTrackingClient(this);
     }
 
     internal IPlatformToolInvoker Tools => _tools;
@@ -47,6 +49,8 @@ public sealed class PlatformCapabilityClient
     public PlatformCommunicationClient Communication { get; }
     public PlatformConnectorClient Connectors { get; }
     public PlatformProjectHealthClient ProjectHealth { get; }
+    public PlatformDelegationClient Delegation { get; }
+    public PlatformWorkTrackingClient WorkTracking { get; }
 
     public Task<BusinessProfileResponse> ReadBusinessProfileAsync(CancellationToken token = default) =>
         InvokeAsync<object, BusinessProfileResponse>(PlatformCapabilities.BusinessProfileRead, new { }, token);

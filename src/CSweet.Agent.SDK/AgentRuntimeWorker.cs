@@ -353,6 +353,8 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 lease.Payload,
                 DateTimeOffset.UtcNow,
                 lease.CorrelationId);
+        if (agent is CSweetAgentBase delegationAgent && await DelegationRuntime.DispatchAsync(delegationAgent, envelope, context, cancellationToken))
+            return AgentWorkResult.Success(new { acknowledged = true });
         if (string.Equals(envelope.EventType, CalendarEvents.ReminderDue, StringComparison.Ordinal) && agent is CSweetAgentBase calendarAgent)
         {
             var reminder = envelope.Data.Deserialize<CalendarReminderDueEvent>(CSweetAgentBase.SerializerOptions)

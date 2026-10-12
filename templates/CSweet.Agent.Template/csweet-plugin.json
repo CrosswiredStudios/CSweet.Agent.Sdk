@@ -5,12 +5,17 @@
   "rolePolicy": {
     "baseType": "individual-contributor",
     "profile": "individual-contributor.v1",
-    "declaredRoleKeys": ["general-specialist"]
+    "declaredRoleKeys": [
+      "general-specialist"
+    ]
   },
   "id": "com.example.agent",
   "name": "Example Agent",
   "version": "0.1.0",
-  "publisher": { "id": "com.example", "name": "Example Publisher" },
+  "publisher": {
+    "id": "com.example",
+    "name": "Example Publisher"
+  },
   "runtime": {
     "type": "dotnet-project",
     "projectPath": "src/CSweet.Agent.Template/CSweet.Agent.Template.csproj",
@@ -20,7 +25,10 @@
     "supportsMultipleInstallations": true,
     "maximumConcurrentJobs": 1
   },
-  "protocol": { "minimumVersion": "2.0", "maximumVersion": "2.x" },
+  "protocol": {
+    "minimumVersion": "2.0",
+    "maximumVersion": "2.x"
+  },
   "provides": [
     {
       "name": "example.execute.v1",
@@ -28,29 +36,228 @@
       "inputSchema": {
         "type": "object",
         "properties": {
-          "input": { "type": "string", "minLength": 1 }
+          "input": {
+            "type": "string",
+            "minLength": 1
+          }
         },
-        "required": ["input"],
+        "required": [
+          "input"
+        ],
         "additionalProperties": false
       },
       "outputSchema": {
         "type": "object",
         "properties": {
-          "message": { "type": "string" }
+          "message": {
+            "type": "string"
+          }
         },
-        "required": ["message"],
+        "required": [
+          "message"
+        ],
         "additionalProperties": false
+      },
+      "executionTimeoutSeconds": 30,
+      "idempotency": "work-item",
+      "riskClass": "standard"
+    },
+    {
+      "name": "agent.configuration.describe.v1",
+      "description": "Describe or update company-approved reasoning settings through native configuration controls.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "executionTimeoutSeconds": 30,
+      "idempotency": "work-item",
+      "riskClass": "standard"
+    },
+    {
+      "name": "agent.configuration.update.v1",
+      "description": "Describe or update company-approved reasoning settings through native configuration controls.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "settings": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "settings"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true
       },
       "executionTimeoutSeconds": 30,
       "idempotency": "work-item",
       "riskClass": "standard"
     }
   ],
-  "requires": [{"name":"work.calendar.read.v1","scope":"organization","purpose":"Operate the business calendar within ownership and reporting authority."},{"name":"work.calendar.create.v1","scope":"organization","purpose":"Operate the business calendar within ownership and reporting authority."},{"name":"work.calendar.update.v1","scope":"organization","purpose":"Operate the business calendar within ownership and reporting authority."},{"name":"work.calendar.cancel.v1","scope":"organization","purpose":"Operate the business calendar within ownership and reporting authority."},{"name":"work.calendar.schedule.v1","scope":"organization","purpose":"Operate the business calendar within ownership and reporting authority."}],
-  "events": { "subscribes": ["com.csweet.calendar.reminder-due.v1"] },
-  "configuration": [],
+  "requires": [
+    {
+      "name": "work.calendar.read.v1",
+      "scope": "organization",
+      "purpose": "Operate the business calendar within ownership and reporting authority."
+    },
+    {
+      "name": "work.calendar.create.v1",
+      "scope": "organization",
+      "purpose": "Operate the business calendar within ownership and reporting authority."
+    },
+    {
+      "name": "work.calendar.update.v1",
+      "scope": "organization",
+      "purpose": "Operate the business calendar within ownership and reporting authority."
+    },
+    {
+      "name": "work.calendar.cancel.v1",
+      "scope": "organization",
+      "purpose": "Operate the business calendar within ownership and reporting authority."
+    },
+    {
+      "name": "work.calendar.schedule.v1",
+      "scope": "organization",
+      "purpose": "Operate the business calendar within ownership and reporting authority."
+    },
+    {
+      "name": "work.delegation.create.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "work.delegation.read.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "work.delegation.respond.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "work.delegation.publish.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "work.delegation.cancel.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "work.tracking.follow.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "work.tracking.unfollow.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "work.tracking.read.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "work.tracking.progress.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "work.tracking.pending.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "work.tracking.processed.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "platform.organization.snapshot.read.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "communication.chat.read.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "work.personal-todo.read.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "work.personal-todo.add.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    },
+    {
+      "name": "platform.llm.chat-stream.v1",
+      "scope": "organization",
+      "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
+      "modelVisible": false
+    }
+  ],
+  "events": {
+    "subscribes": [
+      "com.csweet.calendar.reminder-due.v1",
+      "com.csweet.work.delegation.received.v1",
+      "com.csweet.work.tracking.changed.v1",
+      "com.csweet.user.message.received.v1",
+      "com.csweet.agent.attention.review-due.v1"
+    ]
+  },
+  "configuration": [
+    {
+      "key": "llmProviderId",
+      "type": "provider",
+      "label": "Reasoning service",
+      "required": false,
+      "secret": false,
+      "description": "Company-approved reasoning for delegation and tracking."
+    },
+    {
+      "key": "llmModel",
+      "type": "model",
+      "label": "Reasoning model",
+      "required": false,
+      "secret": false,
+      "description": "Company-approved reasoning for delegation and tracking."
+    }
+  ],
   "credentials": [],
-  "webAccess": { "mode": "None", "rules": [] },
+  "webAccess": {
+    "mode": "None",
+    "rules": []
+  },
   "ui": [],
   "catalog": {
     "summary": "Processes a bounded request for C-Sweet.",
@@ -59,8 +266,13 @@
     "companyLogoUrl": null,
     "accentColor": "#1C6252",
     "category": "General",
-    "role": { "key": "example-agent", "name": "Example Agent" },
-    "license": { "spdxId": "MIT" },
+    "role": {
+      "key": "example-agent",
+      "name": "Example Agent"
+    },
+    "license": {
+      "spdxId": "MIT"
+    },
     "iconUrls": [],
     "roleAliases": [],
     "keywords": [],

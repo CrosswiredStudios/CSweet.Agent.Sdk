@@ -27,7 +27,7 @@ Keep `csweet-plugin.json` at the repository root. Import a reviewed GitHub commi
 clone this repository as an immediate child of C-Sweet's configured local agent catalog. Review
 the exact manifest, grants, activation mode, and source before approving installation.
 
-Built with `CSweet.Agent.SDK` 3.64.3.
+Built with `CSweet.Agent.SDK` 3.65.0.
 
 ## Business calendars
 
@@ -44,3 +44,7 @@ work is delivered separately through the existing personal work queue.
 Calendar.WithToolsAsync(options) adds only approved calendar model tools and operating guidance
 to an existing harness. Calendar.GetResponseAsync(client, messages, ...) supplies a bounded
 function-invocation loop for simple agents. Preserve all existing execution and approval rules.
+
+## Shared delegation
+
+SDK 3.65.0 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.

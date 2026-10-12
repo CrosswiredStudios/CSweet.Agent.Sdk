@@ -36,6 +36,7 @@ public sealed class CapabilityCatalogTests
                 "calendar",
                 "communication",
                 "compute",
+                "delegation",
                 "git-file-locks",
                 "git-merge",
                 "git-workspace",

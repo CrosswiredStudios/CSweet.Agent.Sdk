@@ -13,6 +13,15 @@ public sealed class TemplateAgent : CSweetAgentBase
     public override string AgentId => "com.example.agent";
     public override string Version => "0.1.0";
 
+    protected override AgentConfigurationBuilder Configure(AgentConfigurationBuilder builder) => builder
+        .LlmProvider("llmProviderId", "Reasoning service", required: false)
+        .LlmModel("llmModel", "Reasoning model", "llmProviderId", required: false);
+
+    public override Task<CSweet.WorkManagement.Contracts.DelegationResponse> HandleDelegationReceivedAsync(
+        CSweet.WorkManagement.Contracts.DelegationSnapshot delegation, AgentRuntimeContext context, CancellationToken cancellationToken) =>
+        Task.FromResult<CSweet.WorkManagement.Contracts.DelegationResponse>(
+            new CSweet.WorkManagement.Contracts.DelegationResponse.Clarification("Please supply the typed example input required by this agent."));
+
     protected override async Task<AgentWorkResult> ExecuteCapabilityCoreAsync(
         AgentCapabilityRequest request,
         AgentRuntimeContext context,

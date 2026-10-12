@@ -76,14 +76,17 @@ public sealed class AgentTestRuntime
         string eventType,
         object data,
         Guid? eventId = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        AgentIdentity? identity = null)
     {
         var stableEventId = eventId ?? Guid.NewGuid();
         if (stableEventId == Guid.Empty)
             throw new ArgumentException("Event ID must not be empty.", nameof(eventId));
         var occurredAt = DateTimeOffset.UtcNow;
         var payload = JsonSerializer.SerializeToElement(data, JsonOptions);
-        var context = CreateContext();
+        var context = CreateContext(identity: identity);
+        var envelope = new AgentEventEnvelope(Guid.NewGuid(), stableEventId, eventType, payload, occurredAt, "test-correlation");
+        if (agent is CSweetAgentBase delegationAgent && await DelegationRuntime.DispatchAsync(delegationAgent, envelope, context, cancellationToken)) return;
         if (string.Equals(eventType, AgentAttentionEvents.ReviewDue, StringComparison.Ordinal) &&
             agent is CSweetAgentBase attentiveAgent)
         {

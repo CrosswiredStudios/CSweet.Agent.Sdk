@@ -40,7 +40,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 3.64.3
+  --SdkVersion 3.65.0
 cd ResearchAgent
 dotnet test
 ```
@@ -336,3 +336,7 @@ See [agent collaboration](collaboration.md) for typed documentation requests, re
 Declare `rolePolicy.baseType: "manager"` with `profile: "manager.v1"` and derive from
 `CSweetManagerAgentBase`. Product management and game production are specialized manager roles.
 See [manager authoring](manager-agents.md) for shared monitoring, assessment, recovery hooks and required grants.
+
+## Shared delegation
+
+SDK 3.65.0 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.

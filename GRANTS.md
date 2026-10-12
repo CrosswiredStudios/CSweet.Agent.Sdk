@@ -474,3 +474,19 @@ caller-selected recipients, or resolving an incident by acknowledgement.
 | `platform.hiring-delegation.submit.v1` | Fill approved roles only under the owner’s plan-bound delegation and current limits. |
 
 Policy changes cannot expand authority on old plans without an explicit owner action. Memory and events are context and wake hints; they are never execution grants.
+
+## Delegation and tracking
+
+Reviewed grants remain subject to current source, employee and resource authority.
+
+- `work.delegation.create.v1`
+- `work.delegation.read.v1`
+- `work.delegation.respond.v1`
+- `work.delegation.publish.v1`
+- `work.delegation.cancel.v1`
+- `work.tracking.follow.v1`
+- `work.tracking.unfollow.v1`
+- `work.tracking.read.v1`
+- `work.tracking.progress.v1`
+- `work.tracking.pending.v1`
+- `work.tracking.processed.v1`

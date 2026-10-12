@@ -8,6 +8,20 @@ namespace CSweet.Agent.SDK;
 /// </summary>
 public static class CapabilityNames
 {
+    public static class Delegation
+    {
+        public const string Create = DelegationCapabilities.Create;
+        public const string Read = DelegationCapabilities.Read;
+        public const string Respond = DelegationCapabilities.Respond;
+        public const string Publish = DelegationCapabilities.Publish;
+        public const string Cancel = DelegationCapabilities.Cancel;
+        public const string Follow = DelegationCapabilities.Follow;
+        public const string Unfollow = DelegationCapabilities.Unfollow;
+        public const string ReadTracking = DelegationCapabilities.ReadTracking;
+        public const string Progress = DelegationCapabilities.Progress;
+        public const string Pending = DelegationCapabilities.Pending;
+        public const string Processed = DelegationCapabilities.Processed;
+    }
     public static class WorkDelivery
     {
         public const string Read = WorkDeliveryCapabilities.Read;
@@ -551,6 +565,7 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.PersonalTodoCancel),
             ["project-intake"] = Set(ProjectIntakeCapabilities.All),
             ["work-delivery"] = Set(WorkDeliveryCapabilities.All.ToArray()),
+            ["delegation"] = Set(DelegationCapabilities.All.ToArray()),
             ["project-delivery"] = Set(ProjectDeliveryCapabilities.All),
             ["source-control"] = Set(
                 CapabilityNames.SourceControl.TeamRepositoryOptions,

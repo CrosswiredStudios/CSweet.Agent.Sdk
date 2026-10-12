@@ -7,7 +7,7 @@ namespace CSweet.Agent.SDK;
 /// Recommended base class for agent callbacks, typed payload serialization, and declarative
 /// installation configuration.
 /// </summary>
-public abstract class CSweetAgentBase : ICSweetAgent
+public abstract partial class CSweetAgentBase : ICSweetAgent
 {
     internal static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 

@@ -289,3 +289,7 @@ uses persisted evidence without a model call. Unknown causes and missing evidenc
 ## Owner-controlled hiring delegation
 
 `HiringAutonomyCapabilities` exposes policy reads, capture of authenticated owner decision answers, candidate selection, and delegated submission. `HiringPolicySettings` separates selection mode, automatic authority level, and publisher preference. Manifest grants only allow invoking these operations; the platform validates active Chief identity, organization, approved plan binding, current policy, package digest, cost, headcount, grants, and configuration before installation and employee creation. Agent memory cannot grant authority. Third-party publisher names are not first-party provenance. Delegated work must remain idempotent across retries and revalidate authority after an asynchronous package build.
+
+## Shared delegation
+
+SDK 3.65.0 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
