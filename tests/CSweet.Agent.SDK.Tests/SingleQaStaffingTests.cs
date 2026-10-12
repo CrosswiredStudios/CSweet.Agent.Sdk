@@ -118,6 +118,24 @@ public sealed class SingleQaStaffingTests
     }
 
     [Fact]
+    public async Task DraftRetryIgnoresDatabaseAssignmentOrderAndSelectionTimestamps()
+    {
+        var f = new Fixture(false, true) { ControlError = new(WorkDeliveryCapabilities.Control, PlatformCapabilityErrorCode.Conflict, "GitHost unavailable") };
+        await Assert.ThrowsAsync<DeliveryStaffingException>(f.Prepare);
+        for (var i = 0; i < f.Items.Count; i++)
+            f.Items[i] = f.Items[i] with { StageAssignments = f.Items[i].StageAssignments.Reverse()
+                .Select(stage => stage with { SelectionEvidence = stage.SelectionEvidence is { } evidence
+                    ? evidence with { SelectedAt = evidence.SelectedAt.AddSeconds(1) } : null }).ToArray() };
+        f.plan = f.plan! with { Scopes = f.plan.Scopes.Select(scope => scope with { Stages = scope.Stages.Reverse().ToArray() }).ToArray() };
+        await Assert.ThrowsAsync<DeliveryStaffingException>(f.Prepare);
+        Assert.Equal(1, f.ConfigurationCount);
+        Assert.Equal(3, f.Finalizations.Count);
+        f.ControlError = null;
+        Assert.Equal("Active", (await f.Prepare()).Status);
+        Assert.Equal(3, f.Finalizations.Count);
+    }
+
+    [Fact]
     public async Task InterruptedTaskFinalizationResumesWithoutReplacingCompletedSteps()
     {
         var f = new Fixture(false) { FinalizeFailure = true };

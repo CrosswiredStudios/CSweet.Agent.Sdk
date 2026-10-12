@@ -53,7 +53,7 @@ public static class HierarchicalProjectDelivery
     private static bool Same(object? left, object? right)
     {
         object? Stable(object? value) => value is IEnumerable<WorkStageAssignment> stages
-            ? stages.Select(stage => stage with { SelectionEvidence = stage.SelectionEvidence is { } evidence
+            ? stages.OrderBy(stage => stage.StageKey, StringComparer.Ordinal).Select(stage => stage with { SelectionEvidence = stage.SelectionEvidence is { } evidence
                 ? evidence with { SelectedAt = DateTimeOffset.UnixEpoch } : null }).ToArray() : value;
         return System.Text.Json.JsonSerializer.Serialize(Stable(left)) == System.Text.Json.JsonSerializer.Serialize(Stable(right));
     }
