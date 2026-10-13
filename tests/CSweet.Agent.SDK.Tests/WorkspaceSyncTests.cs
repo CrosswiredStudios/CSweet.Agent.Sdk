@@ -100,6 +100,35 @@ public sealed class WorkspaceSyncTests : IDisposable
         Assert.Contains(ArchiveVariable, error.Message);
     }
 
+    [Fact]
+    public async Task DependencyInstallsDoNotEnterPublishedSourceButLockfilesDo()
+    {
+        var workspace = new GitWorkspaceResult(Guid.NewGuid(), Guid.NewGuid(), "ignored", Guid.NewGuid(),
+            "InternalGit", "PullRequest", "base", "Ready", false);
+        byte[]? published = null;
+        var runtime = new AgentTestRuntime().RegisterCapability<GitWorkspaceSyncRequest, GitWorkspaceSyncResult>(
+            GitWorkspaceCapabilities.Sync, (request, _) =>
+            {
+                if (request.Direction == "push") { published = request.Archive; return Task.FromResult(new GitWorkspaceSyncResult()); }
+                return Task.FromResult(new GitWorkspaceSyncResult(Zip("package.json", "{\"name\":\"fixture\"}")));
+            });
+        var path = PlatformGitWorkspaceClient.LocalWorkspacePath(workspace.WorkspaceId);
+        try
+        {
+            var local = await runtime.CreateContext().Platform.Git.MaterializeAsync(workspace, 1);
+            await File.WriteAllTextAsync(Path.Combine(path, "package-lock.json"), "{\"lockfileVersion\":3}");
+            foreach (var directory in new[] { "node_modules", ".venv" })
+            {
+                Directory.CreateDirectory(Path.Combine(path, directory));
+                await File.WriteAllBytesAsync(Path.Combine(path, directory, "download.bin"), new byte[2 * 1024 * 1024]);
+            }
+            await runtime.CreateContext().Platform.Git.UploadAsync(local, 1);
+            using var archive = new ZipArchive(new MemoryStream(published!));
+            Assert.Equal(new[] { "package-lock.json", "package.json" }, archive.Entries.Select(x => x.FullName).Order(StringComparer.Ordinal));
+        }
+        finally { if (Directory.Exists(path)) Directory.Delete(path, true); }
+    }
+
     public void Dispose()
     {
         foreach (var pair in original)

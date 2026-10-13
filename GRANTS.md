@@ -490,3 +490,7 @@ Reviewed grants remain subject to current source, employee and resource authorit
 - `work.tracking.progress.v1`
 - `work.tracking.pending.v1`
 - `work.tracking.processed.v1`
+
+## Execution permissions
+
+`runtime.internet.public.v1` (`RuntimePermissions.PublicInternet`) requests reviewed public TCP/UDP for the isolated runtime. It is hidden from callable MCP discovery and has no provider binding.

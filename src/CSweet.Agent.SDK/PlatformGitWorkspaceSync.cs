@@ -107,7 +107,7 @@ public sealed partial class PlatformGitWorkspaceClient
                 AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = false }).Order(StringComparer.Ordinal))
             {
                 var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
-                if (relative.Split('/').Any(p => p.Equals(".git", StringComparison.OrdinalIgnoreCase) || p.Equals(".csweet", StringComparison.OrdinalIgnoreCase))) continue;
+                if (relative.Split('/').Any(p => p.Equals(".git", StringComparison.OrdinalIgnoreCase) || p.Equals(".csweet", StringComparison.OrdinalIgnoreCase) || p.Equals("node_modules", StringComparison.OrdinalIgnoreCase) || p.Equals(".venv", StringComparison.OrdinalIgnoreCase))) continue;
                 EnsureNoLinks(path); total = checked(total + new FileInfo(path).Length);
                 if (++count > limits.MaximumFileCount || total > limits.MaximumExpandedBytes)
                     throw new InvalidDataException("Source exceeds the configured workspace content limit.");

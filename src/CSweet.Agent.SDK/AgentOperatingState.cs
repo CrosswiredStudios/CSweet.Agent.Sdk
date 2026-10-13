@@ -4,7 +4,11 @@ namespace CSweet.Agent.SDK;
 
 public sealed record AgentOperatingStateReadRequest(string StateKey);
 
-public sealed record AgentOperatingStateReadResponse(AgentOperatingStateResponse? State);
+public sealed record AgentOperatingStateReadResponse(AgentOperatingStateResponse? State)
+{
+    public string RuntimeNetworkMode { get; init; } = "restricted";
+    public IReadOnlyList<string> ExpectedRuntimeTools { get; init; } = [];
+}
 
 public sealed record AgentOperatingStateWriteRequest(
     string StateKey,

@@ -8,6 +8,10 @@ namespace CSweet.Agent.SDK;
 /// </summary>
 public static class CapabilityNames
 {
+    public static class Runtime
+    {
+        public const string PublicInternet = RuntimePermissions.PublicInternet;
+    }
     public static class Delegation
     {
         public const string Create = DelegationCapabilities.Create;

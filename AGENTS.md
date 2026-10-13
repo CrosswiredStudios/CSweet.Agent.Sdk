@@ -15,8 +15,8 @@ different repository layout when the template can express the request.
 
 - Never expose MCP, JSON-RPC, workload or session tokens, lease tokens, runtime endpoints, or
   transport clients through public authoring APIs.
-- Never add direct database, Docker socket, host filesystem, provider credential, or unrestricted
-  network access to an agent.
+- Never add direct database, Docker socket, host filesystem, provider credential, or unapproved
+  network access to an agent. Reviewed public egress requires `runtime.internet.public.v1`; private and host network access remain unavailable.
 - Manifest declarations request authority; they do not grant it. Generated agents request the
   minimum capabilities and network access needed for their stated purpose.
 - Protocol-v2 agents use `csweet-plugin.json`, `manifestVersion` 2.0, protocol 2.0 through 2.x,
