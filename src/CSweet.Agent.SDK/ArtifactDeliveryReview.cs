@@ -22,11 +22,12 @@ public static class ArtifactDeliveryReview
         if (item.Planning is null || item.PlanningRevision != input.PlanningRevision ||
             item.StageAssignments.Single(x => x.StageKey == "quality").AgentInstallationId.ToString() != context.InstallationId)
             throw new InvalidOperationException("The exact artifact QA assignment changed.");
-        var reference = assignment.PriorOutcomes.Where(x => x.Disposition == WorkExecutionDispositions.Completed && x.Output.ValueKind == JsonValueKind.Object &&
-            x.Output.TryGetProperty("artifactId", out _) && x.Output.TryGetProperty("revisionId", out _))
-            .LastOrDefault()?.Output ?? throw new InvalidOperationException("The author has not delivered an exact artifact revision.");
-        var artifactId = reference.GetProperty("artifactId").GetGuid(); var revisionId = reference.GetProperty("revisionId").GetGuid();
-        var digest = reference.GetProperty("sha256").GetString()!;
+        var author = assignment.PriorOutcomes.LastOrDefault(x => x.Disposition == WorkExecutionDispositions.Completed &&
+            x.OutcomeCode is "completed" or "artifact-delivered");
+        if (author is null || !WorkArtifactDelivery.TryRead(author.Output, out var reference))
+            throw new InvalidOperationException("The author has not delivered a valid exact artifact revision and SHA-256 digest.");
+        var artifactId = reference.ArtifactId; var revisionId = reference.RevisionId;
+        var digest = reference.Sha256;
         var document = await context.Platform.Artifacts.GetAsync(artifactId, ct);
         var revision = document.Revisions.Single(x => x.Id == revisionId);
         if (revision.ContentSha256 != digest || Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(revision.Content))) != digest)

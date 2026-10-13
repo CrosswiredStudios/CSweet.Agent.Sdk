@@ -35,7 +35,7 @@ public static class ArtifactTaskDelivery
         await context.Platform.Artifacts.SubmitAsync(new(document.Id, revision.Id, $"task-artifact-submit:{revision.Id:N}"), ct);
         return AgentWorkResult.Success(new WorkExecutionOutcomeV1(assignment.StageExecutionId, assignment.AttemptId,
             WorkExecutionDispositions.Completed, "artifact-delivered", "Delivered exact artifact revision for independent QA.",
-            JsonSerializer.SerializeToElement(new { ArtifactId = document.Id, RevisionId = revision.Id, Sha256 = digest }, Json),
+            new WorkArtifactDelivery(document.Id, revision.Id, digest).ToOutput(),
             [new("artifact-revision", revision.Id.ToString("D"), digest)], []));
     }
 }

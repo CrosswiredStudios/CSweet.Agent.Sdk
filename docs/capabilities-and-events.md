@@ -292,4 +292,4 @@ uses persisted evidence without a model call. Unknown causes and missing evidenc
 
 ## Shared delegation
 
-SDK 3.65.0 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
+SDK 3.65.1 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.

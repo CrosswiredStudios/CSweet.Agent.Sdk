@@ -1,5 +1,16 @@
 # Hierarchical execution in SDK 3.59.0
 
+SDK 3.65.1 uses `WorkArtifactDelivery` from WorkManagement.Contracts 3.29.0 for
+both author output and artifact QA. Authors call `new WorkArtifactDelivery(artifactId,
+revisionId, sha256).ToOutput()` rather than constructing anonymous JSON. The reader
+accepts existing persisted PascalCase outcomes without rewriting history, and rejects
+malformed or ambiguous identities. QA still verifies the exact document digest and
+every acceptance criterion. A malformed later author result cannot fall back to an
+older valid delivery. `ArtifactTaskDeliveryHandoffTests` covers document creation,
+submission, persistence and independent review; the Technical Director's
+`ArtifactDeliveryHandoffTests` exercises its actual completed-state callback and
+legacy outcomes through the SDK's production review path.
+
 Declare `work.execution.run.v2` alongside preserved V1 support. `CSweetAgentBase` adapts Task scope to the existing task callback; override `ExecuteDeliveryScopeAsync` for Story/Epic/Release. Aggregate assignments never fabricate sprint identifiers. Validate the authoritative active plan, revision, principal and candidate before returning a result.
 
 Use typed `PlatformWorkClient` delivery read/configure/control/evidence/review/accept/recover operations. Scope membership grants no board/artifact/repository access. Managers activate plans and accept exact candidates; architects configure topology within grants. Merges remain trusted platform operations.
@@ -10,7 +21,7 @@ Use typed `PlatformWorkClient` delivery read/configure/control/evidence/review/a
 
 Build IDs bind certified provider/recipe/target/configuration and source revision. `WorkDeliveryBuildPending` returns durable pending identities; platform reconciliation resumes readiness without agent polling loops. `WorkDeliveryFindingResolution` links QA-verified remediation to rejected findings. Domain keys and per-repository receipts protect retries and partial recovery.
 
-SDK 3.65.0 supplies `DeliveryBuildReadiness.ExecuteAsync` for Release `build-readiness`.
+SDK 3.65.1 supplies `DeliveryBuildReadiness.ExecuteAsync` for Release `build-readiness`.
 `HierarchicalProjectDelivery.SelectBuildReadinessRole` prefers an eligible Build Release Engineer,
 then a Technical Director or Developer (including Game Engineer) with V2 execution and explicit
 `work.execution.build-readiness.v1` support. Legacy developers without the handler are excluded.
@@ -32,6 +43,6 @@ DeliveryComputeTest supports compute-test release bindings without certified pac
 
 Draft QA staffing: HierarchicalProjectDelivery.PrepareAsync includes ConfigureWorkDeliveryPlanRequest.TaskAssignments before creating the draft, then finalizes task delivery and activates. The host checks actual assignments before dispatch; proposed QA-report manager reviews never grant execution. Delivery planning conflicts retain the platform task-specific reason as a recoverable DeliveryStaffingException.
 
-## Draft reconciliation (SDK 3.65.0)
+## Draft reconciliation (SDK 3.65.1)
 
 `HierarchicalProjectDelivery.PrepareAsync` rereads current accepted hierarchy before activating an existing Draft. It calls `ConfigureWorkDeliveryPlanRequest` with `PlanId` and `ExpectedRevision` when child membership, planning revision pins or review assignments change. Existing branch and build bindings and release criteria remain explicit. Each task compares accepted delivery content and staffing before its own revision-checked finalization; retries resume from durable state and do not create another release. Selection timestamps alone do not replace assignments. Required specializations and capabilities remain attached to the author selection. Active/paused delivery still requires explicit platform recovery.
