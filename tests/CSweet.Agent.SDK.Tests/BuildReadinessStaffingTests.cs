@@ -16,7 +16,7 @@ public sealed class BuildReadinessStaffingTests
     [Fact]
     public void Prefer_release_specialist_then_technical_director_then_developer()
     {
-        var release = Member("game-build-release-engineer") with { EffectiveCapabilities = [WorkManagementCapabilityNames.ExecutionRunV2] };
+        var release = Member("game-build-release-engineer") with { EffectiveCapabilities = [WorkManagementCapabilityNames.ExecutionRun] };
         var td = Member("game-technical-director"); var dev = Member("software-developer");
         Assert.Equal("game-build-release-engineer", HierarchicalProjectDelivery.SelectBuildReadinessRole(Roster(dev, td, release)));
         Assert.Equal("game-technical-director", HierarchicalProjectDelivery.SelectBuildReadinessRole(Roster(dev, td)));
@@ -34,7 +34,7 @@ public sealed class BuildReadinessStaffingTests
     {
         var member = Member(role);
         member = condition switch {
-            "legacy" => member with { EffectiveCapabilities = [WorkManagementCapabilityNames.ExecutionRunV2] },
+            "legacy" => member with { EffectiveCapabilities = [WorkManagementCapabilityNames.ExecutionRun] },
             "offline" => member with { RuntimeEligibility = "Unavailable" },
             "unavailable" => member with { IsAvailable = false },
             "no-v2" => member with { EffectiveCapabilities = [DeliveryBuildReadiness.ExecutionCapability] },
@@ -45,7 +45,7 @@ public sealed class BuildReadinessStaffingTests
 
     private static AgentTeammate Member(string role) => new(Guid.NewGuid().ToString(), role, "Agent", role, role, "Peer", "Online") {
         AgentInstallationId = Guid.NewGuid(), IsAvailable = true, RuntimeEligibility = "Eligible", DeclaredRoleKeys = [role],
-        EffectiveCapabilities = [WorkManagementCapabilityNames.ExecutionRunV2, DeliveryBuildReadiness.ExecutionCapability] };
+        EffectiveCapabilities = [WorkManagementCapabilityNames.ExecutionRun, DeliveryBuildReadiness.ExecutionCapability] };
     private static AgentTeamContext Roster(params AgentTeammate[] members) => new(Guid.NewGuid().ToString(), "Game", "Game", 1,
         Guid.NewGuid().ToString(), "Producer", members, [], members.Length, false);
 }

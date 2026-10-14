@@ -42,10 +42,10 @@ public sealed class RoleTaxonomyTests
         {
             AgentInstallationId = Guid.NewGuid(), RuntimeEligibility = "Eligible",
             DeclaredRoleKeys = ["software-developer"],
-            EffectiveCapabilities = ["work.execution.run.v1"]
+            EffectiveCapabilities = ["work.execution.run"]
         };
         var preferred = new CSweet.WorkManagement.Contracts.WorkAssignmentRequirements(
-            "game-engineer", [], ["gameplay-programming"], ["work.execution.run.v1"]);
+            "game-engineer", [], ["gameplay-programming"], ["work.execution.run"]);
         var required = preferred with { RequiredSpecializationKeys = ["gameplay-programming"] };
 
         Assert.True(RoleTaxonomy.IsEligible(developer, preferred));
@@ -58,7 +58,7 @@ public sealed class RoleTaxonomyTests
         var firstId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         var secondId = Guid.Parse("00000000-0000-0000-0000-000000000002");
         var requirements = new CSweet.WorkManagement.Contracts.WorkAssignmentRequirements(
-            "game-engineer", ["gameplay-programming"], ["engine-integration"], ["work.execution.run.v1"]);
+            "game-engineer", ["gameplay-programming"], ["engine-integration"], ["work.execution.run"]);
         AgentTeammate Candidate(Guid id, params string[] skills) => new(
             id.ToString("D"), "Engineer", "Agent", null, null, "DirectReport", "Active")
         {
@@ -66,7 +66,7 @@ public sealed class RoleTaxonomyTests
             RuntimeEligibility = "Eligible",
             DeclaredRoleKeys = ["game-engineer"],
             SpecializationKeys = skills,
-            EffectiveCapabilities = ["work.execution.run.v1"]
+            EffectiveCapabilities = ["work.execution.run"]
         };
 
         var selected = RoleTaxonomy.SelectAssignment(

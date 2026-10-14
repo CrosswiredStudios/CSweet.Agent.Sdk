@@ -10,8 +10,8 @@ public sealed class HierarchicalDeliveryTests
     {
         var assignment = Assignment(WorkExecutionScopes.Release);
         Assert.Null(assignment.SprintExecutionId); Assert.Null(assignment.SprintId); Assert.Null(assignment.PolicyRevisionId);
-        Assert.Throws<InvalidOperationException>(assignment.ToTaskAssignment);
-        var roundtrip = JsonSerializer.Deserialize<WorkExecutionAssignmentV2>(JsonSerializer.Serialize(assignment));
+        Assert.Throws<InvalidOperationException>(assignment.RequireTaskScope);
+        var roundtrip = JsonSerializer.Deserialize<WorkExecutionAssignment>(JsonSerializer.Serialize(assignment));
         Assert.Equal(assignment.DeliveryPlanId, roundtrip!.DeliveryPlanId);
         Assert.Equal(assignment.OrganizationUserId, roundtrip.OrganizationUserId);
         Assert.Equal(assignment.PlanningRevision, roundtrip.PlanningRevision);
@@ -40,11 +40,11 @@ public sealed class HierarchicalDeliveryTests
         Assert.Equal("quality", Assert.Single(transitions, x => x.FromStageKey == "task-integration").ToStageKey);
         Assert.Equal("quality", Assert.Single(transitions, x => x.ToStageKey == "done").FromStageKey);
         Assert.Equal("development", Assert.Single(transitions, x => x.FromStageKey == "quality" && x.OutcomeCode == "changes_requested").ToStageKey);
-        Assert.Contains(WorkManagementCapabilityNames.ExecutionRunV1, WorkManagementCapabilityNames.All);
-        Assert.Contains(WorkManagementCapabilityNames.ExecutionRunV2, WorkManagementCapabilityNames.All);
+        Assert.Contains(WorkManagementCapabilityNames.ExecutionRun, WorkManagementCapabilityNames.All);
+        Assert.Contains(WorkManagementCapabilityNames.ExecutionRun, WorkManagementCapabilityNames.All);
     }
 
-    private static WorkExecutionAssignmentV2 Assignment(string scope) => new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+    private static WorkExecutionAssignment Assignment(string scope) => new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
         Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), null, scope, Guid.NewGuid(), 2, null, null, 4, "Release", null,
         "quality", 1, 1, DateTimeOffset.UtcNow.AddHours(1), "Validate", JsonSerializer.SerializeToElement(new { }),
         JsonSerializer.SerializeToElement(new { }), [], []) { OrganizationUserId = Guid.NewGuid(), PlanningRevision = 3, PermittedOutcomes = ["approved", "changes_requested"] };

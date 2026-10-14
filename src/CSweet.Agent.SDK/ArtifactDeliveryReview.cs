@@ -10,14 +10,14 @@ namespace CSweet.Agent.SDK;
 public static class ArtifactDeliveryReview
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-    public static bool Supports(WorkExecutionAssignmentV1 assignment) => assignment.StageKey == "quality" &&
+    public static bool Supports(WorkExecutionAssignment assignment) => assignment.StageKey == "quality" &&
         assignment.Item.TryGetProperty("deliverySpecificationJson", out var value) && value.ValueKind == JsonValueKind.String &&
         value.GetString() is { } text && JsonSerializer.Deserialize<WorkItemDeliverySpecification>(text, Json)?.DeliveryKind == "Artifact";
-    public static async Task<AgentWorkResult> ExecuteAsync(WorkExecutionAssignmentV1 assignment, AgentRuntimeContext context,
+    public static async Task<AgentWorkResult> ExecuteAsync(WorkExecutionAssignment assignment, AgentRuntimeContext context,
         IChatClient client, CancellationToken ct)
     {
         if (!Supports(assignment)) throw new ArgumentException("The assignment is not artifact QA.");
-        var item = await context.Platform.Work.ReadItemAsync(new(assignment.BoardId, assignment.ItemId), ct);
+        var item = await context.Platform.Work.ReadItemAsync(new(assignment.BoardId, assignment.TaskItemId), ct);
         var input = assignment.Input.Deserialize<WorkExecutionInputV1>(Json)!;
         if (item.Planning is null || item.PlanningRevision != input.PlanningRevision ||
             item.StageAssignments.Single(x => x.StageKey == "quality").AgentInstallationId.ToString() != context.InstallationId)

@@ -24,8 +24,9 @@ public sealed class ArtifactTaskDeliveryHandoffTests
             StageAssignments = [new("development", "AgentInstallation", Guid.NewGuid(), authorInstallation),
                 new("quality", "AgentInstallation", Guid.NewGuid(), reviewerInstallation)]
         };
-        var assignment = JsonSerializer.Deserialize<WorkExecutionAssignmentV1>("{}")! with
+        var assignment = JsonSerializer.Deserialize<WorkExecutionAssignment>("{}")! with
         {
+            Scope = WorkExecutionScopes.Task, SprintId = Guid.NewGuid(), SprintExecutionId = Guid.NewGuid(), PolicyRevisionId = Guid.NewGuid(),
             OrganizationId = Guid.NewGuid(), BoardId = Guid.NewGuid(), ItemId = item.Id, StageExecutionId = Guid.NewGuid(), AttemptId = Guid.NewGuid(),
             StageKey = "development", Input = JsonSerializer.SerializeToElement(new WorkExecutionInputV1(Guid.NewGuid(), Guid.NewGuid(), 1, planning), Json),
             Instructions = "Deliver validation", PriorOutcomes = [], Evidence = [], Item = JsonSerializer.SerializeToElement(new { })
@@ -74,7 +75,7 @@ public sealed class ArtifactTaskDeliveryHandoffTests
             StageKey = "quality", StageExecutionId = Guid.NewGuid(), AttemptId = Guid.NewGuid(), PriorOutcomes = [outcome],
             Item = JsonSerializer.SerializeToElement(new { deliverySpecificationJson = JsonSerializer.Serialize(item.Delivery, Json) })
         };
-        qa = JsonSerializer.Deserialize<WorkExecutionAssignmentV1>(JsonSerializer.Serialize(qa, Json), Json)!;
+        qa = JsonSerializer.Deserialize<WorkExecutionAssignment>(JsonSerializer.Serialize(qa, Json), Json)!;
         var reviewContext = runtime.CreateContext(assignment.OrganizationId.ToString(), reviewerInstallation.ToString());
         var reviewed = await ArtifactDeliveryReview.ExecuteAsync(qa, reviewContext,
             reviewContext.CreateChatClient(new(Guid.NewGuid(), "test")), default);

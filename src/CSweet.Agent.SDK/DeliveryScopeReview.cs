@@ -8,7 +8,7 @@ namespace CSweet.Agent.SDK;
 public static class DeliveryScopeReview
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-    public static async Task<AgentWorkResult> ExecuteAsync(WorkExecutionAssignmentV2 assignment, AgentRuntimeContext context,
+    public static async Task<AgentWorkResult> ExecuteAsync(WorkExecutionAssignment assignment, AgentRuntimeContext context,
         IChatClient client, CancellationToken ct)
     {
         if (assignment.Scope == WorkExecutionScopes.Task || (assignment.StageKey is not ("technical-review" or "manager-review") &&
@@ -41,7 +41,7 @@ public static class DeliveryScopeReview
             (result.Approved ? result.Criteria.Any(x => !x.Satisfied) || result.Findings.Count > 0 : result.Findings.Count == 0))
             throw new InvalidOperationException("Aggregate review must bind the exact candidate and address every criterion consistently.");
     }
-    public static AgentWorkResult Outcome(WorkExecutionAssignmentV2 assignment, WorkDeliveryReviewResult result) => AgentWorkResult.Success(
+    public static AgentWorkResult Outcome(WorkExecutionAssignment assignment, WorkDeliveryReviewResult result) => AgentWorkResult.Success(
         new WorkExecutionOutcomeV1(assignment.StageExecutionId, assignment.AttemptId, WorkExecutionDispositions.Completed,
             result.Approved ? "approved" : "changes_requested", result.Summary, JsonSerializer.SerializeToElement(result, Json),
             [new("delivery-candidate", "Reviewed complete candidate", result.CandidateDigest)], result.Findings));

@@ -10,7 +10,7 @@ public sealed class DeliveryCandidateWorkspace : IAsyncDisposable
     private readonly Dictionary<string, string> _sourceHashes = new(StringComparer.Ordinal);
     public string Path { get; }
     private DeliveryCandidateWorkspace(string path) => Path = path;
-    public static async Task<DeliveryCandidateWorkspace> MaterializeAsync(WorkExecutionAssignmentV2 assignment,
+    public static async Task<DeliveryCandidateWorkspace> MaterializeAsync(WorkExecutionAssignment assignment,
         AgentRuntimeContext context, CancellationToken ct)
     {
         if (assignment.DeliveryPlanId is not { } plan || assignment.Candidate is not { } candidate)

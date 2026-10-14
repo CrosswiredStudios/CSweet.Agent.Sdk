@@ -5,6 +5,26 @@ namespace CSweet.Agent.SDK.Tests;
 
 public sealed class SingleQaStaffingTests
 {
+    [Fact]
+    public async Task CreativeDirectorWithOnlyCanonicalExecutionCanAuthorWithoutDuplicateHiring()
+    {
+        var f = new Fixture(false);
+        var director = f.Developer with { DeclaredRoleKeys = ["creative-director"],
+            EffectiveCapabilities = [WorkManagementCapabilityNames.ExecutionRun] };
+        f.Members[f.Members.IndexOf(f.Developer)] = director;
+        f.Items[f.Items.IndexOf(f.Product)] = f.Product with { Planning = f.Product.Planning! with
+        {
+            DelegationRecommendations = [new(f.AuthorStage, "creative-director",
+                [WorkManagementCapabilityNames.ExecutionRun], null, true, "Level grid specification")]
+        } };
+        Assert.Equal("Active", (await f.Prepare()).Status);
+        var stages = f.Finalizations.Single(x => x.ItemId == f.Product.Id).StageAssignments;
+        var author = stages.Single(x => x.StageKey == f.AuthorStage);
+        Assert.Equal(director.AgentInstallationId, author.AgentInstallationId);
+        Assert.Equal(WorkManagementCapabilityNames.ExecutionRun, Assert.Single(author.Requirements!.RequiredCapabilityKeys));
+        Assert.NotEqual(author.AgentInstallationId, stages.Single(x => x.StageKey == "quality").AgentInstallationId);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -191,7 +211,7 @@ public sealed class SingleQaStaffingTests
             Developer = Member(software ? "software-developer" : "game-engineer");
             Technical = Member(software ? "software-architect" : "game-technical-director");
             if (computeTest) Technical = Technical with { EffectiveCapabilities =
-                [WorkManagementCapabilityNames.ExecutionRunV2, DeliveryBuildReadiness.ExecutionCapability, DeliveryComputeTest.ExecutionCapability] };
+                [WorkManagementCapabilityNames.ExecutionRun, DeliveryBuildReadiness.ExecutionCapability, DeliveryComputeTest.ExecutionCapability] };
             Members = [Manager, Qa, Developer, Technical];
             var epic = Item(EpicId, null, "Epic", "Release", null);
             var story = Item(StoryId, EpicId, "Story", "Story", null);
@@ -248,6 +268,6 @@ public sealed class SingleQaStaffingTests
                   [new(AuthorStage, role, [], null, true, "Role-owned work")] } };
         private static AgentTeammate Member(string role) => new(Guid.NewGuid().ToString(), role, "Agent", role, role, "Teammate", "Active")
             { AgentInstallationId = Guid.NewGuid(), RuntimeEligibility = "Eligible", IsAvailable = true,
-              DeclaredRoleKeys = [role], EffectiveCapabilities = [WorkManagementCapabilityNames.ExecutionRunV2] };
+              DeclaredRoleKeys = [role], EffectiveCapabilities = [WorkManagementCapabilityNames.ExecutionRun] };
     }
 }

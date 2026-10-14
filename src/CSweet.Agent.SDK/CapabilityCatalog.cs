@@ -297,8 +297,7 @@ public static class CapabilityNames
         public const string SprintReadReports = WorkManagementCapabilityNames.SprintReadReports;
         public const string AutomationRead = WorkManagementCapabilityNames.AutomationRead;
         public const string AutomationManage = WorkManagementCapabilityNames.AutomationManage;
-        public const string ExecutionRunV1 = WorkManagementCapabilityNames.ExecutionRunV1;
-        public const string ExecutionRunV2 = WorkManagementCapabilityNames.ExecutionRunV2;
+        public const string ExecutionRun = WorkManagementCapabilityNames.ExecutionRun;
         public const string OrchestrationRead = WorkManagementCapabilityNames.OrchestrationRead;
         public const string OrchestrationPreflight = WorkManagementCapabilityNames.OrchestrationPreflight;
         public const string OrchestrationStart = WorkManagementCapabilityNames.OrchestrationStart;
@@ -551,8 +550,7 @@ public static class CapabilityCatalog
                 CapabilityNames.WorkManagement.OrchestrationConfigureSoftwareTemplate,
                 CapabilityNames.WorkManagement.OrchestrationConfigureProfileV1,
                 CapabilityNames.WorkManagement.FlowMetricsReadV1,
-                CapabilityNames.WorkManagement.ExecutionRunV1,
-                CapabilityNames.WorkManagement.ExecutionRunV2,
+                CapabilityNames.WorkManagement.ExecutionRun,
                 CapabilityNames.WorkManagement.PersonalTodoRead,
                 CapabilityNames.WorkManagement.PersonalTodoAdd,
                 CapabilityNames.WorkManagement.PersonalTodoReorder,
@@ -742,8 +740,7 @@ public static class WorkOrchestrationCapabilities
     public const string ConfigureSoftwareTemplate =
         CapabilityNames.WorkManagement.OrchestrationConfigureSoftwareTemplate;
     public const string ConfigureProfile = CapabilityNames.WorkManagement.OrchestrationConfigureProfileV1;
-    public const string Execute = CapabilityNames.WorkManagement.ExecutionRunV1;
-    public const string ExecuteV2 = CapabilityNames.WorkManagement.ExecutionRunV2;
+    public const string Execute = CapabilityNames.WorkManagement.ExecutionRun;
 }
 
 public static class WorkFlowMetricCapabilities

@@ -17,7 +17,7 @@ public static class DeliveryComputeTest
         string? PendingStage = null, Guid? OperationId = null, int NextOffset = 0,
         Guid? ValidationId = null, Guid? PublicationId = null, long Generation = 0,
         string? Mode = null);
-    internal static async Task<AgentWorkResult> ExecuteAuthorizedAsync(WorkExecutionAssignmentV2 assignment,
+    internal static async Task<AgentWorkResult> ExecuteAuthorizedAsync(WorkExecutionAssignment assignment,
         WorkDeliveryPlanResponse plan, AgentRuntimeContext context, CancellationToken ct)
     {
         var candidate = assignment.Candidate!;

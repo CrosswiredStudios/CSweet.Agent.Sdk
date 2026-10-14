@@ -8,11 +8,11 @@ namespace CSweet.Agent.SDK;
 public static class DeliveryTaskTechnicalReview
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-    public static async Task<AgentWorkResult> ExecuteAsync(WorkExecutionAssignmentV1 assignment,
+    public static async Task<AgentWorkResult> ExecuteAsync(WorkExecutionAssignment assignment,
         AgentRuntimeContext context, IChatClient client, CancellationToken ct)
     {
         if (assignment.StageKey != "technical-review") throw new InvalidOperationException("This operation requires assigned Technical Review.");
-        var item = await context.Platform.Work.ReadItemAsync(new(assignment.BoardId, assignment.ItemId), ct);
+        var item = await context.Platform.Work.ReadItemAsync(new(assignment.BoardId, assignment.TaskItemId), ct);
         if (item.Delivery?.DeliveryPlanId is null || item.Delivery.DeliveryKind != "Code" || item.PlanningRevision <= 0 ||
             item.StageAssignments.Single(x => x.StageKey == "technical-review").AgentInstallationId.ToString() != context.InstallationId ||
             item.StageAssignments.Where(x => x.StageKey is "development" or "specialist-execution").Any(x => x.AgentInstallationId.ToString() == context.InstallationId))

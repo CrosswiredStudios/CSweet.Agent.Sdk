@@ -8,13 +8,13 @@ namespace CSweet.Agent.SDK;
 public static class HierarchicalProjectDelivery
 {
     internal static WorkAssignmentRequirements BuildReadinessRequirements(string role) => new(role, [], [],
-        role == "game-build-release-engineer" ? [WorkManagementCapabilityNames.ExecutionRunV2] :
-            [WorkManagementCapabilityNames.ExecutionRunV2, DeliveryBuildReadiness.ExecutionCapability]);
+        role == "game-build-release-engineer" ? [WorkManagementCapabilityNames.ExecutionRun] :
+            [WorkManagementCapabilityNames.ExecutionRun, DeliveryBuildReadiness.ExecutionCapability]);
 
     internal static string SelectBuildReadinessRole(AgentTeamContext roster) =>
         new[] { "game-build-release-engineer", "game-technical-director", "software-developer" }
             .FirstOrDefault(role => RoleTaxonomy.SelectAssignment(roster.Members, BuildReadinessRequirements(role)) is not null)
-        ?? throw new DeliveryStaffingException("Build readiness needs an eligible Build Release Engineer, Technical Director, or Developer with V2 execution and build-readiness support. Certified build evidence is still required.");
+        ?? throw new DeliveryStaffingException("Build readiness needs an eligible Build Release Engineer, Technical Director, or Developer with canonical execution and build-readiness support. Certified build evidence is still required.");
 
     public static async Task<WorkDeliveryPlanResponse> PrepareAsync(Guid projectId, Guid boardId,
         Guid managerId, AgentTeamContext roster, Guid repositoryId, string defaultBranch,
@@ -149,7 +149,7 @@ public static class HierarchicalProjectDelivery
             [Select("technical-review", technicalRole, codeAuthors)]));
         var computeReviewer = RoleTaxonomy.SelectAssignment(roster.Members,
             new WorkAssignmentRequirements("game-technical-director", [], [],
-                [WorkManagementCapabilityNames.ExecutionRunV2, DeliveryComputeTest.ExecutionCapability]))?.Teammate;
+                [WorkManagementCapabilityNames.ExecutionRun, DeliveryComputeTest.ExecutionCapability]))?.Teammate;
         var retainedRelease = draft?.Branches.SingleOrDefault(x => x.Scope == WorkExecutionScopes.Release);
         var useComputeTest = !software && branches.Count > 0 && (retainedRelease is not null
             ? retainedRelease.ReadinessMode == "compute-test" : computeReviewer is not null);
@@ -228,12 +228,12 @@ public static class HierarchicalProjectDelivery
         {
             var requirements = new WorkAssignmentRequirements(role, requestedRequirements?.RequiredSpecializationKeys ?? [],
                 requestedRequirements?.PreferredSpecializationKeys ?? [],
-                [.. (requestedRequirements?.RequiredCapabilityKeys ?? []).Concat([WorkManagementCapabilityNames.ExecutionRunV2])
+                [.. (requestedRequirements?.RequiredCapabilityKeys ?? []).Concat([WorkManagementCapabilityNames.ExecutionRun])
                     .Concat(additionalCapabilities ?? []).Distinct(StringComparer.Ordinal)]);
             var eligible = roster.Members.Where(x => Guid.TryParse(x.EmployeeId, out var employee) && !excluded.Contains(employee) && (!requiredEmployee.HasValue || employee == requiredEmployee)).ToArray();
             var candidate = preferred.HasValue ? RoleTaxonomy.SelectAssignment(eligible.Where(x => x.AgentInstallationId == preferred), requirements)?.Teammate : null;
             candidate ??= RoleTaxonomy.SelectAssignment(eligible, requirements)?.Teammate
-                ?? throw new DeliveryStaffingException($"Staffing needs attention for {subject ?? stage}: assign an eligible {role} with V2 execution to {stage}, independent of the deliverable author. Required review cannot be skipped.");
+                ?? throw new DeliveryStaffingException($"Staffing needs attention for {subject ?? stage}: assign an eligible {role} with canonical execution to {stage}, independent of the deliverable author. Required review cannot be skipped.");
             var matched = requirements.RequiredSpecializationKeys.Concat(requirements.PreferredSpecializationKeys
                 .Where(x => candidate.SpecializationKeys.Contains(x, StringComparer.Ordinal))).Distinct().Order(StringComparer.Ordinal).ToArray();
             var fingerprint = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"{projectId:N}|{stage}|{role}|{candidate.AgentInstallationId}|{roster.Revision}|{profileDigest}|{System.Text.Json.JsonSerializer.Serialize(requirements)}")));

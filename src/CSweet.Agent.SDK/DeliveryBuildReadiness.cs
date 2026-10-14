@@ -6,11 +6,11 @@ namespace CSweet.Agent.SDK;
 /// <summary>Requests certified builds for an authorized exact release candidate without host tool access.</summary>
 public static class DeliveryBuildReadiness
 {
-    /// <summary>Advertises explicit stage support in addition to V2 execution; declarations grant no authority.</summary>
+    /// <summary>Advertises explicit stage support in addition to canonical execution; declarations grant no authority.</summary>
     public const string ExecutionCapability = "work.execution.build-readiness.v1";
 
     /// <summary>Execute one bounded build readiness attempt; pending builds resume through durable platform events.</summary>
-    public static async Task<AgentWorkResult> ExecuteAsync(WorkExecutionAssignmentV2 assignment,
+    public static async Task<AgentWorkResult> ExecuteAsync(WorkExecutionAssignment assignment,
         AgentRuntimeContext context, CancellationToken ct)
     {
         try

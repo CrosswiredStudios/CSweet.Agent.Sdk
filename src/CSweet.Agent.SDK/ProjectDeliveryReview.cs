@@ -8,10 +8,10 @@ namespace CSweet.Agent.SDK;
 public static class ProjectDeliveryReview
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-    public static bool Supports(WorkExecutionAssignmentV1? assignment) => assignment?.StageKey is "quality" or "merge-decision" &&
+    public static bool Supports(WorkExecutionAssignment? assignment) => assignment?.StageKey is "quality" or "merge-decision" &&
         assignment.Input.Deserialize<WorkExecutionInputV1>(Json)?.Planning?.Constraints?.Contains("project-delivery:manager-brief-v2") == true;
 
-    public static async Task<AgentWorkResult> ExecuteAsync(WorkExecutionAssignmentV1 assignment,
+    public static async Task<AgentWorkResult> ExecuteAsync(WorkExecutionAssignment assignment,
         AgentRuntimeContext context, IChatClient client, bool authorizeMerge, CancellationToken ct)
     {
         try
@@ -23,7 +23,7 @@ public static class ProjectDeliveryReview
             var project = await context.Platform.ReadWorkstreamAsync(new(projectId), ct);
             if (project.ProfileKey != "video-game-manager-brief.v1" || project.ProfileVersion != 2 || project.Status is not ("Active" or "Approved"))
                 throw new InvalidOperationException("The current project does not authorize this delivery policy.");
-            var item = await context.Platform.Work.ReadItemAsync(new(assignment.BoardId, assignment.ItemId), ct);
+            var item = await context.Platform.Work.ReadItemAsync(new(assignment.BoardId, assignment.TaskItemId), ct);
             if (item.Planning is null || item.PlanningRevision != input.PlanningRevision || item.Delivery is null ||
                 item.StageAssignments.SingleOrDefault(x => x.StageKey == assignment.StageKey)?.AgentInstallationId.ToString() != context.InstallationId ||
                 item.StageAssignments.SingleOrDefault(x => x.StageKey == "development")?.AgentInstallationId == Guid.Parse(context.InstallationId))
@@ -31,9 +31,9 @@ public static class ProjectDeliveryReview
             if (authorizeMerge && project.AccountableManagerOrganizationUserId.ToString() != context.Identity?.EmployeeId)
                 throw new InvalidOperationException("Only the accountable producer can accept delivery and request merge authorization.");
             var key = $"delivery-review:{assignment.AttemptId:N}:{assignment.AssignmentRevision}";
-            var candidate = await context.Platform.SourceControl.ReviewMergeAsync(new(assignment.ItemId, assignment.AssignmentRevision, key), ct);
+            var candidate = await context.Platform.SourceControl.ReviewMergeAsync(new(assignment.TaskItemId, assignment.AssignmentRevision, key), ct);
             var validations = authorizeMerge ? candidate.QualityEvidence : candidate.ImplementationEvidence;
-            if (candidate.WorkItemId != assignment.ItemId || candidate.RepositoryId != item.Delivery.RepositoryId ||
+            if (candidate.WorkItemId != assignment.TaskItemId || candidate.RepositoryId != item.Delivery.RepositoryId ||
                 candidate.CandidateCommitSha.Length is not (40 or 64) || candidate.CandidateCommitSha.Any(x => !Uri.IsHexDigit(x)) ||
                 !candidate.DiffSummary.Contains("diff --git ", StringComparison.Ordinal) || validations.Count == 0 ||
                 validations.Any(x => !x.Succeeded || x.ExitCode != 0 || string.IsNullOrWhiteSpace(x.Command)))
@@ -57,14 +57,14 @@ public static class ProjectDeliveryReview
             Validate(decision, candidate.CandidateCommitSha, item.Planning.AcceptanceCriteria);
             if (authorizeMerge && decision.Approved)
             {
-                var authorization = await context.Platform.SourceControl.AuthorizeMergeAsync(new(assignment.ItemId,
+                var authorization = await context.Platform.SourceControl.AuthorizeMergeAsync(new(assignment.TaskItemId,
                     assignment.AssignmentRevision, candidate.PublicationId, candidate.CandidateCommitSha,
                     GitMergeDecisions.Approve, decision.Summary, key + ":authorize"), ct);
                 if (authorization.PublicationId != candidate.PublicationId || authorization.CandidateCommitSha != candidate.CandidateCommitSha || authorization.Decision != GitMergeDecisions.Approve)
                     throw new InvalidOperationException("The platform did not confirm authorization for this candidate.");
             }
             if (!decision.Approved)
-                await context.Platform.Work.CommentAsync(new(assignment.BoardId, assignment.ItemId,
+                await context.Platform.Work.CommentAsync(new(assignment.BoardId, assignment.TaskItemId,
                     $"Required rework for candidate {candidate.CandidateCommitSha}:\n" + string.Join("\n", decision.Findings.Select(x => "- " + x)), key + ":findings"), ct);
             var outcome = decision.Approved ? (authorizeMerge ? "approved" : "passed") : (authorizeMerge ? "rejected" : "changes_requested");
             return AgentWorkResult.Success(new WorkExecutionOutcomeV1(assignment.StageExecutionId, assignment.AttemptId,

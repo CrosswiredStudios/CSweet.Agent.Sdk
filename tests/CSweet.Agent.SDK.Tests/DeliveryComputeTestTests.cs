@@ -66,7 +66,7 @@ public sealed class DeliveryComputeTestTests
             Id = planId, WorkstreamId = project, Status = "Active", ScopeRevision = 1, Executions = [execution],
             Branches = [new(repository.RepositoryId,"Release",null,"release","main") { ReadinessMode = "compute-test" }],
             Scopes = [new("Release",null,Guid.NewGuid(),1,[],new(["Run source"],["HTTP works"]),[])] };
-        var assignment = new WorkExecutionAssignmentV2(executionId,stage.Id,Guid.NewGuid(),Guid.NewGuid(),project,Guid.NewGuid(),null,
+        var assignment = new WorkExecutionAssignment(executionId,stage.Id,Guid.NewGuid(),Guid.NewGuid(),project,Guid.NewGuid(),null,
             "Release",planId,1,null,null,1,"Release",null,"build-readiness",0,1,DateTimeOffset.UtcNow.AddHours(1),"Test",
             JsonSerializer.SerializeToElement(new {}),JsonSerializer.SerializeToElement(new {}),[],[],candidate)
             { OrganizationUserId = employee, AgentInstallationId = installation };

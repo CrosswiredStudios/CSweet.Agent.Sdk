@@ -2,7 +2,7 @@
 
 ## Hierarchical delivery (SDK 3.59.0)
 
-`work.execution.run.v2` provides scope-specific execution. Task assignments carry real sprint
+`work.execution.run` provides scope-specific execution. Task assignments carry real sprint
 identifiers; story, epic and release assignments carry delivery-plan authority and exact candidates.
 The published V1 execution contract remains available.
 
@@ -306,7 +306,7 @@ remain durable while the body disappears from reads.
 - `WorkOrchestrationCapabilities.Resume` â€” `work.orchestration.resume`
 - `WorkOrchestrationCapabilities.Cancel` â€” `work.orchestration.cancel`
 - `WorkOrchestrationCapabilities.Retry` â€” `work.orchestration.retry`
-- `WorkOrchestrationCapabilities.Execute` â€” `work.execution.run.v1`
+- `WorkOrchestrationCapabilities.Execute` â€” `work.execution.run`
 
 ## Source control and Git workspace
 

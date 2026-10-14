@@ -10,7 +10,7 @@ namespace CSweet.Agent.SDK;
 public static class ArtifactTaskDelivery
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-    public static async Task<AgentWorkResult> ExecuteAsync(WorkExecutionAssignmentV1 assignment, WorkItem item,
+    public static async Task<AgentWorkResult> ExecuteAsync(WorkExecutionAssignment assignment, WorkItem item,
         AgentRuntimeContext context, IChatClient client, CancellationToken ct)
     {
         if (item.Delivery is not { DeliveryKind: "Artifact", RepositoryId: var repository } || repository != Guid.Empty ||

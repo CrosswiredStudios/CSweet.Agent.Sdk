@@ -53,7 +53,7 @@ public sealed class DeliveryBuildReadinessTests
                     Provenance = state == "missing-provenance" ? null : new("provider", "1.0", "digest", "image", JsonSerializer.SerializeToElement(new { }),
                         "lock", ["build"], source, new string('f', 64), []) });
             });
-        var assignment = new WorkExecutionAssignmentV2(executionId, stage.Id, Guid.NewGuid(), Guid.NewGuid(), project, Guid.NewGuid(), null,
+        var assignment = new WorkExecutionAssignment(executionId, stage.Id, Guid.NewGuid(), Guid.NewGuid(), project, Guid.NewGuid(), null,
             "Release", planId, 1, null, null, 1, "Release", null, "build-readiness", 0, 1, DateTimeOffset.UtcNow.AddHours(1), "Build candidate",
             JsonSerializer.SerializeToElement(new { }), JsonSerializer.SerializeToElement(new { }), [], [], candidate) {
                 OrganizationUserId = employee, AgentInstallationId = installation, PlanningRevision = 1, PermittedOutcomes = ["approved", "changes_requested", "awaiting-build"] };

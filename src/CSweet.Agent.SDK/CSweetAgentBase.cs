@@ -154,23 +154,29 @@ public abstract partial class CSweetAgentBase : ICSweetAgent
             return UpdateConfiguration(request);
         }
 
-        if (request.Capability == WorkManagementCapabilityNames.ExecutionRunV2 || request.Capability == DeliveryBuildReadiness.ExecutionCapability || request.Capability == DeliveryComputeTest.ExecutionCapability)
+        if (request.Capability == WorkManagementCapabilityNames.ExecutionRun || request.Capability == DeliveryBuildReadiness.ExecutionCapability || request.Capability == DeliveryComputeTest.ExecutionCapability)
         {
-            var assignment = DeserializePayload<WorkExecutionAssignmentV2>(request.Payload);
-            if (assignment is null) return AgentWorkResult.Failure("The V2 execution assignment is required.");
+            var assignment = DeserializePayload<WorkExecutionAssignment>(request.Payload);
+            if (assignment is null) return AgentWorkResult.Failure("The execution assignment is required.");
+            if (assignment.Scope is not (WorkExecutionScopes.Task or WorkExecutionScopes.Story or WorkExecutionScopes.Epic or WorkExecutionScopes.Release) ||
+                assignment.Scope != WorkExecutionScopes.Task &&
+                (assignment.SprintId is not null || assignment.SprintExecutionId is not null || assignment.PolicyRevisionId is not null))
+                return AgentWorkResult.Failure("The execution scope or its authority is invalid.", "execution.invalid_assignment");
             if ((request.Capability == DeliveryBuildReadiness.ExecutionCapability || request.Capability == DeliveryComputeTest.ExecutionCapability) &&
                 (assignment.Scope != WorkExecutionScopes.Release || assignment.StageKey != "build-readiness"))
                 return AgentWorkResult.Failure("Build readiness requires its assigned release scope.");
             if (assignment.Scope == WorkExecutionScopes.Task)
-                return await ExecuteCapabilityCoreAsync(request with { Capability = WorkManagementCapabilityNames.ExecutionRunV1,
-                    Arguments = SerializePayload(assignment.ToTaskAssignment()) }, context, cancellationToken);
+            {
+                assignment.RequireTaskScope();
+                return await ExecuteCapabilityCoreAsync(request, context, cancellationToken);
+            }
             return await ExecuteDeliveryScopeAsync(assignment, context, cancellationToken);
         }
         return await ExecuteCapabilityCoreAsync(request, context, cancellationToken);
     }
 
     /// <summary>Executes a delivery-plan review using its real aggregate identity and exact candidate.</summary>
-    protected virtual Task<AgentWorkResult> ExecuteDeliveryScopeAsync(WorkExecutionAssignmentV2 assignment,
+    protected virtual Task<AgentWorkResult> ExecuteDeliveryScopeAsync(WorkExecutionAssignment assignment,
         AgentRuntimeContext context, CancellationToken cancellationToken) => Task.FromResult(AgentWorkResult.Failure(
             "This agent has no handler for the assigned aggregate review.", "delivery.unsupported_scope"));
 
