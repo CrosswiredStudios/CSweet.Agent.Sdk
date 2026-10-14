@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <PackageId>CSweet.Agent.SDK</PackageId>
-    <Version>4.0.0</Version>
+    <Version>4.1.0</Version>
     <PackageVersion Condition="'$(CSweetAgentSdkPackageVersion)' != ''">$(CSweetAgentSdkPackageVersion)</PackageVersion>
     <Authors>C-Sweet</Authors>
     <Company>C-Sweet</Company>
@@ -37,6 +37,7 @@
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\GRANTS.md" Pack="true" PackagePath="\" />
     <None Include="..\..\AGENT_AUTHORING.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\docs\manager-agents.md" Pack="true" PackagePath="docs\" />
     <None Include="..\..\docs\creating-an-agent.md" Pack="true" PackagePath="docs\" />
     <None Include="..\..\docs\manifest-reference.md" Pack="true" PackagePath="docs\" />
     <None Include="..\..\docs\collaboration.md" Pack="true" PackagePath="docs\" />

@@ -19,7 +19,8 @@ public abstract partial class CSweetAgentBase
         return JsonSerializer.Deserialize<T>(text, SerializerOptions) ?? throw new JsonException("Delegation model returned empty output.");
     }
 
-    private IChatClient CreateDelegationChatClient(AgentRuntimeContext context, CommunicationMessageReceivedEvent? incoming)
+    protected IChatClient CreateDelegationChatClient(AgentRuntimeContext context, CommunicationMessageReceivedEvent? incoming,
+        string invocationKind = "shared-delegation")
     {
         var schema = CreateConfigurationSchema();
         var providerField = schema.Fields.FirstOrDefault(x => x.Type == AgentConfigurationFieldTypes.LlmProvider && Settings.GetGuid(x.Key).HasValue);
@@ -27,7 +28,7 @@ public abstract partial class CSweetAgentBase
         var provider = providerField is null ? incoming?.ProviderProfileId ?? Guid.Empty : Settings.GetGuid(providerField.Key)!.Value;
         if (provider == Guid.Empty) throw new InvalidOperationException("Configure a model provider to interpret delegation requests.");
         return context.CreateChatClient(new(provider, modelField is null ? null : Settings.GetString(modelField.Key), new(
-            incoming is null ? null : Guid.Parse(incoming.ConversationId), incoming?.TurnId, "shared-delegation")));
+            incoming is null ? null : Guid.Parse(incoming.ConversationId), incoming?.TurnId, invocationKind)));
     }
 
     /// <summary>Classifies the outer request before a specialist conversation fallback.</summary>

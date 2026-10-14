@@ -353,6 +353,8 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 lease.Payload,
                 DateTimeOffset.UtcNow,
                 lease.CorrelationId);
+        if (agent is CSweetManagerAgentBase managerAgent && await ManagerIncidentCoordinator.DispatchAsync(managerAgent, envelope, context, cancellationToken))
+            return AgentWorkResult.Success(new { acknowledged = true });
         if (agent is CSweetAgentBase delegationAgent && await DelegationRuntime.DispatchAsync(delegationAgent, envelope, context, cancellationToken))
             return AgentWorkResult.Success(new { acknowledged = true });
         if (string.Equals(envelope.EventType, CalendarEvents.ReminderDue, StringComparison.Ordinal) && agent is CSweetAgentBase calendarAgent)
@@ -449,7 +451,8 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                     claim = new PersonalTodoClaim(null);
                     foreach (var candidate in candidates)
                     {
-                        if (await policy.EvaluatePersonalTodoClaimAsync(candidate, context, cancellationToken) != PersonalTodoClaimDecision.Claim)
+                        if (!(personalTodoAgent is CSweetManagerAgentBase && ManagerIncidentCoordinator.IsIncidentCommitment(candidate)) &&
+                            await policy.EvaluatePersonalTodoClaimAsync(candidate, context, cancellationToken) != PersonalTodoClaimDecision.Claim)
                             continue;
                         claim = await context.Platform.PersonalTodo.ClaimAsync(
                             eventId, candidate.Id, candidate.Revision, cancellationToken);
@@ -465,8 +468,10 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 PersonalTodoResult result;
                 try
                 {
-                    result = await personalTodoAgent.HandlePersonalTodoAsync(
-                        claim.Item, context, cancellationToken);
+                    result = personalTodoAgent is CSweetManagerAgentBase manager
+                        ? await ManagerIncidentCoordinator.HandlePersonalCommitmentAsync(manager, claim.Item, context, cancellationToken)
+                            ?? await personalTodoAgent.HandlePersonalTodoAsync(claim.Item, context, cancellationToken)
+                        : await personalTodoAgent.HandlePersonalTodoAsync(claim.Item, context, cancellationToken);
                 }
                 catch
                 {

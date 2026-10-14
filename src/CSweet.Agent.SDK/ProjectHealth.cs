@@ -8,12 +8,15 @@ public static class ProjectHealthCapabilities
     public const string Incidents = CapabilityNames.ProjectHealth.Incidents;
     public const string Report = CapabilityNames.ProjectHealth.Report;
     public const string Forward = CapabilityNames.ProjectHealth.Forward;
+    public const string Presentation = CapabilityNames.ProjectHealth.Presentation;
+    public const string Resolution = CapabilityNames.ProjectHealth.Resolution;
 }
 
 public static class ProjectHealthEvents
 {
     public const string ReviewDue = "com.csweet.project-health.review-due.v1";
     public const string IncidentChanged = "com.csweet.management.incident.changed.v1";
+    public const string OwnerReportRequested = "com.csweet.management.incident.owner-report-requested.v1";
 }
 
 public sealed record ProjectHealthHint(Guid WorkstreamId, Guid IncidentId, long Revision);
@@ -25,7 +28,30 @@ public sealed record ProjectHealthSnapshot(Guid WorkstreamId, DateTimeOffset Las
 public sealed record ProjectDiagnosticEvidence(string Kind, Guid SourceId, DateTimeOffset OccurredAt, string Detail,
     string? Link = null);
 public sealed record ProjectDiagnosticsPage(IReadOnlyList<ProjectDiagnosticEvidence> Evidence, int? NextOffset,
-    IReadOnlyList<string> Limitations);
+    IReadOnlyList<string> Limitations)
+{
+    public IncidentCurrentState? CurrentState { get; init; }
+}
+public sealed record IncidentDocumentReference(Guid ArtifactId, Guid RevisionId, string Digest);
+public sealed record IncidentCurrentState(string Hash, string ProjectName,
+    IReadOnlyList<ProjectDiagnosticEvidence> Facts, IReadOnlyList<IncidentDocumentReference> Documents);
+public sealed record IncidentResolutionOption(string Id, string Label, string Description, string IntendedOutcome);
+public sealed record IncidentOwnerReport(string Title, string Summary, string Recovery, string NextStep,
+    IReadOnlyList<IncidentResolutionOption> Options, string RecommendedOptionId, string SourceHash);
+public sealed record UpdateManagementIncidentPresentation(Guid IncidentId, long ExpectedRevision,
+    string IdempotencyKey, IncidentOwnerReport? OwnerReport = null, Guid? ResolutionDecisionId = null,
+    string? ResolutionOutcome = null);
+public sealed record ReadIncidentResolution(Guid DecisionId, Guid TurnId);
+public sealed record IncidentResolutionContext(ManagementIncident Incident, Guid DecisionId,
+    long ReportRevision, string IntendedOutcome, string? OptionId, string? SomethingElse, bool AlreadyHandled)
+{
+    public Guid TurnId { get; init; }
+    public Guid ConversationId { get; init; }
+    public Guid SourceMessageId { get; init; }
+    public bool IsFollowUp { get; init; }
+    public string? RecordedOutcome { get; init; }
+    public CSweet.WorkManagement.Contracts.PersonalTodoItem? Commitment { get; init; }
+}
 public sealed record ManagementIncidentHop(Guid FromEmployeeId, Guid? ToEmployeeId, DateTimeOffset OccurredAt, string Reason);
 public sealed record ManagementIncident(Guid Id, Guid WorkstreamId, Guid ProducerEmployeeId, Guid CurrentRecipientId,
     string Status, string Reason, Guid? AffectedWorkItemId, DateTimeOffset DetectedAt, DateTimeOffset LastProgressAt,
@@ -37,6 +63,8 @@ public sealed record ManagementIncident(Guid Id, Guid WorkstreamId, Guid Produce
     public string Disposition { get; init; } = IncidentDispositions.Escalate;
     public DateTimeOffset? ReviewAt { get; init; }
     public string? ActionReference { get; init; }
+    public IncidentOwnerReport? OwnerReport { get; init; }
+    public long ReportRevision { get; init; }
 }
 public sealed record ManagementIncidentPage(IReadOnlyList<ManagementIncident> Incidents, int? NextOffset);
 public sealed record ReportManagementIncident(Guid IncidentId, long ExpectedRevision, string IdempotencyKey,
@@ -45,11 +73,16 @@ public sealed record ReportManagementIncident(Guid IncidentId, long ExpectedRevi
     public string Disposition { get; init; } = IncidentDispositions.Escalate;
     public DateTimeOffset? ReviewAt { get; init; }
     public string? ActionReference { get; init; }
+    public IncidentOwnerReport? OwnerReport { get; init; }
 }
 public sealed record ForwardManagementIncident(Guid IncidentId, long ExpectedRevision, string IdempotencyKey, string Reason);
 
 public sealed class PlatformProjectHealthClient(PlatformCapabilityClient platform)
 {
+    public Task<ManagementIncident> UpdatePresentationAsync(UpdateManagementIncidentPresentation request, CancellationToken token = default) =>
+        platform.InvokeAsync<UpdateManagementIncidentPresentation, ManagementIncident>(ProjectHealthCapabilities.Presentation, request, token);
+    public Task<IncidentResolutionContext> ReadResolutionAsync(ReadIncidentResolution request, CancellationToken token = default) =>
+        platform.InvokeAsync<ReadIncidentResolution, IncidentResolutionContext>(ProjectHealthCapabilities.Resolution, request, token);
     public Task<ProjectHealthSnapshot> ReadAsync(ReadProjectHealth request, CancellationToken token = default) =>
         platform.InvokeAsync<ReadProjectHealth, ProjectHealthSnapshot>(ProjectHealthCapabilities.Read, request, token);
     public Task<ProjectDiagnosticsPage> ReadDiagnosticsAsync(ReadProjectDiagnostics request, CancellationToken token = default) =>

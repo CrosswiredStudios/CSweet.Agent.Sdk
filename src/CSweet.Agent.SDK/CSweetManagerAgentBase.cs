@@ -1,7 +1,7 @@
 namespace CSweet.Agent.SDK;
 
 /// <summary>Common manager behavior. The manifest must independently request its capabilities and subscriptions.</summary>
-public abstract class CSweetManagerAgentBase : CSweetAgentBase
+public abstract partial class CSweetManagerAgentBase : CSweetAgentBase
 {
     public string BaseType => AgentBaseTypes.Manager;
     protected abstract string ManagementResponsibility { get; }
@@ -9,15 +9,16 @@ public abstract class CSweetManagerAgentBase : CSweetAgentBase
     // Sealed entrypoints keep monitoring independent of the specialized workflow's intake state.
     public sealed override async Task HandleEventAsync(AgentEventEnvelope message, AgentRuntimeContext context, CancellationToken token)
     {
+        if (await ManagerIncidentCoordinator.DispatchAsync(this, message, context, token)) return;
         if (ProjectIncidentReview.Handles(message.EventType))
-            await ProjectIncidentReview.HandleManagerAsync(message, context, AssessIncidentAsync, token);
+            await ProjectIncidentReview.HandleManagerAsync(message, context, AssessIncidentAsync, token, GenerateIncidentOwnerReportAsync);
         else
             await HandleManagerEventAsync(message, context, token);
     }
 
     public sealed override async Task HandleAttentionReviewAsync(AgentAttentionReviewContext review, AgentRuntimeContext context, CancellationToken token)
     {
-        await ProjectIncidentReview.RecoverManagerAsync(context, AssessIncidentAsync, token);
+        await ProjectIncidentReview.RecoverManagerAsync(context, AssessIncidentAsync, token, GenerateIncidentOwnerReportAsync);
         await HandleManagerAttentionReviewAsync(review, context, token);
     }
 

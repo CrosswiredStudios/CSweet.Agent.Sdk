@@ -5,24 +5,34 @@ namespace CSweet.Agent.SDK;
 /// <summary>Bounded incident handling independent of a manager's planning or creative intake state.</summary>
 public static class ProjectIncidentReview
 {
+    public static Task HandleManagerAsync(AgentEventEnvelope message, AgentRuntimeContext context,
+        Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<ManagerIncidentAssessment>> assess, CancellationToken token) =>
+        HandleManagerAsync(message, context, assess, token, null);
+
+    public static Task RecoverManagerAsync(AgentRuntimeContext context,
+        Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<ManagerIncidentAssessment>> assess, CancellationToken token) =>
+        RecoverManagerAsync(context, assess, token, null);
+
     public static async Task HandleManagerAsync(AgentEventEnvelope message, AgentRuntimeContext context,
-        Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<ManagerIncidentAssessment>> assess, CancellationToken token)
+        Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<ManagerIncidentAssessment>> assess, CancellationToken token,
+        Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<IncidentOwnerReport?>>? generateReport)
     {
         var hint = message.Data.Deserialize<ProjectHealthHint>(new JsonSerializerOptions(JsonSerializerDefaults.Web));
         if (hint is null) return;
         var page = await context.Platform.ProjectHealth.ReadIncidentsAsync(new(IncidentId: hint.IncidentId), token);
-        foreach (var incident in page.Incidents) await ReviewManagerAsync(incident, context, assess, token);
+        foreach (var incident in page.Incidents) await ReviewManagerAsync(incident, context, assess, token, generateReport);
     }
 
     public static async Task RecoverManagerAsync(AgentRuntimeContext context,
-        Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<ManagerIncidentAssessment>> assess, CancellationToken token)
+        Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<ManagerIncidentAssessment>> assess, CancellationToken token,
+        Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<IncidentOwnerReport?>>? generateReport)
     {
         try
         {
             var page = await context.Platform.ProjectHealth.ReadIncidentsAsync(new(Limit: 25), token);
             foreach (var incident in page.Incidents)
             {
-                try { await ReviewManagerAsync(incident, context, assess, token); }
+                try { await ReviewManagerAsync(incident, context, assess, token, generateReport); }
                 catch (PlatformCapabilityException) { /* One unavailable incident cannot starve the rest. */ }
             }
         }
@@ -30,7 +40,8 @@ public static class ProjectIncidentReview
     }
 
     private static async Task ReviewManagerAsync(ManagementIncident incident, AgentRuntimeContext context,
-        Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<ManagerIncidentAssessment>> assess, CancellationToken token)
+        Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<ManagerIncidentAssessment>> assess, CancellationToken token,
+        Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<IncidentOwnerReport?>>? generateReport)
     {
         if (incident.Status != "Open" || incident.ReviewAt is not null || incident.CurrentRecipientId.ToString("D") != context.Identity?.EmployeeId) return;
         // The authoritative discovery endpoint omits scheduled reviews until they become due.
@@ -49,8 +60,22 @@ public static class ProjectIncidentReview
             assessment = ManagerIncidentAssessment.Escalate("Manager assessment failed; management assistance is required.");
         }
         var report = Baseline(incident, diagnostics, $"project-health:{incident.Id:N}:{incident.Revision}:{incident.CurrentRecipientId:N}");
+        IncidentOwnerReport? ownerReport = null;
+        // A report failure must not prevent the durable baseline from reaching management.
+        if (diagnostics.CurrentState is not null)
+        {
+            try
+            {
+                if (generateReport is not null)
+                    ownerReport = await generateReport(new(incident, diagnostics,
+                        $"incident-action:{incident.Id:N}:{incident.CurrentRecipientId:N}"), context, token);
+            }
+            catch (Exception error) when (error is not OperationCanceledException || !token.IsCancellationRequested)
+            { ownerReport = ManagerIncidentCoordinator.FactualFallback(new(incident, diagnostics, $"incident-action:{incident.Id:N}")); }
+        }
         await context.Platform.ProjectHealth.ReportAsync(report with
         {
+            OwnerReport = ownerReport,
             RecommendedAction = Bound(assessment.Reason),
             Disposition = assessment.Disposition, ReviewAt = assessment.ReviewAt, ActionReference = assessment.ActionReference
         }, token);

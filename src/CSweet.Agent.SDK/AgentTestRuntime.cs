@@ -86,6 +86,7 @@ public sealed class AgentTestRuntime
         var payload = JsonSerializer.SerializeToElement(data, JsonOptions);
         var context = CreateContext(identity: identity);
         var envelope = new AgentEventEnvelope(Guid.NewGuid(), stableEventId, eventType, payload, occurredAt, "test-correlation");
+        if (agent is CSweetManagerAgentBase managerAgent && await ManagerIncidentCoordinator.DispatchAsync(managerAgent, envelope, context, cancellationToken)) return;
         if (agent is CSweetAgentBase delegationAgent && await DelegationRuntime.DispatchAsync(delegationAgent, envelope, context, cancellationToken)) return;
         if (string.Equals(eventType, AgentAttentionEvents.ReviewDue, StringComparison.Ordinal) &&
             agent is CSweetAgentBase attentiveAgent)

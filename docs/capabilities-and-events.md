@@ -292,10 +292,26 @@ uses persisted evidence without a model call. Unknown causes and missing evidenc
 
 ## Shared delegation
 
-SDK 4.0.0 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
+SDK 4.1.0 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
 
 ## Reviewed runtime public internet
 
-SDK 4.0.0 defines `RuntimePermissions.PublicInternet` (`runtime.internet.public.v1`). Declare it in `requires` with a purpose and `modelVisible: false`. It requests an execution-environment permission, not a callable MCP operation or provider binding. The installed manifest and owner-approved grant must both include it. It does not imply brokered web, credentials, private-network, inbound, compute or deployment authority.
+SDK 4.1.0 defines `RuntimePermissions.PublicInternet` (`runtime.internet.public.v1`). Declare it in `requires` with a purpose and `modelVisible: false`. It requests an execution-environment permission, not a callable MCP operation or provider binding. The installed manifest and owner-approved grant must both include it. It does not imply brokered web, credentials, private-network, inbound, compute or deployment authority.
 
 The certified development guest supplies Node/npm. Scoped project restores and portable tools may use the workload's writable directories when internet is approved; missing lockfiles are generated and verified through a clean restore. Workspace publication excludes `node_modules` and `.venv` while preserving lockfiles. Runtime-state reads report the effective network mode and expected development tools; command results remain the evidence that a particular validation ran.
+
+## Shared manager incident coordinator (SDK 4.1.0)
+
+`CSweetManagerAgentBase` uses `ProjectIncidentReview` and `ManagerIncidentCoordinator` independently of specialist intake. Managers can override `GenerateIncidentOwnerReportAsync`, `CreateIncidentChatClient`, and `ExecuteIncidentResolutionAsync`; other callback-based agents can invoke the reusable coordinator explicitly.
+
+`ProjectDiagnosticsPage.CurrentState` contains current project/work/decision facts, exact accepted document references and a server-generated evidence hash. Document references do not grant access: the coordinator reads exact revisions through `Platform.Artifacts` and verifies the project and digest. Analysis treats documents and errors as data, limits output to 2,048 tokens and two minutes, and falls back to current facts when analysis is unavailable. Owner reports carry two to four bounded intended-outcome options.
+
+Required reviewed capabilities:
+- `platform.management.incident.presentation.update.v1`: update the report or recovery outcome within current reporting authority, without changing routing or resolving the incident.
+- `platform.management.incident.resolution.read.v1`: read a persisted human choice bound to the caller's durable turn or its retry lineage.
+
+Subscribe to `ProjectHealthEvents.OwnerReportRequested` (`com.csweet.management.incident.owner-report-requested.v1`) for bounded refresh of existing open incidents. The platform persists this wake in an outbox; agents never poll for reports.
+
+Resolution dispatch runs before delegation classification and specialist intake in both `AgentRuntimeWorker` and `AgentTestRuntime`. Only broker-derived answer context triggers it; message text cannot. Recovery uses existing granted management operations, pins mutation keys to the decision and target, and delegates execution outside the manager's remit. Longer management work uses authenticated canonical commitments, handled by the shared coordinator before specialist claim policies/task handlers. A queued request, completed inbox task, or manager assertion does not prove project recovery. Required spending, scope and document approvals remain enforced by platform services.
+
+Deploy platform schema/broker support before package upgrades. Legacy grants keep factual reports; new grants must be reviewed rather than inferred from a manifest.
