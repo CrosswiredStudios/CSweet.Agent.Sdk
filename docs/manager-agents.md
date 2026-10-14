@@ -78,11 +78,13 @@ The older `ProjectIncidentReview.HandleAsync` helper remains available for SDK c
 `ManagementIncident.MonitoringManagerEmployeeId` is the generic owner accessor; the legacy
 `ProducerEmployeeId` wire field remains readable by older SDK clients.
 
-## Shared manager incident coordinator (SDK 4.1.0)
+## Shared manager incident coordinator (SDK 4.1.1)
 
 `CSweetManagerAgentBase` uses `ProjectIncidentReview` and `ManagerIncidentCoordinator` independently of specialist intake. Managers can override `GenerateIncidentOwnerReportAsync`, `CreateIncidentChatClient`, and `ExecuteIncidentResolutionAsync`; other callback-based agents can invoke the reusable coordinator explicitly.
 
-`ProjectDiagnosticsPage.CurrentState` contains current project/work/decision facts, exact accepted document references and a server-generated evidence hash. Document references do not grant access: the coordinator reads exact revisions through `Platform.Artifacts` and verifies the project and digest. Analysis treats documents and errors as data, limits output to 2,048 tokens and two minutes, and falls back to current facts when analysis is unavailable. Owner reports carry two to four bounded intended-outcome options.
+`ProjectDiagnosticsPage.CurrentState` contains current project/work/decision facts, exact accepted document references and a server-generated evidence hash. Document references do not grant access: the coordinator reads exact revisions through `Platform.Artifacts` and verifies the project and digest. Analysis treats documents and errors as data, limits reporting output to 1,200 tokens and two minutes, and falls back to current facts when analysis is unavailable. Recovery execution retains its separate 2,048-token bound.
+
+`ManagerIncidentCoordinator.GenerateReportAsync` writes for a nontechnical owner: what cannot continue, what can continue, and the next decision. `ValidateReport` bounds the summary to 80 words, recovery and next step to 25 words each, and each option description to 25 words. Diagnostics, permission names, error codes and speculative causes stay behind investigation links. Routine investigation within existing grants must not be phrased as requiring new approval. Reports carry two to four short resolution choices with one recommendation; intended outcomes remain precise for execution. Invalid or wordy model output uses a concise factual fallback without another model call.
 
 Required reviewed capabilities:
 - `platform.management.incident.presentation.update.v1`: update the report or recovery outcome within current reporting authority, without changing routing or resolving the incident.

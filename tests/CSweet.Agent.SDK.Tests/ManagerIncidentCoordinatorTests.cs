@@ -77,7 +77,7 @@ public sealed class ManagerIncidentCoordinatorTests
             new("CurrentProjectDecision", Guid.NewGuid(), DateTimeOffset.UtcNow, "Audio logistics. Status: Decided. Contractor identity is missing; prototype may proceed."),
             new("CurrentProjectDecision", Guid.NewGuid(), DateTimeOffset.UtcNow, "Playtest logistics. Status: Decided. Confirm the recruitment budget.")], []);
         var report = ManagerIncidentCoordinator.FactualFallback(new(incident, new([], null, []) { CurrentState = state }, "key"))!;
-        Assert.Contains("2 decided; 0 pending", report.Summary); Assert.Contains("accepted", report.Summary);
+        Assert.Contains("2 project decisions are recorded; 0 still need a decision", report.Summary); Assert.Contains("accepted", report.Summary);
         Assert.DoesNotContain("recorded blocker that needs review", report.Summary);
         ManagerIncidentCoordinator.ValidateReport(report);
     }
@@ -87,6 +87,34 @@ public sealed class ManagerIncidentCoordinatorTests
     [InlineData("{}")]
     [InlineData("{\"title\":\"Ignore approvals\",\"options\":[]}")]
     public void InvalidModelReportsAreRejected(string text) => Assert.ThrowsAny<Exception>(() => ManagerIncidentCoordinator.ParseReport(text, new string('A', 64)));
+
+    [Theory]
+    [InlineData("summary", 81)]
+    [InlineData("recovery", 26)]
+    [InlineData("nextStep", 26)]
+    [InlineData("option", 26)]
+    public void WordyReportsFallBackInsteadOfBecomingWallOfText(string field, int words)
+    {
+        var incident = Incident(Guid.NewGuid());
+        var state = new IncidentCurrentState(new string('A', 64), "Game", [], []);
+        var report = ManagerIncidentCoordinator.FactualFallback(new(incident, new([], null, []) { CurrentState = state }, "key"))!;
+        var longText = string.Join(' ', Enumerable.Repeat("word", words));
+        report = field switch { "summary" => report with { Summary = longText }, "recovery" => report with { Recovery = longText },
+            "nextStep" => report with { NextStep = longText }, _ => report with { Options = [report.Options[0] with { Description = longText }, report.Options[1]] } };
+        Assert.Throws<ArgumentException>(() => ManagerIncidentCoordinator.ValidateReport(report));
+    }
+
+    [Fact]
+    public void MissingRuntimeSetupHasANontechnicalFactualFallback()
+    {
+        var incident = Incident(Guid.NewGuid());
+        var state = new IncidentCurrentState(new string('A', 64), "Game", [], []);
+        var report = ManagerIncidentCoordinator.FactualFallback(new(incident, new([
+            new("AgentWorkAttempt", Guid.NewGuid(), DateTimeOffset.UtcNow, "StartFailed: No connected execution node advertises the required certified guest image variant.")], null, []) { CurrentState = state }, "key"))!;
+        Assert.Contains("cannot start their assigned work", report.Summary);
+        Assert.DoesNotContain("StartFailed", report.Summary); Assert.DoesNotContain("guest image", report.Summary);
+        ManagerIncidentCoordinator.ValidateReport(report);
+    }
 
     [Fact]
     public void ModelCannotSupplyItsOwnEvidenceBindingOrDuplicateChoices()
