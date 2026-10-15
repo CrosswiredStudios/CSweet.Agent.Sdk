@@ -81,7 +81,18 @@ public sealed record RepositoryProvisioningResult(
 public sealed record ReviewGitMergeRequest(
     Guid WorkItemId,
     long AssignmentRevision,
-    string IdempotencyKey);
+    string IdempotencyKey)
+{
+    /// <summary>False returns an exact publication reference and file inventory without the full patch.</summary>
+    public bool IncludePatch { get; init; } = true;
+    /// <summary>Read one bounded page, pinned to the publication and source/target observed earlier.</summary>
+    public GitReviewDiffRead? DiffRead { get; init; }
+}
+
+public sealed record GitReviewDiffRead(Guid PublicationId, string CandidateCommitSha, string? TargetCommitSha,
+    string PatchDigest, int Offset, int MaximumCharacters = 12000);
+
+public sealed record GitReviewDiffPage(string PatchDigest, int Offset, int TotalCharacters, string Text, int? NextOffset);
 
 public sealed record GitMergeReview(
     Guid PublicationId,
@@ -100,6 +111,11 @@ public sealed record GitMergeReview(
     /// <summary>The current assigned integration target, bound by hierarchical Technical Review.</summary>
     public string? TargetCommitSha { get; init; }
     public string? TargetBranch { get; init; }
+    public string? SourceBranch { get; init; }
+    public IReadOnlyList<string> ChangedFiles { get; init; } = [];
+    public IReadOnlyList<string> RemovedFiles { get; init; } = [];
+    public string? PatchDigest { get; init; }
+    public GitReviewDiffPage? DiffPage { get; init; }
 }
 
 public static class GitMergeDecisions

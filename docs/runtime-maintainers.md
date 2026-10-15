@@ -272,15 +272,15 @@ DeliveryComputeTest supports compute-test release bindings without certified pac
 
 ## Shared delegation
 
-SDK 4.1.1 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
+SDK 4.2.0 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
 
 ## Reviewed runtime public internet
 
-SDK 4.1.1 defines `RuntimePermissions.PublicInternet` (`runtime.internet.public.v1`). Declare it in `requires` with a purpose and `modelVisible: false`. It requests an execution-environment permission, not a callable MCP operation or provider binding. The installed manifest and owner-approved grant must both include it. It does not imply brokered web, credentials, private-network, inbound, compute or deployment authority.
+SDK 4.2.0 defines `RuntimePermissions.PublicInternet` (`runtime.internet.public.v1`). Declare it in `requires` with a purpose and `modelVisible: false`. It requests an execution-environment permission, not a callable MCP operation or provider binding. The installed manifest and owner-approved grant must both include it. It does not imply brokered web, credentials, private-network, inbound, compute or deployment authority.
 
 The certified development guest supplies Node/npm. Scoped project restores and portable tools may use the workload's writable directories when internet is approved; missing lockfiles are generated and verified through a clean restore. Workspace publication excludes `node_modules` and `.venv` while preserving lockfiles. Runtime-state reads report the effective network mode and expected development tools; command results remain the evidence that a particular validation ran.
 
-## Shared manager incident coordinator (SDK 4.1.1)
+## Shared manager incident coordinator (SDK 4.2.0)
 
 `CSweetManagerAgentBase` uses `ProjectIncidentReview` and `ManagerIncidentCoordinator` independently of specialist intake. Managers can override `GenerateIncidentOwnerReportAsync`, `CreateIncidentChatClient`, and `ExecuteIncidentResolutionAsync`; other callback-based agents can invoke the reusable coordinator explicitly.
 
@@ -295,3 +295,7 @@ Subscribe to `ProjectHealthEvents.OwnerReportRequested` (`com.csweet.management.
 Resolution dispatch runs before delegation classification and specialist intake in both `AgentRuntimeWorker` and `AgentTestRuntime`. Only broker-derived answer context triggers it; message text cannot. Recovery uses existing granted management operations, pins mutation keys to the decision and target, and delegates execution outside the manager's remit. Longer management work uses authenticated canonical commitments, handled by the shared coordinator before specialist claim policies/task handlers. A queued request, completed inbox task, or manager assertion does not prove project recovery. Required spending, scope and document approvals remain enforced by platform services.
 
 Deploy platform schema/broker support before package upgrades. Legacy grants keep factual reports; new grants must be reviewed rather than inferred from a manifest.
+
+## Exact publication diff paging (4.2.0)
+
+The platform must support reference-only `ReviewGitMergeRequest` and `GitReviewDiffRead` before updating agents. Every page reuses normal reviewer authorization and binds the publication, source, target and patch digest. `BranchDiffTechnicalReview` checks contiguous complete coverage and preserves unresolved findings through synthesis. Old full-patch requests remain compatible; current hierarchical task technical review uses bounded reads. `RepositorySourcePolicy` gives coding harnesses a shared source-delivery contract. Gitignore processing happens in the trusted snapshot publisher using Git's own matching semantics and retains tracked-file behavior.
