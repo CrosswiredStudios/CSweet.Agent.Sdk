@@ -35,8 +35,8 @@ public sealed class BranchDiffTechnicalReviewTests
             StageKey = "technical-review", StageExecutionId = Guid.NewGuid(), AttemptId = Guid.NewGuid(), AssignmentRevision = 1
         };
         var client = new Client(number => number == 0
-            ? JsonSerializer.Serialize(new { sourceCommitSha = Source, targetCommitSha = Target, offset = 0, summary = "Reviewed", findings = Array.Empty<string>() })
-            : JsonSerializer.Serialize(new { sourceCommitSha = Source, targetCommitSha = Target, approved = true, summary = "Verified source", findings = Array.Empty<string>() }));
+            ? JsonSerializer.Serialize(new { summary = "Reviewed", findings = Array.Empty<string>() })
+            : JsonSerializer.Serialize(new { approved = true, summary = "Verified source", findings = Array.Empty<string>() }));
         var result = await DeliveryTaskTechnicalReview.ExecuteAsync(assignment,
             runtime.CreateContext(installationId: reviewer.ToString()), client, default);
         var outcome = result.Value!.Value.Deserialize<WorkExecutionOutcomeV1>(new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
@@ -83,9 +83,9 @@ public sealed class BranchDiffTechnicalReviewTests
         var reference = Reference("src/game.ts", "dist/old.js") with { RemovedFiles = ["dist/old.js"] };
         var offsets = new List<int>();
         var client = new Client(number => number < 2
-            ? JsonSerializer.Serialize(new { sourceCommitSha = Source, targetCommitSha = Target, offset = number * 3,
+            ? JsonSerializer.Serialize(new {
                 summary = "Reviewed source section.", findings = pageFinding && number == 0 ? new[] { "src/game.ts: fix invalid state" } : [] })
-            : JsonSerializer.Serialize(new { sourceCommitSha = Source, targetCommitSha = Target, approved = !pageFinding,
+            : JsonSerializer.Serialize(new { approved = !pageFinding,
                 summary = "Reviewed the complete change.", findings = pageFinding ? new[] { "src/game.ts: fix invalid state" } : [] }));
         var result = await BranchDiffTechnicalReview.ExecuteAsync(reference, new { requirements = "Works" }, (read, _) =>
         {
@@ -96,11 +96,23 @@ public sealed class BranchDiffTechnicalReviewTests
         Assert.Equal(new[] { 0, 3 }, offsets);
         Assert.Equal(3, client.Prompts.Count);
         Assert.Equal(!pageFinding, result.Approved);
+        Assert.Equal(Source, result.SourceCommitSha);
+        Assert.Equal(Target, result.TargetCommitSha);
+        var synthesis = JsonDocument.Parse(client.Prompts[^1].Split('\n').Last()).RootElement;
+        var pages = synthesis.GetProperty("reviews").EnumerateArray().ToArray();
+        Assert.Equal(new[] { 0, 3 }, pages.Select(x => x.GetProperty("offset").GetInt32()));
+        Assert.All(pages, page =>
+        {
+            Assert.Equal(Source, page.GetProperty("sourceCommitSha").GetString());
+            Assert.Equal(Target, page.GetProperty("targetCommitSha").GetString());
+        });
         Assert.All(client.Prompts, prompt => Assert.True(prompt.Length < 60000));
     }
 
     [Theory]
     [InlineData("target")]
+    [InlineData("source")]
+    [InlineData("publication")]
     [InlineData("digest")]
     [InlineData("offset")]
     [InlineData("gap")]
@@ -111,6 +123,8 @@ public sealed class BranchDiffTechnicalReviewTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, new { }, (_, _) =>
             Task.FromResult(reference with
             {
+                PublicationId = change == "publication" ? Guid.NewGuid() : reference.PublicationId,
+                CandidateCommitSha = change == "source" ? Target : Source,
                 TargetCommitSha = change == "target" ? Source : Target,
                 DiffPage = new(change == "digest" ? Source : Digest, change == "offset" ? 1 : 0, 6, "abc", change == "gap" ? 4 : 3)
             }), client, default));
@@ -121,10 +135,48 @@ public sealed class BranchDiffTechnicalReviewTests
     {
         var reference = Reference("source.cs");
         var client = new Client(number => number == 0
-            ? JsonSerializer.Serialize(new { sourceCommitSha = Source, targetCommitSha = Target, offset = 0, summary = "Defect", findings = new[] { "Fix source.cs" } })
-            : JsonSerializer.Serialize(new { sourceCommitSha = Source, targetCommitSha = Target, approved = true, summary = "Fine", findings = Array.Empty<string>() }));
+            ? JsonSerializer.Serialize(new { summary = "Defect", findings = new[] { "Fix source.cs" } })
+            : JsonSerializer.Serialize(new { approved = true, summary = "Fine", findings = Array.Empty<string>() }));
         await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, null,
             (_, _) => Task.FromResult(reference with { DiffPage = new(Digest, 0, 3, "abc", null) }), client, default));
+    }
+
+    [Fact]
+    public async Task ModelCannotSwapTheAuthoritativeCommitPairOrPageOffset()
+    {
+        // The October 15 live response reversed source and target. Model-generated identity
+        // fields are no longer part of the review contract or used to identify evidence.
+        var reference = Reference("source.cs");
+        var client = new Client(number => number == 0
+            ? JsonSerializer.Serialize(new { sourceCommitSha = Target, targetCommitSha = Source, offset = 12000,
+                summary = "Found defect", findings = new[] { "source.cs: fix invalid state" } })
+            : JsonSerializer.Serialize(new { sourceCommitSha = Target, targetCommitSha = Source, approved = false,
+                summary = "Fix the defect", findings = new[] { "source.cs: fix invalid state" } }));
+        var result = await BranchDiffTechnicalReview.ExecuteAsync(reference, null,
+            (_, _) => Task.FromResult(reference with { DiffPage = new(Digest, 0, 3, "abc", null) }), client, default);
+        Assert.False(result.Approved);
+        Assert.Equal(Source, result.SourceCommitSha);
+        Assert.Equal(Target, result.TargetCommitSha);
+        Assert.Equal("source.cs: fix invalid state", Assert.Single(result.Findings));
+        var synthesis = JsonDocument.Parse(client.Prompts[^1].Split('\n').Last()).RootElement;
+        var page = Assert.Single(synthesis.GetProperty("reviews").EnumerateArray());
+        Assert.Equal(0, page.GetProperty("offset").GetInt32());
+        Assert.Equal(Source, page.GetProperty("sourceCommitSha").GetString());
+        Assert.Equal(Target, page.GetProperty("targetCommitSha").GetString());
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"summary\":\"\",\"findings\":[]}")]
+    [InlineData("{\"summary\":\"Reviewed\",\"findings\":null}")]
+    [InlineData("{\"summary\":\"Reviewed\",\"findings\":[\"\"]}")]
+    public async Task MissingReviewContentCannotReachSynthesis(string response)
+    {
+        var reference = Reference("source.cs");
+        var client = new Client(_ => response);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, null,
+            (_, _) => Task.FromResult(reference with { DiffPage = new(Digest, 0, 3, "abc", null) }), client, default));
+        Assert.Single(client.Prompts);
     }
 
     private sealed class Client(Func<int, string> response) : IChatClient
