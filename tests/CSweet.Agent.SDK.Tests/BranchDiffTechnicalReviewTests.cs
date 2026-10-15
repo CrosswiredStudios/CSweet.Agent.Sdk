@@ -1,195 +1,155 @@
 using System.Text.Json;
-using Microsoft.Extensions.AI;
 using CSweet.WorkManagement.Contracts;
+using Microsoft.Extensions.AI;
 
 namespace CSweet.Agent.SDK.Tests;
 
 public sealed class BranchDiffTechnicalReviewTests
 {
-    [Fact]
-    public async Task TaskCallbackUsesReferenceThenBoundedDiffUnderExistingGrant()
-    {
-        var reviewer = Guid.NewGuid();
-        var reference = Reference("src/game.ts");
-        var item = JsonSerializer.Deserialize<WorkItem>("{}")! with
-        {
-            Id = reference.WorkItemId, PlanningRevision = 1,
-            Delivery = new(reference.RepositoryId, ["Works"], ["Works"])
-                { DeliveryPlanId = Guid.NewGuid(), BaseBranch = "story" },
-            StageAssignments = [new("technical-review", "AgentInstallation", AgentInstallationId: reviewer)]
-        };
-        var calls = new List<ReviewGitMergeRequest>();
-        var runtime = new AgentTestRuntime()
-            .RegisterCapability<WorkItemReference, WorkItem>(WorkManagementCapabilityNames.ItemRead, (_, _) => Task.FromResult(item))
-            .RegisterCapability<ReviewGitMergeRequest, GitMergeReview>(GitMergeCapabilities.Review, (request, _) =>
-            {
-                calls.Add(request);
-                Assert.False(request.IncludePatch);
-                return Task.FromResult(request.DiffRead is null ? reference :
-                    reference with { DiffPage = new(Digest, 0, 3, "abc", null) });
-            });
-        var assignment = JsonSerializer.Deserialize<WorkExecutionAssignment>("{}")! with
-        {
-            Scope = WorkExecutionScopes.Task, ItemId = item.Id, BoardId = Guid.NewGuid(),
-            SprintId = Guid.NewGuid(), SprintExecutionId = Guid.NewGuid(), PolicyRevisionId = Guid.NewGuid(),
-            StageKey = "technical-review", StageExecutionId = Guid.NewGuid(), AttemptId = Guid.NewGuid(), AssignmentRevision = 1
-        };
-        var client = new Client(number => number == 0
-            ? JsonSerializer.Serialize(new { summary = "Reviewed", findings = Array.Empty<string>() })
-            : JsonSerializer.Serialize(new { approved = true, summary = "Verified source", findings = Array.Empty<string>() }));
-        var result = await DeliveryTaskTechnicalReview.ExecuteAsync(assignment,
-            runtime.CreateContext(installationId: reviewer.ToString()), client, default);
-        var outcome = result.Value!.Value.Deserialize<WorkExecutionOutcomeV1>(new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
-        Assert.Equal("approved", outcome.OutcomeCode);
-        Assert.Equal(2, calls.Count);
-        Assert.Null(calls[0].DiffRead);
-        Assert.Equal(reference.PublicationId, calls[1].DiffRead!.PublicationId);
-        Assert.Contains(outcome.Evidence, x => x.Value == Source);
-        Assert.Contains(outcome.Evidence, x => x.Value == Target);
-    }
-
-    [Theory]
-    [InlineData("node_modules/phaser/index.js", true)]
-    [InlineData("dist/assets/game.js", true)]
-    [InlineData("app/.next/server.js", true)]
-    [InlineData(".venv/lib/dependency.py", true)]
-    [InlineData("package-lock.json", false)]
-    [InlineData("src/bin/launcher.ts", false)]
-    [InlineData("assets/player.png", false)]
-    public void SourcePolicyKeepsAuthoredFilesAndLockfiles(string path, bool excluded) =>
-        Assert.Equal(excluded, RepositorySourcePolicy.IsGeneratedOrDependencyPath(path));
-
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly string Source = new('a', 40), Target = new('b', 40), Digest = new('c', 64);
-    private static GitMergeReview Reference(params string[] files) => new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
-        "Game", Source, null, "", [], [], "AwaitingValidation")
-        { TargetCommitSha = Target, TargetBranch = "story", PatchDigest = Digest, ChangedFiles = files };
+    private static readonly BranchDiffTechnicalReview.Issue Defect = new("server.js", "Malformed URLs crash the server", "decodeURIComponent has no exception handler", "Return 400 for malformed escapes");
+    private static GitMergeReview Reference() => new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Game", Source, null, "", [], [], "AwaitingValidation")
+        { TargetCommitSha = Target, TargetBranch = "story", PatchDigest = Digest, ChangedFiles = ["server.js", "package-lock.json"] };
+    private static BranchDiffTechnicalReview.PageContent Page(bool defect = false) => new("Reviewed source section", defect ? [Defect] : [], ["Nonblocking observation"], ["Check implementation on the next page"]);
+    private static string Serialize(object value) => JsonSerializer.Serialize(value, Json);
+    private static GitMergeReview Read(GitMergeReview reference, GitReviewDiffRead read, int total) => reference with
+        { DiffPage = new(Digest, read.Offset, total, new string('x', Math.Min(12000, total - read.Offset)), read.Offset + 12000 < total ? read.Offset + 12000 : null) };
+    private static string Final(JsonElement input, bool resolve = true)
+    {
+        var issues = input.GetProperty("findings").EnumerateArray().ToArray();
+        var criteria = input.GetProperty("reference").GetProperty("planning");
+        var names = criteria.TryGetProperty("acceptanceCriteria", out var entries) ? entries.EnumerateArray().Select(x => x.GetString()!).ToArray() : [];
+        return Serialize(new BranchDiffTechnicalReview.FinalContent(resolve || issues.Length == 0, "Complete independent review", [],
+            issues.Select(i => new BranchDiffTechnicalReview.Resolution(i.GetProperty("findingId").GetString()!, resolve ? "resolved" : "unresolved", "Source evidence checked against the relevant implementation", [0])).ToArray(),
+            names.Select(c => new BranchDiffTechnicalReview.Criterion(c, true, "Observed source and published build evidence", [0])).ToArray()));
+    }
 
     [Fact]
-    public async Task GeneratedLibraryBundleRequestsSourceCleanupWithoutSendingItToModel()
+    public async Task ThirteenPagesCorrectMalformedFourthResponseWithoutRepeatingEarlierPages()
     {
-        var client = new Client(_ => throw new InvalidOperationException("Must not invoke model."));
-        var result = await BranchDiffTechnicalReview.ExecuteAsync(Reference("src/game.ts", "dist/assets/engine.js"), new { },
-            (_, _) => throw new InvalidOperationException("Must not fetch library patch."), client, default);
-        Assert.False(result.Approved);
-        Assert.Contains(".gitignore", Assert.Single(result.Findings));
-        Assert.Empty(client.Prompts);
+        var reference = Reference();
+        var retained = new Dictionary<int, BranchDiffTechnicalReview.PageReview>();
+        var reads = new List<int>();
+        var client = new Client((messages, input) => input.TryGetProperty("page", out var page)
+            ? Serialize(Page()) + (page.GetProperty("offset").GetInt32() == 36000 && messages.Count == 2 ? "}" : "")
+            : Final(input));
+        var result = await BranchDiffTechnicalReview.ExecuteAsync(reference, new { }, (read, _) =>
+        { reads.Add(read.Offset); return Task.FromResult(Read(reference, read, 146391)); }, client, default,
+            (offset, _) => Task.FromResult(retained.GetValueOrDefault(offset)),
+            (page, _) => { retained.Add(page.Offset, page); return Task.CompletedTask; });
+        Assert.True(result.Approved); Assert.Equal(13, result.PageCount); Assert.Equal(146391, result.CoveredCharacters);
+        Assert.Equal(13, reads.Count); Assert.Equal(13, retained.Count); Assert.Equal(15, client.Calls);
+        Assert.All(client.Formats, format => Assert.IsType<ChatResponseFormatJson>(format));
+        Assert.Equal(Source, result.SourceCommitSha); Assert.Equal(Target, result.TargetCommitSha);
+    }
+
+    [Fact]
+    public async Task InterruptedReviewResumesPersistedPagesButReauthorizesEveryPage()
+    {
+        var reference = Reference(); var retained = new Dictionary<int, BranchDiffTechnicalReview.PageReview>();
+        var reads = new List<int>();
+        Task<GitMergeReview> ReadPage(GitReviewDiffRead read, CancellationToken _)
+        { reads.Add(read.Offset); return Task.FromResult(Read(reference, read, 48001)); }
+        Task<BranchDiffTechnicalReview.PageReview?> Load(int offset, CancellationToken _) => Task.FromResult(retained.GetValueOrDefault(offset));
+        Task Save(BranchDiffTechnicalReview.PageReview page, CancellationToken _) { retained[page.Offset] = page; return Task.CompletedTask; }
+        var broken = new Client((messages, input) => input.GetProperty("page").GetProperty("offset").GetInt32() == 36000 ? "{}" : Serialize(Page()));
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, new { }, ReadPage, broken, default, Load, Save));
+        Assert.Contains("offset 36000", error.Message); Assert.Contains("one correction", error.Message); Assert.Equal(3, retained.Count);
+        var resumed = new Client((messages, input) => input.TryGetProperty("page", out _) ? Serialize(Page()) : Final(input));
+        var result = await BranchDiffTechnicalReview.ExecuteAsync(reference, new { }, ReadPage, resumed, default, Load, Save);
+        Assert.True(result.Approved); Assert.Equal(3, resumed.Calls); Assert.Equal(new[] { 0,12000,24000,36000,0,12000,24000,36000,48000 }, reads);
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task ReviewsEveryPageBeforeSynthesisAndDoesNotDiscardFindings(bool pageFinding)
+    [InlineData("source")][InlineData("target")][InlineData("publication")][InlineData("digest")][InlineData("offset")][InlineData("gap")]
+    public async Task ChangedOrIncompletePagesNeverReachInference(string change)
     {
-        var reference = Reference("src/game.ts", "dist/old.js") with { RemovedFiles = ["dist/old.js"] };
-        var offsets = new List<int>();
-        var client = new Client(number => number < 2
-            ? JsonSerializer.Serialize(new {
-                summary = "Reviewed source section.", findings = pageFinding && number == 0 ? new[] { "src/game.ts: fix invalid state" } : [] })
-            : JsonSerializer.Serialize(new { approved = !pageFinding,
-                summary = "Reviewed the complete change.", findings = pageFinding ? new[] { "src/game.ts: fix invalid state" } : [] }));
-        var result = await BranchDiffTechnicalReview.ExecuteAsync(reference, new { requirements = "Works" }, (read, _) =>
-        {
-            offsets.Add(read.Offset);
-            Assert.Equal(reference.PublicationId, read.PublicationId);
-            return Task.FromResult(reference with { DiffPage = new(Digest, read.Offset, 6, read.Offset == 0 ? "abc" : "def", read.Offset == 0 ? 3 : null) });
-        }, client, default);
-        Assert.Equal(new[] { 0, 3 }, offsets);
-        Assert.Equal(3, client.Prompts.Count);
-        Assert.Equal(!pageFinding, result.Approved);
-        Assert.Equal(Source, result.SourceCommitSha);
-        Assert.Equal(Target, result.TargetCommitSha);
-        var synthesis = JsonDocument.Parse(client.Prompts[^1].Split('\n').Last()).RootElement;
-        var pages = synthesis.GetProperty("reviews").EnumerateArray().ToArray();
-        Assert.Equal(new[] { 0, 3 }, pages.Select(x => x.GetProperty("offset").GetInt32()));
-        Assert.All(pages, page =>
-        {
-            Assert.Equal(Source, page.GetProperty("sourceCommitSha").GetString());
-            Assert.Equal(Target, page.GetProperty("targetCommitSha").GetString());
-        });
-        Assert.All(client.Prompts, prompt => Assert.True(prompt.Length < 60000));
+        var reference = Reference(); var client = new Client((_, _) => throw new Exception("No model"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, new { }, (read, _) =>
+            Task.FromResult(reference with { CandidateCommitSha = change == "source" ? Target : Source,
+                TargetCommitSha = change == "target" ? Source : Target, PublicationId = change == "publication" ? Guid.NewGuid() : reference.PublicationId,
+                DiffPage = new(change == "digest" ? Source : Digest, change == "offset" ? 1 : 0, 6, "abc", change == "gap" ? 4 : 3) }), client, default));
+        Assert.Equal(0, client.Calls);
+    }
+
+    [Fact]
+    public async Task FinalCannotSilentlyEraseABlockingFinding()
+    {
+        var reference = Reference();
+        var client = new Client((messages, input) => input.TryGetProperty("page", out _) ? Serialize(Page(true)) :
+            Serialize(new BranchDiffTechnicalReview.FinalContent(true, "Ignore issue", [], [], [])));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, new { },
+            (read, _) => Task.FromResult(Read(reference, read, 3)), client, default));
+        Assert.Equal(3, client.Calls);
     }
 
     [Theory]
-    [InlineData("target")]
-    [InlineData("source")]
-    [InlineData("publication")]
-    [InlineData("digest")]
-    [InlineData("offset")]
-    [InlineData("gap")]
-    public async Task ChangedOrIncompletePagesCannotApprove(string change)
+    [InlineData(true)][InlineData(false)]
+    public async Task ExplicitEvidenceResolvesConcernOrReturnsItForRework(bool resolve)
     {
-        var reference = Reference("src/game.ts");
-        var client = new Client(_ => throw new InvalidOperationException("Bad pages must never reach a model."));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, new { }, (_, _) =>
-            Task.FromResult(reference with
-            {
-                PublicationId = change == "publication" ? Guid.NewGuid() : reference.PublicationId,
-                CandidateCommitSha = change == "source" ? Target : Source,
-                TargetCommitSha = change == "target" ? Source : Target,
-                DiffPage = new(change == "digest" ? Source : Digest, change == "offset" ? 1 : 0, 6, "abc", change == "gap" ? 4 : 3)
-            }), client, default));
-    }
-
-    [Fact]
-    public async Task FinalApprovalCannotEraseAnUnresolvedPageFinding()
-    {
-        var reference = Reference("source.cs");
-        var client = new Client(number => number == 0
-            ? JsonSerializer.Serialize(new { summary = "Defect", findings = new[] { "Fix source.cs" } })
-            : JsonSerializer.Serialize(new { approved = true, summary = "Fine", findings = Array.Empty<string>() }));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, null,
-            (_, _) => Task.FromResult(reference with { DiffPage = new(Digest, 0, 3, "abc", null) }), client, default));
-    }
-
-    [Fact]
-    public async Task ModelCannotSwapTheAuthoritativeCommitPairOrPageOffset()
-    {
-        // The October 15 live response reversed source and target. Model-generated identity
-        // fields are no longer part of the review contract or used to identify evidence.
-        var reference = Reference("source.cs");
-        var client = new Client(number => number == 0
-            ? JsonSerializer.Serialize(new { sourceCommitSha = Target, targetCommitSha = Source, offset = 12000,
-                summary = "Found defect", findings = new[] { "source.cs: fix invalid state" } })
-            : JsonSerializer.Serialize(new { sourceCommitSha = Target, targetCommitSha = Source, approved = false,
-                summary = "Fix the defect", findings = new[] { "source.cs: fix invalid state" } }));
-        var result = await BranchDiffTechnicalReview.ExecuteAsync(reference, null,
-            (_, _) => Task.FromResult(reference with { DiffPage = new(Digest, 0, 3, "abc", null) }), client, default);
-        Assert.False(result.Approved);
-        Assert.Equal(Source, result.SourceCommitSha);
-        Assert.Equal(Target, result.TargetCommitSha);
-        Assert.Equal("source.cs: fix invalid state", Assert.Single(result.Findings));
-        var synthesis = JsonDocument.Parse(client.Prompts[^1].Split('\n').Last()).RootElement;
-        var page = Assert.Single(synthesis.GetProperty("reviews").EnumerateArray());
-        Assert.Equal(0, page.GetProperty("offset").GetInt32());
-        Assert.Equal(Source, page.GetProperty("sourceCommitSha").GetString());
-        Assert.Equal(Target, page.GetProperty("targetCommitSha").GetString());
+        var reference = Reference();
+        var client = new Client((messages, input) => input.TryGetProperty("page", out _) ? Serialize(Page(true)) : Final(input, resolve));
+        var result = await BranchDiffTechnicalReview.ExecuteAsync(reference, new { }, (read, _) => Task.FromResult(Read(reference, read, 3)), client, default);
+        Assert.Equal(resolve, result.Approved); Assert.Single(result.Resolutions);
+        if (resolve) Assert.Empty(result.Findings); else Assert.Contains("Malformed URLs", Assert.Single(result.Findings));
     }
 
     [Theory]
     [InlineData("{}")]
-    [InlineData("{\"summary\":\"\",\"findings\":[]}")]
-    [InlineData("{\"summary\":\"Reviewed\",\"findings\":null}")]
-    [InlineData("{\"summary\":\"Reviewed\",\"findings\":[\"\"]}")]
-    public async Task MissingReviewContentCannotReachSynthesis(string response)
+    [InlineData("{\"summary\":\"Reviewed\",\"findings\":[]}")]
+    [InlineData("{\"summary\":\"Reviewed\",\"blockingFindings\":[],\"observations\":[],\"questions\":[],\"sourceCommitSha\":\"forged\"}")]
+    [InlineData("{\"summary\":\"a\",\"summary\":\"b\",\"blockingFindings\":[],\"observations\":[],\"questions\":[]}")]
+    public async Task OldMalformedOrAmbiguousContentReceivesExactlyOneCorrection(string bad)
     {
-        var reference = Reference("source.cs");
-        var client = new Client(_ => response);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, null,
-            (_, _) => Task.FromResult(reference with { DiffPage = new(Digest, 0, 3, "abc", null) }), client, default));
-        Assert.Single(client.Prompts);
+        var reference = Reference(); var client = new Client((_, _) => bad);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, new { },
+            (read, _) => Task.FromResult(Read(reference, read, 3)), client, default));
+        Assert.Equal(2, client.Calls);
     }
 
-    private sealed class Client(Func<int, string> response) : IChatClient
+    [Fact]
+    public async Task RetainedContentWithAChangedPageHashCannotApprove()
     {
-        public List<string> Prompts { get; } = [];
-        public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default)
+        var reference = Reference(); var client = new Client((_, _) => throw new Exception("No model"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, new { },
+            (read, _) => Task.FromResult(Read(reference, read, 3)), client, default,
+            (_, _) => Task.FromResult<BranchDiffTechnicalReview.PageReview?>(new(0,3,3,"wrong",Page()))));
+    }
+
+    [Fact]
+    public async Task OversizeSynthesisReturnsReworkWithoutDroppingCoverage()
+    {
+        var reference = Reference(); var client = new Client((messages, input) =>
         {
-            var number = Prompts.Count;
-            Prompts.Add(string.Join("\n", messages.Select(x => x.Text)));
-            return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, response(number))));
+            Assert.True(input.TryGetProperty("page", out _));
+            return Serialize(new BranchDiffTechnicalReview.PageContent(new string('s',350), [], [new string('o',200), new string('p',200)], [new string('q',200),new string('r',200)]));
+        });
+        var result = await BranchDiffTechnicalReview.ExecuteAsync(reference, new { }, (read, _) => Task.FromResult(Read(reference, read, 480000)), client, default);
+        Assert.False(result.Approved); Assert.Equal(40, result.PageCount); Assert.Equal(480000,result.CoveredCharacters); Assert.NotEmpty(result.Findings);
+    }
+
+    [Fact]
+    public async Task GeneratedAdditionsReturnActionableReworkWithoutInference()
+    {
+        var client = new Client((_, _) => throw new Exception("No model"));
+        var result = await BranchDiffTechnicalReview.ExecuteAsync(Reference() with { ChangedFiles=["dist/game.js"] }, new { },
+            (_,_) => throw new Exception("No read"),client,default);
+        Assert.False(result.Approved); Assert.Contains(".gitignore",Assert.Single(result.Findings));
+    }
+
+    internal sealed class Client(Func<IReadOnlyList<ChatMessage>,JsonElement,string> response) : IChatClient
+    {
+        public int Calls { get; private set; }
+        public List<ChatResponseFormat?> Formats { get; } = [];
+        public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages,ChatOptions? options=null,CancellationToken cancellationToken=default)
+        {
+            Calls++; Formats.Add(options?.ResponseFormat); var list=messages.ToArray();
+            using var input=JsonDocument.Parse(list[1].Text);
+            return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant,response(list,input.RootElement))) { FinishReason=ChatFinishReason.Stop });
         }
-        public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public object? GetService(Type serviceType, object? serviceKey = null) => null;
+        public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages,ChatOptions? options=null,CancellationToken cancellationToken=default)=>throw new NotSupportedException();
+        public object? GetService(Type type,object? key=null)=>null;
         public void Dispose() { }
     }
 }

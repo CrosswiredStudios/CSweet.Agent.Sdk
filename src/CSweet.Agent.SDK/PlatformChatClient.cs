@@ -119,7 +119,9 @@ internal sealed record PlatformChatRequest(
     ReasoningOutput? ReasoningOutput = null,
     ReasoningEffort? ReasoningEffort = null,
     float? Temperature = null,
-    int? MaxOutputTokens = null);
+    int? MaxOutputTokens = null,
+    JsonElement? ResponseSchema = null,
+    string? ResponseSchemaName = null);
 
 internal sealed record PlatformChatTelemetry(
     Guid? ConversationId,
@@ -134,7 +136,8 @@ internal sealed record PlatformChatChunk(
     long? OutputTokenCount = null,
     string? Role = null,
     IReadOnlyList<PlatformChatContent>? Contents = null,
-    IReadOnlyDictionary<string, long>? AdditionalUsageCounts = null);
+    IReadOnlyDictionary<string, long>? AdditionalUsageCounts = null,
+    string? FinishReason = null);
 
 public sealed class PlatformChatClient : IChatClient
 {
@@ -155,12 +158,14 @@ public sealed class PlatformChatClient : IChatClient
         CancellationToken cancellationToken = default)
     {
         var contents = new List<AIContent>();
+        ChatFinishReason? finish = null;
         await foreach (var update in GetStreamingResponseAsync(messages, options, cancellationToken))
         {
             contents.AddRange(update.Contents.Where(content => content is not UsageContent));
+            finish = update.FinishReason ?? finish;
         }
 
-        return new ChatResponse(new ChatMessage(ChatRole.Assistant, contents));
+        return new ChatResponse(new ChatMessage(ChatRole.Assistant, contents)) { FinishReason = finish };
     }
 
     public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
@@ -197,7 +202,9 @@ public sealed class PlatformChatClient : IChatClient
             options?.Reasoning?.Output,
             options?.Reasoning?.Effort,
             options?.Temperature,
-            options?.MaxOutputTokens);
+            options?.MaxOutputTokens,
+            (options?.ResponseFormat as ChatResponseFormatJson)?.Schema,
+            (options?.ResponseFormat as ChatResponseFormatJson)?.SchemaName);
         await foreach (var result in _tools.InvokeStreamingAsync(
             PlatformChatCapabilities.ChatStream,
             JsonSerializer.SerializeToElement(payload, JsonOptions),
@@ -216,9 +223,10 @@ public sealed class PlatformChatClient : IChatClient
                 contents.Insert(0, new TextContent(chunk.Text));
             }
 
-            if (contents.Count > 0)
+            if (contents.Count > 0 || chunk.FinishReason is not null)
             {
-                yield return new ChatResponseUpdate(role, contents);
+                yield return new ChatResponseUpdate(role, contents)
+                { FinishReason = chunk.FinishReason is { } finish ? new ChatFinishReason(finish) : null };
             }
 
             if (chunk.InputTokenCount is not null || chunk.OutputTokenCount is not null)

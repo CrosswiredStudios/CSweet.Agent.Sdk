@@ -1,6 +1,6 @@
 # Delegation and outcome tracking
 
-SDK 4.2.1 adds shared interaction dispatch before specialist `HandleEventAsync` fallbacks.
+SDK 4.3.2 adds shared interaction dispatch before specialist `HandleEventAsync` fallbacks.
 Request capabilities through reviewed manifest grants; declarations do not expand resource or
 execution authority.
 
