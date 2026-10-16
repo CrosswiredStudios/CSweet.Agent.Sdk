@@ -266,15 +266,15 @@ DeliveryComputeTest supports compute-test release bindings without certified pac
 
 ## Shared delegation
 
-SDK 4.3.3 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
+SDK 4.4.0 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
 
 ## Reviewed runtime public internet
 
-SDK 4.3.3 defines `RuntimePermissions.PublicInternet` (`runtime.internet.public.v1`). Declare it in `requires` with a purpose and `modelVisible: false`. It requests an execution-environment permission, not a callable MCP operation or provider binding. The installed manifest and owner-approved grant must both include it. It does not imply brokered web, credentials, private-network, inbound, compute or deployment authority.
+SDK 4.4.0 defines `RuntimePermissions.PublicInternet` (`runtime.internet.public.v1`). Declare it in `requires` with a purpose and `modelVisible: false`. It requests an execution-environment permission, not a callable MCP operation or provider binding. The installed manifest and owner-approved grant must both include it. It does not imply brokered web, credentials, private-network, inbound, compute or deployment authority.
 
 The certified development guest supplies Node/npm. Scoped project restores and portable tools may use the workload's writable directories when internet is approved; missing lockfiles are generated and verified through a clean restore. Workspace publication excludes `node_modules` and `.venv` while preserving lockfiles. Runtime-state reads report the effective network mode and expected development tools; command results remain the evidence that a particular validation ran.
 
-## Shared manager incident coordinator (SDK 4.3.3)
+## Shared manager incident coordinator (SDK 4.4.0)
 
 `CSweetManagerAgentBase` uses `ProjectIncidentReview` and `ManagerIncidentCoordinator` independently of specialist intake. Managers can override `GenerateIncidentOwnerReportAsync`, `CreateIncidentChatClient`, and `ExecuteIncidentResolutionAsync`; other callback-based agents can invoke the reusable coordinator explicitly.
 
@@ -290,7 +290,7 @@ Resolution dispatch runs before delegation classification and specialist intake 
 
 Deploy platform schema/broker support before package upgrades. Legacy grants keep factual reports; new grants must be reviewed rather than inferred from a manifest.
 
-## Authorized diff pages (4.3.3)
+## Authorized diff pages (4.4.0)
 
 `ReviewGitMergeRequest.IncludePatch=false` requests reference metadata. `DiffRead` uses the existing reviewed merge-review grant and rechecks current assignment, publication and source/target on every read. Pages carry an exact patch digest, contiguous offsets and bounded size; they convey no new repository or merge authority. An incomplete or changed read cannot approve. Generated/dependency additions are returned as actionable rework, never silently omitted from an approval. Source remains untrusted input throughout page inspection and synthesis.
 
@@ -301,4 +301,11 @@ coverage remain SDK/platform checks. Approval cannot erase an unresolved page fi
 
 ## Artifact QA rework inputs
 
-SDK 4.3.3 requires one platform-selected current-cycle author outcome for artifact QA. It rejects ambiguous historical envelopes before reading documents or invoking inference. Deploy the matching platform dispatcher before retrying old queued assignments. Review evidence remains untrusted input, not permission or a waiver; required API and feasibility claims need independent version-specific evidence.
+SDK 4.4.0 requires one platform-selected current-cycle author outcome for artifact QA. It rejects ambiguous historical envelopes before reading documents or invoking inference. Deploy the matching platform dispatcher before retrying old queued assignments. Review evidence remains untrusted input, not permission or a waiver; required API and feasibility claims need independent version-specific evidence.
+
+## Routine incident recovery (4.4.0)
+
+Routine incident recovery uses only model-visible reads and idempotent tracked delegation or
+work comments within the existing broker grants. It excludes chat replay, document mutation,
+spending and approval changes. Incident evidence and model classifications confer no authority.
+Owner input requires an explicit requirement; a failure or investigation alone is not approval.

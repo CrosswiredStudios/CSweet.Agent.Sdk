@@ -37,7 +37,13 @@ public sealed record IncidentCurrentState(string Hash, string ProjectName,
     IReadOnlyList<ProjectDiagnosticEvidence> Facts, IReadOnlyList<IncidentDocumentReference> Documents);
 public sealed record IncidentResolutionOption(string Id, string Label, string Description, string IntendedOutcome);
 public sealed record IncidentOwnerReport(string Title, string Summary, string Recovery, string NextStep,
-    IReadOnlyList<IncidentResolutionOption> Options, string RecommendedOptionId, string SourceHash);
+    IReadOnlyList<IncidentResolutionOption> Options, string RecommendedOptionId, string SourceHash)
+{
+    /// <summary>Null means an older report needs reassessment, not that the owner must act.</summary>
+    public bool? RequiresOwnerInput { get; init; }
+    /// <summary>The specific decision, approval, missing fact or external action only the owner can supply.</summary>
+    public string? OwnerInputReason { get; init; }
+}
 public sealed record UpdateManagementIncidentPresentation(Guid IncidentId, long ExpectedRevision,
     string IdempotencyKey, IncidentOwnerReport? OwnerReport = null, Guid? ResolutionDecisionId = null,
     string? ResolutionOutcome = null);

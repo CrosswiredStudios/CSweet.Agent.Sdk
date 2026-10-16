@@ -6,6 +6,35 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class ManagerAgentTests
 {
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OwnerRequirementControlsEscalationInsteadOfDefaultManagerAssessment(bool ownerInput)
+    {
+        var self = Guid.NewGuid();
+        var incident = new ManagementIncident(Guid.NewGuid(), Guid.NewGuid(), self, self, "Open", "Interrupted reply", null,
+            DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMinutes(15), 1, "Saved actions may exist", "Unknown", "Unknown", "Review", []);
+        var state = new IncidentCurrentState(new string('A', 64), "Game", [], []);
+        var diagnostics = new ProjectDiagnosticsPage([], null, []) { CurrentState = state };
+        ReportManagementIncident? recorded = null;
+        var runtime = new AgentTestRuntime()
+            .RegisterCapability<ReadManagementIncidents, ManagementIncidentPage>(ProjectHealthCapabilities.Incidents, (_, _) => Task.FromResult(new ManagementIncidentPage([incident], null)))
+            .RegisterCapability<ReadProjectDiagnostics, ProjectDiagnosticsPage>(ProjectHealthCapabilities.Diagnostics, (_, _) => Task.FromResult(diagnostics))
+            .RegisterCapability<ReportManagementIncident, ManagementIncident>(ProjectHealthCapabilities.Report, (r, _) => { recorded = r; return Task.FromResult(incident); });
+        var context = runtime.CreateContext(identity: new AgentIdentity(self.ToString(), "Manager", null, null, null, [], null, null, null));
+        var hint = JsonSerializer.SerializeToElement(new ProjectHealthHint(incident.WorkstreamId, incident.Id, 1), new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var message = new AgentEventEnvelope(Guid.NewGuid(), Guid.NewGuid(), ProjectHealthEvents.ReviewDue, hint, DateTimeOffset.UtcNow, "test");
+        await ProjectIncidentReview.HandleManagerAsync(message, context,
+            (_, _, _) => Task.FromResult(ManagerIncidentAssessment.Escalate("Default assessment")), default,
+            (review, _, _) => Task.FromResult<IncidentOwnerReport?>(ManagerIncidentCoordinator.FactualFallback(review)! with {
+                RequiresOwnerInput = ownerInput, OwnerInputReason = ownerInput ? "Confirm the external budget." : null,
+                Options = ownerInput ? [new("approve", "Approve", "Approve budget", "Authorize spending"),
+                    new("defer", "Defer", "Defer work", "Defer spending")] : [], RecommendedOptionId = ownerInput ? "approve" : "" }));
+        Assert.Equal(ownerInput ? IncidentDispositions.Escalate : IncidentDispositions.Investigating, recorded!.Disposition);
+        Assert.Equal(ownerInput, recorded.OwnerReport!.RequiresOwnerInput);
+        if (!ownerInput) { Assert.NotNull(recorded.ReviewAt); Assert.Null(recorded.ActionReference); }
+    }
+
+    [Theory]
     [InlineData("game-producer")]
     [InlineData("product-manager")]
     [InlineData("future-manager-specialty")]

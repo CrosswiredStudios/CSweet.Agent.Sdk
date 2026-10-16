@@ -6,6 +6,54 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class ManagerIncidentCoordinatorTests
 {
     [Fact]
+    public void RoutineToolsExcludeReplayApprovalsAndDocumentMutation()
+    {
+        var schema = JsonSerializer.SerializeToElement(new { type = "object", properties = new { idempotencyKey = new { type = "string" } } });
+        var capabilities = new[] { "work.delegation.create.v1", "platform.artifact.read.v1", "platform.artifact.accept.v1",
+            "platform.decision.answer.v1", "communication.turn.retry.v1", "work.personal-todo.add.v1", "work.item.comment",
+            "communication.thread.delete.v1", "work.delegation.cancel.v1" };
+        var tools = capabilities.Select(x => new AgentToolDescriptor(x, x, x, schema, null, 1, true)).ToArray();
+        Assert.Equal(new[] { "work.delegation.create.v1", "platform.artifact.read.v1", "work.item.comment" },
+            ManagerIncidentCoordinator.RoutineRecoveryCapabilities(tools));
+        Assert.Empty(ManagerIncidentCoordinator.RoutineRecoveryCapabilities([tools[0] with { ModelVisible = false }]));
+        Assert.Empty(ManagerIncidentCoordinator.RoutineRecoveryCapabilities([tools[0] with { InputSchema = JsonSerializer.SerializeToElement(new { }) }]));
+    }
+
+    [Fact]
+    public void RoutineRecoveryHasNoOwnerChoicesAndAnEscalationRequiresASpecificInput()
+    {
+        var state = new IncidentCurrentState(new string('A', 64), "Game", [], []);
+        var report = ManagerIncidentCoordinator.FactualFallback(new(Incident(Guid.NewGuid()), new([], null, []) { CurrentState = state }, "key"))!;
+        Assert.False(report.RequiresOwnerInput); Assert.Empty(report.Options);
+        var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        Assert.False(ManagerIncidentCoordinator.ParseReport(JsonSerializer.Serialize(report, json), state.Hash).RequiresOwnerInput);
+        Assert.Throws<ArgumentException>(() => ManagerIncidentCoordinator.ValidateReport(report with {
+            RequiresOwnerInput = true, Options = [new("a", "Approve", "Approve budget", "Authorize spending"),
+                new("b", "Defer", "Defer work", "Defer spending")], RecommendedOptionId = "a" }));
+        Assert.Throws<ArgumentException>(() => ManagerIncidentCoordinator.ParseReport(JsonSerializer.Serialize(report with {
+            RequiresOwnerInput = null }, json), state.Hash));
+    }
+
+    [Fact]
+    public async Task RoutineRecoveryKeysSurviveEvidenceRefreshAndIgnoreModelKeys()
+    {
+        var state = new IncidentCurrentState(new string('A', 64), "Game", [], []);
+        var review = new ManagerIncidentContext(Incident(Guid.NewGuid()), new([], null, []) { CurrentState = state }, "key");
+        var capture = new CapturingFunction();
+        var tool = new ManagerIncidentCoordinator.RoutineRecoveryFunction(capture, review);
+        var target = Guid.NewGuid().ToString();
+        for (var i = 0; i < 2; i++)
+            await tool.InvokeAsync(new AIFunctionArguments(new Dictionary<string, object?> {
+                ["idempotencyKey"] = Guid.NewGuid().ToString(), ["targetOrganizationUserId"] = target }));
+        Assert.Equal(capture.Calls[0]["idempotencyKey"], capture.Calls[1]["idempotencyKey"]);
+        Assert.Contains(review.Incident.Id.ToString("N"), capture.Calls[0]["idempotencyKey"]!.ToString());
+        await new ManagerIncidentCoordinator.RoutineRecoveryFunction(capture, review with {
+            Diagnostics = review.Diagnostics with { CurrentState = state with { Hash = new string('B', 64) } }
+        }).InvokeAsync(new AIFunctionArguments(new Dictionary<string, object?> { ["targetOrganizationUserId"] = target }));
+        Assert.Equal(capture.Calls[0]["idempotencyKey"], capture.Calls[2]["idempotencyKey"]);
+    }
+
+    [Fact]
     public async Task RecoveryKeysAndCanonicalCommitmentBindingIgnoreModelGeneratedScopeAndKeys()
     {
         var self = Guid.NewGuid(); var incident = Incident(self); var decision = Guid.NewGuid();
@@ -100,7 +148,8 @@ public sealed class ManagerIncidentCoordinatorTests
         var report = ManagerIncidentCoordinator.FactualFallback(new(incident, new([], null, []) { CurrentState = state }, "key"))!;
         var longText = string.Join(' ', Enumerable.Repeat("word", words));
         report = field switch { "summary" => report with { Summary = longText }, "recovery" => report with { Recovery = longText },
-            "nextStep" => report with { NextStep = longText }, _ => report with { Options = [report.Options[0] with { Description = longText }, report.Options[1]] } };
+            "nextStep" => report with { NextStep = longText }, _ => report with { RequiresOwnerInput = true, OwnerInputReason = "Confirm the budget.",
+                Options = [new("a", "Approve", longText, "Approve budget"), new("b", "Decline", "Decline budget", "Decline budget")], RecommendedOptionId = "a" } };
         Assert.Throws<ArgumentException>(() => ManagerIncidentCoordinator.ValidateReport(report));
     }
 
@@ -121,7 +170,8 @@ public sealed class ManagerIncidentCoordinatorTests
     {
         var report = new IncidentOwnerReport("Prism Break needs scope reconciliation", "The brief needs its recorded decisions incorporated.",
             "No confirmed recovery.", "Coordinate a revision.", [new("a", "Coordinate", "Coordinate the update", "Coordinate the update"),
-                new("b", "Gather facts", "Request missing facts", "Request missing facts")], "a", "forged");
+                new("b", "Gather facts", "Request missing facts", "Request missing facts")], "a", "forged")
+            { RequiresOwnerInput = true, OwnerInputReason = "Confirm the budget." };
         var parsed = ManagerIncidentCoordinator.ParseReport(JsonSerializer.Serialize(report, new JsonSerializerOptions(JsonSerializerDefaults.Web)), new string('B', 64));
         Assert.Equal(new string('B', 64), parsed.SourceHash);
         Assert.Throws<ArgumentException>(() => ManagerIncidentCoordinator.ValidateReport(parsed with { Options = [parsed.Options[0], parsed.Options[0]] }));

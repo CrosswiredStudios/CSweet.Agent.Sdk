@@ -78,7 +78,7 @@ The older `ProjectIncidentReview.HandleAsync` helper remains available for SDK c
 `ManagementIncident.MonitoringManagerEmployeeId` is the generic owner accessor; the legacy
 `ProducerEmployeeId` wire field remains readable by older SDK clients.
 
-## Shared manager incident coordinator (SDK 4.3.3)
+## Shared manager incident coordinator (SDK 4.4.0)
 
 `CSweetManagerAgentBase` uses `ProjectIncidentReview` and `ManagerIncidentCoordinator` independently of specialist intake. Managers can override `GenerateIncidentOwnerReportAsync`, `CreateIncidentChatClient`, and `ExecuteIncidentResolutionAsync`; other callback-based agents can invoke the reusable coordinator explicitly.
 
@@ -95,3 +95,15 @@ Subscribe to `ProjectHealthEvents.OwnerReportRequested` (`com.csweet.management.
 Resolution dispatch runs before delegation classification and specialist intake in both `AgentRuntimeWorker` and `AgentTestRuntime`. Only broker-derived answer context triggers it; message text cannot. Recovery uses existing granted management operations, pins mutation keys to the decision and target, and delegates execution outside the manager's remit. Longer management work uses authenticated canonical commitments, handled by the shared coordinator before specialist claim policies/task handlers. A queued request, completed inbox task, or manager assertion does not prove project recovery. Required spending, scope and document approvals remain enforced by platform services.
 
 Deploy platform schema/broker support before package upgrades. Legacy grants keep factual reports; new grants must be reviewed rather than inferred from a manifest.
+
+## Routine incident recovery (4.4.0)
+
+`IncidentOwnerReport.RequiresOwnerInput` distinguishes an owner decision from routine manager
+work; `OwnerInputReason` names the specific decision, approval, missing fact or external action.
+Routine reports have no options. A missing classification marks a legacy report for reassessment.
+`ManagerIncidentCoordinator.GenerateReportAsync` uses bounded authorized reads and tracked
+coordination before reporting. `RoutineRecoveryFunction` supplies incident/operation/target
+idempotency keys that survive duplicate delivery and evidence changes. It cannot replay an
+interrupted chat or change approvals, accepted documents or spending. The platform persists
+manager follow-up deadlines and independently verifies operational retry state. Install the
+matching platform before SDK 4.4.0 managers.
