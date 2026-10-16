@@ -10,6 +10,36 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class McpAgentRuntimeClientTests
 {
     [Theory]
+    [InlineData(0, 2, true)] // Lost response, then recovery.
+    [InlineData(503, 2, true)]
+    [InlineData(0, 10, false)] // Exhaust bounded retries.
+    [InlineData(403, 2, false)] // Revocation is never retried.
+    public async Task Heartbeat_retries_only_transient_failures_with_the_same_attempt(int status, int succeedAt, bool succeeds)
+    {
+        await using var fixture = await StreamingFixture.CreateAsync(null);
+        var bodies = new List<string>();
+        fixture.Handler.Control = (method, body) =>
+        {
+            Assert.Equal("csweet/work/renew", method);
+            bodies.Add(body);
+            if (bodies.Count < succeedAt)
+            {
+                if (status == 0) throw new HttpRequestException(HttpRequestError.ResponseEnded);
+                return new HttpResponseMessage((HttpStatusCode)status);
+            }
+            return new HttpResponseMessage(HttpStatusCode.OK)
+                { Content = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{}}") };
+        };
+        var lease = new AgentWorkLease(Guid.NewGuid(), 2, AgentWorkKind.Capability, "test",
+            JsonSerializer.SerializeToElement(new { }), "test-lease", DateTimeOffset.UtcNow.AddMinutes(3),
+            DateTimeOffset.UtcNow.AddMinutes(30), null, null);
+        if (succeeds) await fixture.Client.RenewWorkAsync(lease, default);
+        else await Assert.ThrowsAsync<HttpRequestException>(() => fixture.Client.RenewWorkAsync(lease, default));
+        Assert.Equal(status == 403 ? 1 : succeeds ? 2 : 3, bodies.Count);
+        Assert.All(bodies, body => Assert.Equal(bodies[0], body));
+    }
+
+    [Theory]
     [InlineData("Conflict", PlatformCapabilityErrorCode.Conflict)]
     [InlineData("platform.capability.conflict", PlatformCapabilityErrorCode.Conflict)]
     [InlineData("Denied", PlatformCapabilityErrorCode.Denied)]
@@ -348,6 +378,7 @@ public sealed class McpAgentRuntimeClientTests
     private sealed class ScriptedHandler(string? streamBody, object? toolResult = null) : HttpMessageHandler
     {
         public int NonStreamingCalls { get; private set; }
+        public Func<string, string, HttpResponseMessage>? Control { get; set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
@@ -355,6 +386,7 @@ public sealed class McpAgentRuntimeClientTests
         {
             var requestJson = await request.Content!.ReadAsStringAsync(cancellationToken);
             var method = JsonDocument.Parse(requestJson).RootElement.GetProperty("method").GetString();
+            if (Control is not null) return Control(method!, requestJson);
             if (method == "initialize")
                 return JsonResponse(new
                 {

@@ -17,7 +17,7 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
     private static readonly TimeSpan DefaultCapabilityRequestTimeout = TimeSpan.FromMinutes(3);
     private static readonly TimeSpan DefaultRateLimitRetryDelay = TimeSpan.FromSeconds(10);
     private const int MaximumRateLimitAttempts = 3;
-    private const int MaximumInferenceTransportAttempts = 3;
+    private const int MaximumReplaySafeTransportAttempts = 3;
     private static readonly Meter Meter = new("CSweet.Agent.SDK.Streaming");
     private static readonly Counter<long> StreamFallbacks = Meter.CreateCounter<long>("csweet.agent.sdk.stream.fallbacks");
     private static readonly Counter<long> StreamFrames = Meter.CreateCounter<long>("csweet.agent.sdk.stream.frames");
@@ -529,14 +529,15 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
                 catch (HttpRequestException exception) when (!timeoutCancellation.IsCancellationRequested)
                 {
                     // A start key deduplicates an accepted job, and reads replay the same
-                    // cursor. Reuse the buffered envelope, including that key, after a
-                    // lost connection/response; never replay arbitrary capability mutations.
-                    if (method is "csweet/llm/start" or "csweet/llm/read" &&
-                        IsConnectionInterruption(exception) && attempt < MaximumInferenceTransportAttempts)
+                    // cursor. Lease renewal is also safe to repeat for the same authenticated
+                    // attempt: the host rejects expired/revoked leases. Never replay arbitrary
+                    // capability mutations or token rotations after an unknown outcome.
+                    if (method is "csweet/llm/start" or "csweet/llm/read" or "csweet/work/renew" &&
+                        IsConnectionInterruption(exception) && attempt < MaximumReplaySafeTransportAttempts)
                     {
                         _logger.LogWarning(
                             "The MCP broker connection interrupted '{Method}' ({RequestBytes} bytes). Retrying attempt {Attempt} of {MaximumAttempts} with the same request.",
-                            method, content?.Length ?? 0, attempt + 1, MaximumInferenceTransportAttempts);
+                            method, content?.Length ?? 0, attempt + 1, MaximumReplaySafeTransportAttempts);
                         await Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), timeoutCancellation.Token);
                         continue;
                     }
@@ -545,6 +546,14 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
                     throw new HttpRequestException(exception.HttpRequestError,
                         $"MCP broker transport failed during '{method}' ({content?.Length ?? 0} request bytes, {attempt} attempt(s)): " +
                         DescribeTransportFailure(exception), exception, exception.StatusCode);
+                }
+                if (method == "csweet/work/renew" &&
+                    response.StatusCode is HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout &&
+                    attempt < MaximumReplaySafeTransportAttempts)
+                {
+                    response.Dispose();
+                    await Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), timeoutCancellation.Token);
+                    continue;
                 }
                 if (response.StatusCode != HttpStatusCode.TooManyRequests ||
                     attempt >= MaximumRateLimitAttempts)

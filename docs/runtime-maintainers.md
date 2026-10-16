@@ -1,5 +1,14 @@
 # Runtime maintainer guide
 
+## Work heartbeat transport recovery (SDK 4.4.1)
+
+`McpAgentRuntimeClient.SendAsync` retries the same `csweet/work/renew` envelope after
+a connection interruption or HTTP 502/503/504, at most three attempts within the existing
+control-request timeout. Work/attempt/token identity stays unchanged. Exhaustion still
+cancels work through `AgentRuntimeWorker.RenewLeaseAsync`; denied, expired or revoked
+authority is not recovered by retry. Cancellation interrupts the backoff. Arbitrary
+capability mutations and session token rotation remain outside this replay policy.
+
 ## Release build-readiness (SDK 3.64.1)
 
 `CSweetAgentBase.ExecuteCapabilityAsync` routes V2 aggregate work and the explicit
