@@ -272,15 +272,15 @@ DeliveryComputeTest supports compute-test release bindings without certified pac
 
 ## Shared delegation
 
-SDK 4.3.2 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
+SDK 4.3.3 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
 
 ## Reviewed runtime public internet
 
-SDK 4.3.2 defines `RuntimePermissions.PublicInternet` (`runtime.internet.public.v1`). Declare it in `requires` with a purpose and `modelVisible: false`. It requests an execution-environment permission, not a callable MCP operation or provider binding. The installed manifest and owner-approved grant must both include it. It does not imply brokered web, credentials, private-network, inbound, compute or deployment authority.
+SDK 4.3.3 defines `RuntimePermissions.PublicInternet` (`runtime.internet.public.v1`). Declare it in `requires` with a purpose and `modelVisible: false`. It requests an execution-environment permission, not a callable MCP operation or provider binding. The installed manifest and owner-approved grant must both include it. It does not imply brokered web, credentials, private-network, inbound, compute or deployment authority.
 
 The certified development guest supplies Node/npm. Scoped project restores and portable tools may use the workload's writable directories when internet is approved; missing lockfiles are generated and verified through a clean restore. Workspace publication excludes `node_modules` and `.venv` while preserving lockfiles. Runtime-state reads report the effective network mode and expected development tools; command results remain the evidence that a particular validation ran.
 
-## Shared manager incident coordinator (SDK 4.3.2)
+## Shared manager incident coordinator (SDK 4.3.3)
 
 `CSweetManagerAgentBase` uses `ProjectIncidentReview` and `ManagerIncidentCoordinator` independently of specialist intake. Managers can override `GenerateIncidentOwnerReportAsync`, `CreateIncidentChatClient`, and `ExecuteIncidentResolutionAsync`; other callback-based agents can invoke the reusable coordinator explicitly.
 
@@ -296,7 +296,7 @@ Resolution dispatch runs before delegation classification and specialist intake 
 
 Deploy platform schema/broker support before package upgrades. Legacy grants keep factual reports; new grants must be reviewed rather than inferred from a manifest.
 
-## Exact publication diff paging (4.3.2)
+## Exact publication diff paging (4.3.3)
 
 The platform must support reference-only `ReviewGitMergeRequest` and `GitReviewDiffRead` before updating agents. Every page reuses normal reviewer authorization and binds the publication, source, target and patch digest. `BranchDiffTechnicalReview` checks contiguous complete coverage and preserves unresolved findings through synthesis. Hierarchical task technical review uses only bounded reads and has no old-review fallback. `RepositorySourcePolicy` gives coding harnesses a shared source-delivery contract. Gitignore processing happens in the trusted snapshot publisher using Git's own matching semantics and retains tracked-file behavior.
 
@@ -304,8 +304,12 @@ The platform must support reference-only `ReviewGitMergeRequest` and `GitReviewD
 
 `DeliveryTaskTechnicalReview` persists each validated page in operating state with a policy and candidate/planning/scope identity. Resume reauthorizes each current page and verifies its text hash. Final synthesis resolves every identified blocker explicitly, cites reviewed offsets and covers every exact criterion. Overflow rejects safely after complete coverage. Retained page state is evidence, never an execution grant; final authorized source, target, planning, delivery and reviewer reads remain mandatory.
 
-SDK 4.3.2 no longer asks models to reproduce commit hashes or offsets. The validated read loop
+SDK 4.3.3 no longer asks models to reproduce commit hashes or offsets. The validated read loop
 attaches those identities to page summaries, and the final result uses the authorized reference
 pair. This prevents the observed source/target reversal from blocking review without trusting
 model-generated provenance. Models still supply and validate substantive review content; changed
 or incomplete reads and approvals with unresolved findings fail closed.
+
+## Artifact QA rework recovery (4.3.3)
+
+The platform dispatcher selects only the latest attempt of the current traversal's author for artifact QA. ArtifactDeliveryReview rejects ambiguous producer history before any artifact read. Authorized retry evidence is supplied to the reviewer, which must distinguish API claims from independently supported source evidence and proposed performance targets from measurements. Platform grant reconciliation must load producer attempts even when invoked from a fresh inbox-claim context; partial EF navigation state cannot revoke active review grants.

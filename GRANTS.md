@@ -495,7 +495,7 @@ Reviewed grants remain subject to current source, employee and resource authorit
 
 `runtime.internet.public.v1` (`RuntimePermissions.PublicInternet`) requests reviewed public TCP/UDP for the isolated runtime. It is hidden from callable MCP discovery and has no provider binding.
 
-## Shared manager incident coordinator (SDK 4.3.2)
+## Shared manager incident coordinator (SDK 4.3.3)
 
 `CSweetManagerAgentBase` uses `ProjectIncidentReview` and `ManagerIncidentCoordinator` independently of specialist intake. Managers can override `GenerateIncidentOwnerReportAsync`, `CreateIncidentChatClient`, and `ExecuteIncidentResolutionAsync`; other callback-based agents can invoke the reusable coordinator explicitly.
 

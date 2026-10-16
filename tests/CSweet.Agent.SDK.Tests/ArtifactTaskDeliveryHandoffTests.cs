@@ -9,8 +9,11 @@ public sealed class ArtifactTaskDeliveryHandoffTests
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    [Fact]
-    public async Task ActualDocumentCreationSubmissionPersistenceAndIndependentReviewUseTheSameContract()
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task ActualDocumentCreationSubmissionPersistenceAndIndependentReviewUseTheSameContract(bool ambiguousHistory, bool olderFirst)
     {
         var authorInstallation = Guid.NewGuid(); var reviewerInstallation = Guid.NewGuid();
         var artifact = Guid.NewGuid(); var revision = Guid.NewGuid(); var now = DateTimeOffset.UtcNow;
@@ -31,7 +34,7 @@ public sealed class ArtifactTaskDeliveryHandoffTests
             StageKey = "development", Input = JsonSerializer.SerializeToElement(new WorkExecutionInputV1(Guid.NewGuid(), Guid.NewGuid(), 1, planning), Json),
             Instructions = "Deliver validation", PriorOutcomes = [], Evidence = [], Item = JsonSerializer.SerializeToElement(new { })
         };
-        ArtifactDocument? saved = null; var submissions = 0; var inference = 0;
+        ArtifactDocument? saved = null; var submissions = 0; var inference = 0; var artifactReads = 0;
         var runtime = new AgentTestRuntime()
             .RegisterCapability<CreateArtifactDocument, ArtifactDocument>(PlatformCapabilities.ArtifactCreate, (request, _) =>
             {
@@ -48,6 +51,7 @@ public sealed class ArtifactTaskDeliveryHandoffTests
             })
             .RegisterCapability<JsonElement, ArtifactDocument>(PlatformCapabilities.ArtifactRead, (request, _) =>
             {
+                artifactReads++;
                 Assert.Equal(artifact, request.GetProperty("artifactId").GetGuid());
                 return Task.FromResult(saved!);
             })
@@ -56,9 +60,11 @@ public sealed class ArtifactTaskDeliveryHandoffTests
             {
                 inference++;
                 if (inference == 1) return Task.FromResult(JsonSerializer.SerializeToElement(new { text = content, role = "assistant" }));
+                Assert.Contains("API names and feasibility assertions", request.GetProperty("messages")[0].GetProperty("text").GetString());
                 var prompt = JsonSerializer.Deserialize<JsonElement>(request.GetProperty("messages").EnumerateArray().Last().GetProperty("text").GetString()!);
                 Assert.Equal(content, prompt.GetProperty("content").GetString());
                 Assert.Equal(revision, prompt.GetProperty("revisionId").GetGuid());
+                Assert.Contains("Version-specific upstream source", prompt.GetProperty("reviewEvidence").GetRawText());
                 var report = new WorkArtifactQualityResult(artifact, revision, sha, true, "Reviewed exact API evidence",
                     [new(planning.AcceptanceCriteria.Single(), true, "Document contains concrete API evidence")], []);
                 return Task.FromResult(JsonSerializer.SerializeToElement(new { text = JsonSerializer.Serialize(report, Json), role = "assistant" }));
@@ -73,10 +79,23 @@ public sealed class ArtifactTaskDeliveryHandoffTests
         var qa = assignment with
         {
             StageKey = "quality", StageExecutionId = Guid.NewGuid(), AttemptId = Guid.NewGuid(), PriorOutcomes = [outcome],
+            Evidence = [new("manager-direction", "Verification evidence", "Version-specific upstream source: verify every claimed API; missing evidence is a finding.")],
             Item = JsonSerializer.SerializeToElement(new { deliverySpecificationJson = JsonSerializer.Serialize(item.Delivery, Json) })
         };
+        if (ambiguousHistory)
+        {
+            var old = outcome with { StageExecutionId = Guid.NewGuid(), AttemptId = Guid.NewGuid(),
+                Output = new WorkArtifactDelivery(Guid.NewGuid(), Guid.NewGuid(), sha).ToOutput() };
+            qa = qa with { PriorOutcomes = olderFirst ? [old, outcome] : [outcome, old] };
+        }
         qa = JsonSerializer.Deserialize<WorkExecutionAssignment>(JsonSerializer.Serialize(qa, Json), Json)!;
         var reviewContext = runtime.CreateContext(assignment.OrganizationId.ToString(), reviewerInstallation.ToString());
+        if (ambiguousHistory)
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => ArtifactDeliveryReview.ExecuteAsync(qa, reviewContext,
+                reviewContext.CreateChatClient(new(Guid.NewGuid(), "test")), default));
+            Assert.Equal(0, artifactReads); Assert.Equal(1, inference); return;
+        }
         var reviewed = await ArtifactDeliveryReview.ExecuteAsync(qa, reviewContext,
             reviewContext.CreateChatClient(new(Guid.NewGuid(), "test")), default);
         var final = reviewed.Value!.Value.Deserialize<WorkExecutionOutcomeV1>(Json)!;

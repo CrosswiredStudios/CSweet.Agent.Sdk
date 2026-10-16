@@ -78,7 +78,7 @@ The older `ProjectIncidentReview.HandleAsync` helper remains available for SDK c
 `ManagementIncident.MonitoringManagerEmployeeId` is the generic owner accessor; the legacy
 `ProducerEmployeeId` wire field remains readable by older SDK clients.
 
-## Shared manager incident coordinator (SDK 4.3.2)
+## Shared manager incident coordinator (SDK 4.3.3)
 
 `CSweetManagerAgentBase` uses `ProjectIncidentReview` and `ManagerIncidentCoordinator` independently of specialist intake. Managers can override `GenerateIncidentOwnerReportAsync`, `CreateIncidentChatClient`, and `ExecuteIncidentResolutionAsync`; other callback-based agents can invoke the reusable coordinator explicitly.
 

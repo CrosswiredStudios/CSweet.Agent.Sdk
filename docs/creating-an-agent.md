@@ -40,7 +40,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 4.3.2
+  --SdkVersion 4.3.3
 cd ResearchAgent
 dotnet test
 ```
@@ -339,4 +339,4 @@ See [manager authoring](manager-agents.md) for shared monitoring, assessment, re
 
 ## Shared delegation
 
-SDK 4.3.2 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
+SDK 4.3.3 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
