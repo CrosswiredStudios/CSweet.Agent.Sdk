@@ -1,10 +1,12 @@
 # C-Sweet Agent SDK
 
+SDK 4.5.0 adds `HierarchicalProjectDelivery.PrepareIncrementAsync`: select fully detailed Epic increments while retaining future approved scope on the board. Each selected increment still requires task, Story, Epic and release acceptance, independent reviewers and existing preflight. An active plan cannot silently change its selected increment. See [hierarchical delivery](docs/hierarchical-delivery.md).
+
 SDK 4.4.1 adds bounded retry of interrupted work heartbeat requests. It preserves the
 same authenticated attempt and existing timeout; it does not revive expired leases
 or retry arbitrary capability mutations. See `docs/runtime-maintainers.md`.
 
-SDK 4.4.1 uses one execution capability, `work.execution.run`, and one scope-aware
+SDK 4.5.0 uses one execution capability, `work.execution.run`, and one scope-aware
 `WorkExecutionAssignment`. Staffing, task dispatch and aggregate reviews share the
 same contract. The SDK preserves the complete assignment when invoking task handlers,
 including principal, planning revision, delivery plan and permitted outcomes.
@@ -27,7 +29,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 4.4.1 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 4.5.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -44,7 +46,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 4.4.1
+  --SdkVersion 4.5.0
 cd ResearchAgent
 dotnet test
 ```
@@ -52,7 +54,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 4.4.1
+dotnet add package CSweet.Agent.SDK --version 4.5.0
 ```
 
 ```csharp
@@ -159,15 +161,15 @@ See [manager authoring](docs/manager-agents.md) for shared monitoring, assessmen
 
 ## Reviewed runtime public internet
 
-SDK 4.4.1 defines `RuntimePermissions.PublicInternet` (`runtime.internet.public.v1`). Declare it in `requires` with a purpose and `modelVisible: false`. It requests an execution-environment permission, not a callable MCP operation or provider binding. The installed manifest and owner-approved grant must both include it. It does not imply brokered web, credentials, private-network, inbound, compute or deployment authority.
+SDK 4.5.0 defines `RuntimePermissions.PublicInternet` (`runtime.internet.public.v1`). Declare it in `requires` with a purpose and `modelVisible: false`. It requests an execution-environment permission, not a callable MCP operation or provider binding. The installed manifest and owner-approved grant must both include it. It does not imply brokered web, credentials, private-network, inbound, compute or deployment authority.
 
 The certified development guest supplies Node/npm. Scoped project restores and portable tools may use the workload's writable directories when internet is approved; missing lockfiles are generated and verified through a clean restore. Workspace publication excludes `node_modules` and `.venv` while preserving lockfiles. Runtime-state reads report the effective network mode and expected development tools; command results remain the evidence that a particular validation ran.
 
 ## Manager blocker reports
 
-SDK 4.4.1 exposes shared evidence-based incident reports and human-selected recovery through `CSweetManagerAgentBase` and `ManagerIncidentCoordinator`. See [manager agents](docs/manager-agents.md) for hooks, reviewed grants, bounded analysis, durable decisions and rollout.
+SDK 4.5.0 exposes shared evidence-based incident reports and human-selected recovery through `CSweetManagerAgentBase` and `ManagerIncidentCoordinator`. See [manager agents](docs/manager-agents.md) for hooks, reviewed grants, bounded analysis, durable decisions and rollout.
 
-## Bounded task technical review (4.4.1)
+## Bounded task technical review (4.5.0)
 
 The SDK attaches validated source/target commits and page offsets to model findings. Models
 return review content without reproducing identifiers; reversed or invented model identity
@@ -176,4 +178,4 @@ unresolved-finding checks remain enforced before trusted integration and indepen
 
 `DeliveryTaskTechnicalReview` starts with a publication/PR/branch reference and exact source/target commits, not a full patch in a model message. It reads contiguous diff pages through the existing authorized `git.merge.review.v1` capability, binding every page to the publication and patch digest. It refuses changed candidates, missing pages, oversized synthesis and approval that erases unresolved findings. Newly added or modified generated/dependency paths request source cleanup without model evaluation of their contents.
 
-Coding agents use `RepositorySourcePolicy.Instructions` to maintain `.gitignore`, preserve manifests/lockfiles and authored assets, and build deployment output through reproducible recipes. The trusted publisher applies Git's native root/nested ignore rules to new files in snapshot workspaces; already tracked files require explicit cleanup. Ship the platform broker and trusted Git publisher before installing SDK 4.4.1 consumers.
+Coding agents use `RepositorySourcePolicy.Instructions` to maintain `.gitignore`, preserve manifests/lockfiles and authored assets, and build deployment output through reproducible recipes. The trusted publisher applies Git's native root/nested ignore rules to new files in snapshot workspaces; already tracked files require explicit cleanup. Ship the platform broker and trusted Git publisher before installing SDK 4.5.0 consumers.

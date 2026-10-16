@@ -6,6 +6,34 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class SingleQaStaffingTests
 {
     [Fact]
+    public async Task Selected_increment_excludes_empty_future_scope_and_retains_independent_acceptance()
+    {
+        var f = new Fixture(false);
+        var future = f.Items.Single(x => x.Id == f.EpicId) with { Id = Guid.NewGuid(), Title = "Later agreed scope" };
+        f.Items.Add(future);
+        f.Items.Add(f.Items.Single(x => x.Id == f.StoryId) with { Id = Guid.NewGuid(), ParentItemId = future.Id });
+        var plan = await f.PrepareIncrement([f.EpicId]);
+        Assert.Equal("Active", plan.Status);
+        Assert.Equal(f.EpicId, Assert.Single(plan.EpicItemIds));
+        Assert.DoesNotContain(f.Configuration!.Assignments, x => x.ItemId == future.Id);
+        Assert.All(f.Configuration.Assignments.Where(x => x.Scope is "Story" or "Release"), x =>
+            Assert.Equal(f.Qa.AgentInstallationId, x.Stages.Single(s => s.StageKey == "quality").AgentInstallationId));
+        await Assert.ThrowsAsync<DeliveryStaffingException>(() => f.PrepareIncrement([future.Id]));
+        Assert.Equal(1, f.ConfigurationCount);
+    }
+
+    [Fact]
+    public async Task Selected_increment_rejects_empty_foreign_or_undetailed_scope_before_mutation()
+    {
+        var f = new Fixture(false);
+        await Assert.ThrowsAsync<ArgumentException>(() => f.PrepareIncrement([]));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => f.PrepareIncrement([Guid.NewGuid()]));
+        f.Items.RemoveAll(x => x.ParentItemId == f.StoryId);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => f.PrepareIncrement([f.EpicId]));
+        Assert.Null(f.Configuration); Assert.Empty(f.Finalizations);
+    }
+
+    [Fact]
     public async Task CreativeDirectorWithOnlyCanonicalExecutionCanAuthorWithoutDuplicateHiring()
     {
         var f = new Fixture(false);
@@ -261,6 +289,9 @@ public sealed class SingleQaStaffingTests
         public Task<WorkDeliveryPlanResponse> Prepare() => HierarchicalProjectDelivery.PrepareAsync(Project, BoardId,
             Guid.Parse(Manager.EmployeeId), new(Guid.NewGuid().ToString(), "team", "Team", 1, Manager.EmployeeId, "Manager", Members, [], Members.Count, false),
             computeTest ? Project : Guid.Empty, computeTest ? "main" : "", new string('a', 64), software, context, default);
+        public Task<WorkDeliveryPlanResponse> PrepareIncrement(IReadOnlyCollection<Guid> epics) => HierarchicalProjectDelivery.PrepareIncrementAsync(Project, BoardId,
+            Guid.Parse(Manager.EmployeeId), new(Guid.NewGuid().ToString(), "team", "Team", 1, Manager.EmployeeId, "Manager", Members, [], Members.Count, false),
+            Guid.Empty, "", new string('a', 64), software, epics, context, default);
         private WorkItem Item(Guid id, Guid? parent, string kind, string title, string? role) =>
             new(id, BoardId, parent, null, kind, title, "", "Ready", "High", null, 0, 1, null)
             { ExecutionMode = kind == "Task" ? WorkItemExecutionModes.Executable : WorkItemExecutionModes.Container,

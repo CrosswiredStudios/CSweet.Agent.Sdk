@@ -56,3 +56,8 @@ final approval decision. Model-generated commit or offset fields cannot select t
 candidate. Ordered complete coverage and rejection of approval with unresolved page findings
 remain mandatory. `BranchDiffTechnicalReviewTests` covers reversed model identities, source or
 target changes, publication changes, digest/offset gaps and incomplete review content.
+# Progressive increments (4.5.0)
+
+`HierarchicalProjectDelivery.PrepareIncrementAsync` accepts explicit board-local `epicItemIds` in addition to the normal manager, roster, repository and profile inputs. Publish the complete approved milestone/Story outline first, then detail only the next increment. Select only Epics whose Stories have executable leaves; future Epics and empty future Stories remain approved board scope outside the current delivery plan.
+
+The helper rejects empty, duplicate, foreign, terminal or undetailed selections and a selection differing from an existing active/draft plan. It retains the same independent task QA, aggregate Story/Epic/release reviews, integration, build readiness and host preflight as `PrepareAsync`. Starting a successor requires authoritative completion of the preceding delivery plan; task completion alone is insufficient. This is an additive authoring helper and requests no new capability.
