@@ -59,6 +59,11 @@ public sealed record AgentWorkResult(
         string failureCode = "agent.rejected",
         bool retryable = false) =>
         new(false, Error: error, FailureCode: failureCode, Retryable: retryable);
+
+    /// <summary>Yield this exact work operation after checkpointing; this is not a task failure.</summary>
+    public static AgentWorkResult ResourceHandoff(WorkloadResourceRequest request) =>
+        new(false, JsonSerializer.SerializeToElement(request, SerializerOptions),
+            "Source checkpoint saved; waiting for runtime replacement.", "runtime.resources.handoff", true);
 }
 
 public sealed record AgentRuntimeSession(
@@ -113,7 +118,10 @@ public sealed record AgentWorkLease(
     DateTimeOffset LeaseExpiresAt,
     DateTimeOffset Deadline,
     Guid? EventId,
-    string? CorrelationId);
+    string? CorrelationId)
+{
+    public WorkloadResources? Resources { get; init; }
+}
 
 internal sealed record AgentToolDescriptor(
     string Capability,

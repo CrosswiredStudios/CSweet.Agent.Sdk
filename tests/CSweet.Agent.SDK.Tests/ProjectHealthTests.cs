@@ -4,6 +4,24 @@ namespace CSweet.Agent.SDK.Tests;
 
 public sealed class ProjectHealthTests
 {
+    [Theory]
+    [InlineData("project-health.stale_evidence", 2)]
+    [InlineData("project-health.stale_revision", 2)]
+    [InlineData("project-health.denied", 1)]
+    public async Task Manager_refreshes_stale_state_once_and_never_retries_revoked_authority(string failure, int expectedCalls)
+    {
+        var employee = Guid.NewGuid(); var incident = Incident(employee); var reports = 0; var reads = 0;
+        var runtime = new AgentTestRuntime()
+            .RegisterCapability<ReadManagementIncidents, ManagementIncidentPage>(ProjectHealthCapabilities.Incidents, (_, _) =>
+            { reads++; return Task.FromResult(new ManagementIncidentPage([incident with { Revision = incident.Revision + reads }], null)); })
+            .RegisterCapability<ReadProjectDiagnostics, ProjectDiagnosticsPage>(ProjectHealthCapabilities.Diagnostics, (_, _) => Task.FromResult(new ProjectDiagnosticsPage([], null, [])))
+            .RegisterCapability<ReportManagementIncident, ManagementIncident>(ProjectHealthCapabilities.Report, (_, _) =>
+            { reports++; throw new PlatformCapabilityException(ProjectHealthCapabilities.Report, PlatformCapabilityErrorCode.Conflict, "safe", failureCode: failure); });
+        await Assert.ThrowsAsync<PlatformCapabilityException>(() => ProjectIncidentReview.HandleManagerAsync(Hint(incident),
+            runtime.CreateContext(identity: Identity(employee)), (_, _, _) => Task.FromResult(ManagerIncidentAssessment.Escalate("Review")), default));
+        Assert.Equal(expectedCalls, reports); Assert.Equal(expectedCalls, reads);
+    }
+
     [Fact]
     public async Task ProducerReadsCurrentRevisionAndReportsWithoutModelOrRepairCapabilities()
     {

@@ -698,7 +698,11 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
         eventId.ValueKind is not JsonValueKind.Null
             ? eventId.GetGuid()
             : null,
-        work.TryGetProperty("correlationId", out var correlationId) ? correlationId.GetString() : null);
+        work.TryGetProperty("correlationId", out var correlationId) ? correlationId.GetString() : null)
+    {
+        Resources = work.TryGetProperty("resources", out var resources) && resources.ValueKind == JsonValueKind.Object
+            ? resources.Deserialize<WorkloadResources>(JsonOptions) : null
+    };
 
     private static string RequiredString(JsonElement element, string name) =>
         element.GetProperty(name).GetString()

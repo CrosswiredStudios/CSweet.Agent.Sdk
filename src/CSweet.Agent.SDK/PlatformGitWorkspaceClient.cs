@@ -105,7 +105,11 @@ public sealed record GitWorkspaceResult(
     string DeliveryKind,
     string BaseCommitSha,
     string Status,
-    bool Resumed);
+    bool Resumed)
+{
+    public IReadOnlyList<WorkloadResourceHint> ResourceProfiles { get; init; } = [];
+    public WorkspaceResumeSummary? ResumeSummary { get; init; }
+}
 
 public sealed record RefreshGitWorkspaceRequest(
     Guid WorkspaceId,

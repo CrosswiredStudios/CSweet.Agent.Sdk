@@ -43,6 +43,21 @@ public static class ProjectIncidentReview
         Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<ManagerIncidentAssessment>> assess, CancellationToken token,
         Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<IncidentOwnerReport?>>? generateReport)
     {
+        // Exactly one refresh. Re-assess changed evidence and revalidate the recipient;
+        // never replay a stale report against a new revision or a revoked authority.
+        try { await ReviewManagerCoreAsync(incident, context, assess, token, generateReport); }
+        catch (PlatformCapabilityException error) when (error.FailureCode is "project-health.stale_revision" or "project-health.stale_evidence")
+        {
+            var current = await context.Platform.ProjectHealth.ReadIncidentsAsync(new(IncidentId: incident.Id), token);
+            if (current.Incidents.SingleOrDefault(x => x.Id == incident.Id) is { } refreshed)
+                await ReviewManagerCoreAsync(refreshed, context, assess, token, generateReport);
+        }
+    }
+
+    private static async Task ReviewManagerCoreAsync(ManagementIncident incident, AgentRuntimeContext context,
+        Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<ManagerIncidentAssessment>> assess, CancellationToken token,
+        Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<IncidentOwnerReport?>>? generateReport)
+    {
         if (incident.Status != "Open" || incident.ReviewAt is not null || incident.CurrentRecipientId.ToString("D") != context.Identity?.EmployeeId) return;
         // The authoritative discovery endpoint omits scheduled reviews until they become due.
         ProjectDiagnosticsPage diagnostics;
@@ -59,7 +74,7 @@ public static class ProjectIncidentReview
             diagnostics = diagnostics with { Limitations = [.. diagnostics.Limitations, $"Manager assessment failed ({error.GetType().Name}); forwarding the baseline."] };
             assessment = ManagerIncidentAssessment.Escalate("Manager assessment failed; management assistance is required.");
         }
-        var report = Baseline(incident, diagnostics, $"project-health:{incident.Id:N}:{incident.Revision}:{incident.CurrentRecipientId:N}");
+        var report = Baseline(incident, diagnostics, $"project-health:{incident.Id:N}:{incident.Revision}:{incident.CurrentRecipientId:N}:{diagnostics.CurrentState?.Hash}");
         IncidentOwnerReport? ownerReport = null;
         // A report failure must not prevent the durable baseline from reaching management.
         if (diagnostics.CurrentState is not null)

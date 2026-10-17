@@ -1,5 +1,17 @@
 # Security Policy
 
+## Resource handoff boundary (SDK 4.6.0)
+
+Resource requests are advisory, bounded execution-control results tied to the current work
+lease. A checkpoint receipt confers no execution, repository, network or spending authority.
+Headquarters must recheck the current assignment and grant revision, checkpoint runtime and
+digest, the administrator-approved memory ceiling and aggregate host admission. Stop and
+fence the old VM before a replacement may claim the same operation. Kernel/supervisor
+resource evidence must come through the authenticated guest broker; arbitrary exit codes,
+logs and model assertions are insufficient. Stored resumption summaries do not prove tests
+passed on current source. Agents receive neither provider APIs nor workload tokens.
+
+
 ## Certified build-readiness (SDK 3.64.1)
 
 `DeliveryBuildReadiness` runs only an assigned Release build-readiness stage. It re-reads the

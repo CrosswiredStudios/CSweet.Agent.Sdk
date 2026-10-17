@@ -199,6 +199,7 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         inferenceScope.Enter();
         var context = CreateContext(inferenceScope.BindPlatform(runtime), identity,
             new WorkScopedProgressReporter(progress, inferenceScope));
+        context.Resources = lease.Resources;
         var renewal = RenewLeaseAsync(lease, deadline);
         try
         {
@@ -219,6 +220,11 @@ internal sealed class AgentRuntimeWorker<TAgent>(
             };
             inferenceScope.Close();
             await runtime.CompleteAsync(lease, result, runtimeCancellation);
+        }
+        catch (WorkloadResourceHandoffException handoff)
+        {
+            inferenceScope.Close();
+            await runtime.CompleteAsync(lease, AgentWorkResult.ResourceHandoff(handoff.Request), runtimeCancellation);
         }
         catch (OperationCanceledException) when (deadline.IsCancellationRequested && !runtimeCancellation.IsCancellationRequested)
         {
@@ -253,9 +259,32 @@ internal sealed class AgentRuntimeWorker<TAgent>(
         finally
         {
             inferenceScope.Close();
-            await deadline.CancelAsync();
-            try { await renewal; }
+            var cancellation = deadline.CancelAsync();
+            try { await cancellation.WaitAsync(TimeSpan.FromSeconds(10)); }
+            catch (TimeoutException)
+            {
+                _configurationRestartRequested = true;
+                _ = cancellation.ContinueWith(t => _ = t.Exception, TaskContinuationOptions.OnlyOnFaulted);
+                logger.LogWarning("Work cancellation cleanup exceeded its bound; the isolated runtime must stop.");
+            }
+            catch (Exception)
+            {
+                _configurationRestartRequested = true;
+                logger.LogWarning("Work cancellation cleanup failed; the isolated runtime must stop.");
+            }
+            try { await renewal.WaitAsync(TimeSpan.FromSeconds(10)); }
             catch (OperationCanceledException) when (deadline.IsCancellationRequested) { }
+            catch (TimeoutException)
+            {
+                _configurationRestartRequested = true;
+                _ = renewal.ContinueWith(t => _ = t.Exception, TaskContinuationOptions.OnlyOnFaulted);
+                logger.LogWarning("Work lease renewal cleanup exceeded its bound; the isolated runtime must stop.");
+            }
+            catch (Exception)
+            {
+                _configurationRestartRequested = true;
+                logger.LogWarning("Work lease renewal cleanup failed; the isolated runtime must stop.");
+            }
         }
     }
 
@@ -437,7 +466,23 @@ internal sealed class AgentRuntimeWorker<TAgent>(
             for (var handled = 0; handled < maximumItems; handled++)
             {
                 PersonalTodoClaim claim;
-                if (personalTodoAgent is IPersonalTodoClaimPolicy policy)
+                if (context.Resources is { ReplacementCount: > 0, ResumeWorkItemId: { } resumeItem })
+                {
+                    // This exact root came from the server-validated checkpoint handoff.
+                    // Re-read current revision; never pick a different task on replacement.
+                    var directory = await context.Platform.PersonalTodo.ListAsync(cancellationToken);
+                    var retained = directory.Boards.SelectMany(x => x.Items).SingleOrDefault(x => x.Id == resumeItem && x.ArchivedAt is null);
+                    claim = retained is null ? new PersonalTodoClaim(null) : await context.Platform.PersonalTodo.ClaimAsync(eventId, retained.Id, retained.Revision, cancellationToken);
+                    if (claim.Item is null && retained is not null)
+                    {
+                        // Claim may have atomically expired the old VM's personal-work lease.
+                        // Refresh once and reclaim only that same root at its new revision.
+                        directory = await context.Platform.PersonalTodo.ListAsync(cancellationToken);
+                        retained = directory.Boards.SelectMany(x => x.Items).SingleOrDefault(x => x.Id == resumeItem && x.Status == PersonalTodoStatuses.Ready);
+                        if (retained is not null) claim = await context.Platform.PersonalTodo.ClaimAsync(eventId, retained.Id, retained.Revision, cancellationToken);
+                    }
+                }
+                else if (personalTodoAgent is IPersonalTodoClaimPolicy policy)
                 {
                     var directory = await context.Platform.PersonalTodo.ListAsync(cancellationToken);
                     var ownerId = Guid.TryParse(context.Identity?.EmployeeId, out var parsedOwner) ? parsedOwner : directory.CurrentOrganizationUserId;
@@ -473,6 +518,7 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                             ?? await personalTodoAgent.HandlePersonalTodoAsync(claim.Item, context, cancellationToken)
                         : await personalTodoAgent.HandlePersonalTodoAsync(claim.Item, context, cancellationToken);
                 }
+                catch (WorkloadResourceHandoffException) { throw; }
                 catch
                 {
                     await context.Platform.PersonalTodo.ReleaseAsync(

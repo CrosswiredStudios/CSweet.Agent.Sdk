@@ -40,6 +40,9 @@ public sealed class AgentRuntimeContext
     /// </summary>
     public AgentIdentity? Identity { get; init; }
 
+    /// <summary>Server-authorized allocation for this callback; absent on older hosts.</summary>
+    public WorkloadResources? Resources { get; internal set; }
+
     /// <summary>
     /// The single project this agent is currently assigned to, sourced from the same
     /// server hydration as <see cref="Identity"/>. <see langword="null"/> means the

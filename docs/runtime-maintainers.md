@@ -1,5 +1,21 @@
 # Runtime maintainer guide
 
+## Checkpointed resource handoff (SDK 4.6.0)
+
+`AgentWorkLease.Resources` is a server snapshot, not allocation authority. Agents upload
+safe source with `PlatformGitWorkspaceClient.UploadCheckpointAsync` and yield
+`AgentWorkResult.ResourceHandoff`. `AgentRuntimeWorker` also handles
+`WorkloadResourceHandoffException`; personal claims remain attached to the exact original
+root across replacement. The host owns current-lease, grant-revision, checkpoint, policy,
+fencing, capacity and idempotency checks. Duplicate events are wake hints. Agents must not
+poll or attempt provider resize directly. SDK cancellation and renewal cleanup are bounded.
+
+`WorkspaceResumeSummary` is context only. Current-source executed receipts must gate
+publication. Git snapshots prune dependency/metadata directories before traversal and do
+not turn those directories into cross-VM caches. `ProjectIncidentReview` refreshes stale
+manager revision/evidence once; it does not retry revoked authority or invent success.
+
+
 ## Work heartbeat transport recovery (SDK 4.4.1)
 
 `McpAgentRuntimeClient.SendAsync` retries the same `csweet/work/renew` envelope after

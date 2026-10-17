@@ -5,8 +5,18 @@ using System.Text;
 namespace CSweet.Agent.SDK;
 
 public sealed record GitWorkspaceSyncRequest(Guid WorkspaceId, long AssignmentRevision, string Direction,
-    string IdempotencyKey, byte[]? Archive = null);
-public sealed record GitWorkspaceSyncResult(byte[]? Archive = null);
+    string IdempotencyKey, byte[]? Archive = null)
+{
+    public string? CommandClass { get; init; }
+    public string? InputFingerprint { get; init; }
+    public WorkspaceResumeSummary? ResumeSummary { get; init; }
+}
+public sealed record GitWorkspaceSyncResult(byte[]? Archive = null)
+{
+    public WorkspaceCheckpointReceipt? Checkpoint { get; init; }
+    public IReadOnlyList<WorkloadResourceHint> ResourceProfiles { get; init; } = [];
+    public WorkspaceResumeSummary? ResumeSummary { get; init; }
+}
 
 public sealed partial class PlatformGitWorkspaceClient
 {
@@ -33,7 +43,7 @@ public sealed partial class PlatformGitWorkspaceClient
             EnsureNoLinks(receipt);
             if (!File.Exists(receipt) || await File.ReadAllTextAsync(receipt, ct) != identity)
                 throw new InvalidOperationException("The local workspace identity does not match the retained assignment.");
-            return workspace with { Path = path };
+            return workspace with { Path = path, ResourceProfiles = result.ResourceProfiles, ResumeSummary = result.ResumeSummary };
         }
         var archive = result.Archive ?? throw new InvalidDataException("The platform returned no source snapshot.");
         var limits = ReadWorkspaceLimits();
@@ -49,11 +59,16 @@ public sealed partial class PlatformGitWorkspaceClient
             Directory.Move(staging, path);
         }
         finally { if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true); }
-        return workspace with { Path = path };
+        return workspace with { Path = path, ResourceProfiles = result.ResourceProfiles, ResumeSummary = result.ResumeSummary };
     }
 
     /// <summary>Send edited source back to Core before inspection or publication. No Git credentials or host mounts.</summary>
     public async Task UploadAsync(GitWorkspaceResult workspace, long assignmentRevision, CancellationToken ct = default)
+        => await UploadCheckpointAsync(workspace, assignmentRevision, ct);
+
+    /// <summary>Upload safe source and receive a platform-bound receipt before requesting VM replacement.</summary>
+    public async Task<WorkspaceCheckpointReceipt> UploadCheckpointAsync(GitWorkspaceResult workspace, long assignmentRevision, CancellationToken ct = default,
+        string? commandClass = null, string? inputFingerprint = null, WorkspaceResumeSummary? resumeSummary = null)
     {
         var path = LocalWorkspacePath(workspace.WorkspaceId);
         if (workspace.WorkspaceId == Guid.Empty || assignmentRevision < 1 || Path.GetFullPath(workspace.Path) != path)
@@ -61,8 +76,10 @@ public sealed partial class PlatformGitWorkspaceClient
         EnsureNoLinks(path);
         var archive = await CreateSnapshotAsync(path, ct);
         var digest = Convert.ToHexStringLower(SHA256.HashData(archive));
-        await InvokeAsync<GitWorkspaceSyncRequest, GitWorkspaceSyncResult>(SyncCapability,
-            new(workspace.WorkspaceId, assignmentRevision, "push", $"workspace:{workspace.WorkspaceId:N}:{digest}", archive), ct);
+        var result = await InvokeAsync<GitWorkspaceSyncRequest, GitWorkspaceSyncResult>(SyncCapability,
+            new GitWorkspaceSyncRequest(workspace.WorkspaceId, assignmentRevision, "push", $"workspace:{workspace.WorkspaceId:N}:{digest}", archive)
+                { CommandClass = commandClass, InputFingerprint = inputFingerprint, ResumeSummary = resumeSummary }, ct);
+        return result.Checkpoint ?? new(workspace.WorkspaceId, assignmentRevision, digest);
     }
 
     internal static async Task ExtractSnapshotAsync(byte[] archive, string root, CancellationToken ct)
@@ -103,8 +120,7 @@ public sealed partial class PlatformGitWorkspaceClient
         using (var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
         {
             long total = 0; var count = 0;
-            foreach (var path in Directory.EnumerateFiles(root, "*", new EnumerationOptions { RecurseSubdirectories = true,
-                AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = false }).Order(StringComparer.Ordinal))
+            foreach (var path in EnumerateSourceFiles(root).Order(StringComparer.Ordinal))
             {
                 var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
                 if (relative.Split('/').Any(p => p.Equals(".git", StringComparison.OrdinalIgnoreCase) || p.Equals(".csweet", StringComparison.OrdinalIgnoreCase) || p.Equals("node_modules", StringComparison.OrdinalIgnoreCase) || p.Equals(".venv", StringComparison.OrdinalIgnoreCase))) continue;
@@ -120,6 +136,22 @@ public sealed partial class PlatformGitWorkspaceClient
         if (output.Length > limits.MaximumArchiveBytes)
             throw new InvalidDataException($"The source snapshot exceeds the configured {limits.MaximumArchiveBytes}-byte transfer limit.");
         return output.ToArray();
+    }
+
+    private static IEnumerable<string> EnumerateSourceFiles(string root)
+    {
+        var directories = new Stack<string>(); directories.Push(root);
+        while (directories.TryPop(out var directory))
+        foreach (var path in Directory.EnumerateFileSystemEntries(directory))
+        {
+            var attributes = File.GetAttributes(path);
+            if ((attributes & FileAttributes.ReparsePoint) != 0) continue;
+            if ((attributes & FileAttributes.Directory) != 0)
+            {
+                if (Path.GetFileName(path) is not (".git" or ".csweet" or "node_modules" or ".venv")) directories.Push(path);
+            }
+            else yield return path;
+        }
     }
 
     private static WorkspaceSyncLimits ReadWorkspaceLimits()

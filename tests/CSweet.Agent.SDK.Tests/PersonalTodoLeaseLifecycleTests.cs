@@ -10,8 +10,10 @@ namespace CSweet.Agent.SDK.Tests;
 
 public sealed class PersonalTodoLeaseLifecycleTests
 {
-    [Fact]
-    public async Task StartupWaitsForDurableDeliveryThenRunsPersonalWorkWithProgressAndInferenceScope()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task StartupWaitsForDurableDeliveryThenRunsPersonalWorkWithProgressAndInferenceScope(bool replacement)
     {
         var path = Path.GetTempFileName();
         await File.WriteAllTextAsync(path, """
@@ -28,7 +30,7 @@ public sealed class PersonalTodoLeaseLifecycleTests
         // Use the published constant so this test exercises the real startup subscription.
         var manifest = await File.ReadAllTextAsync(path);
         await File.WriteAllTextAsync(path, manifest.Replace("work.personal-todo.claim.v1", PersonalTodoCapabilities.Claim));
-        await using var transport = new Transport();
+        await using var transport = new Transport(replacement);
         var agent = new TestAgent();
         using var worker = new AgentRuntimeWorker<TestAgent>(agent, transport,
             new AgentPlatformAccessor(), Options.Create(new AgentRuntimeOptions { ManifestPath = path }),
@@ -76,7 +78,7 @@ public sealed class PersonalTodoLeaseLifecycleTests
         }
     }
 
-    private sealed class Transport : IAgentRuntimeTransport
+    private sealed class Transport(bool replacement) : IAgentRuntimeTransport
     {
         public TaskCompletionSource WaitingForDelivery { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource DeliveryAvailable { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -101,12 +103,17 @@ public sealed class PersonalTodoLeaseLifecycleTests
             delivered = true;
             return new(workId, 1, AgentWorkKind.Event, PersonalTodoEvents.Available,
                 JsonSerializer.SerializeToElement(new { }), "lease", DateTimeOffset.UtcNow.AddMinutes(1),
-                DateTimeOffset.UtcNow.AddHours(1), eventId, null);
+                DateTimeOffset.UtcNow.AddHours(1), eventId, null)
+            { Resources = replacement ? new(8192, 16384, 1, ResumeWorkItemId: item.Id) : null };
         }
         public Task<JsonElement> InvokeAsync(string capability, JsonElement arguments, CancellationToken cancellationToken = default)
         {
             Assert.Equal(workId, InferenceExecutionScope.Current?.Lease.WorkId);
+            if (capability == PersonalTodoCapabilities.Read)
+                return Task.FromResult(JsonSerializer.SerializeToElement(new PersonalTodoDirectory([
+                    new(item.BoardId, item.OwnerOrganizationUserId, "Daniel", null, null, 1, CompletedItems > 0 ? [item with { Status = PersonalTodoStatuses.Completed }] : [item])], item.OwnerOrganizationUserId), new JsonSerializerOptions(JsonSerializerDefaults.Web)));
             Assert.Equal(eventId, arguments.GetProperty("eventId").GetGuid());
+            if (replacement && capability == PersonalTodoCapabilities.Claim) Assert.Equal(item.Id, arguments.GetProperty("itemId").GetGuid());
             object result = capability switch
             {
                 var c when c == PersonalTodoCapabilities.Claim => new PersonalTodoClaim(PersonalClaims++ == 0 ? item : null),
