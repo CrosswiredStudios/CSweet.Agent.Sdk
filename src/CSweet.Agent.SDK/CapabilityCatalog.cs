@@ -93,6 +93,7 @@ public static class CapabilityNames
         public const string Execute = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.Execute;
         public const string Inbound = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.Inbound;
         public const string PublishPort = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.PublishPort;
+        public const string Outbound = global::CSweet.Agent.SDK.Compute.ComputeCapabilities.Outbound;
     }
     public static class Calendar
     {

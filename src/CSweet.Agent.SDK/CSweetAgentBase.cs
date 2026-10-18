@@ -158,12 +158,13 @@ public abstract partial class CSweetAgentBase : ICSweetAgent
         {
             var assignment = DeserializePayload<WorkExecutionAssignment>(request.Payload);
             if (assignment is null) return AgentWorkResult.Failure("The execution assignment is required.");
-            if (assignment.Scope is not (WorkExecutionScopes.Task or WorkExecutionScopes.Story or WorkExecutionScopes.Epic or WorkExecutionScopes.Release) ||
+            if (assignment.Scope is not (WorkExecutionScopes.Task or WorkExecutionScopes.Story or WorkExecutionScopes.Epic or WorkExecutionScopes.Release or WorkExecutionScopes.Ticket) ||
                 assignment.Scope != WorkExecutionScopes.Task &&
                 (assignment.SprintId is not null || assignment.SprintExecutionId is not null || assignment.PolicyRevisionId is not null))
                 return AgentWorkResult.Failure("The execution scope or its authority is invalid.", "execution.invalid_assignment");
             if ((request.Capability == DeliveryBuildReadiness.ExecutionCapability || request.Capability == DeliveryComputeTest.ExecutionCapability) &&
-                (assignment.Scope != WorkExecutionScopes.Release || assignment.StageKey != "build-readiness"))
+                (assignment.Scope is not (WorkExecutionScopes.Release or WorkExecutionScopes.Ticket) ||
+                    assignment.StageKey != "build-readiness" && assignment.Handler is not ("build-readiness" or "compute-test")))
                 return AgentWorkResult.Failure("Build readiness requires its assigned release scope.");
             if (assignment.Scope == WorkExecutionScopes.Task)
             {

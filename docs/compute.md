@@ -1,3 +1,5 @@
+SDK 5.0.2 runs ordinary networked npm restoration as a durable guest service with no overall installation deadline. Short compute commands launch or observe the job; runtime restarts reuse its stable identity and only a completed successful job receipt permits tests/build. A lost launch reply leads to observation rather than another install. The VM lease, explicit destruction and npm's own completion/failure remain authoritative.
+
 # Typed compute client
 
 SDK 3.46.1 exposes `context.Platform.Compute`. This calls the same authorized broker as the platform's MCP compute tools; agent authors do not implement MCP, provisioning, UAC or credential handling.
@@ -38,8 +40,8 @@ with the existing Git inspect/publish SDK methods. Personal queue completion and
 
 Compute defaults grant no network access. Local test publication needs explicit inbound and publish-port grants for the
 instance and guest port. Outbound access, private networking and public exposure are separate authorities; declaring a
-capability does not grant it. The current Hyper-V provider keeps VMs without network adapters and fails unsupported network
-requests closed. Docker inside a prepared guest image does not add host or outbound authority.
+capability does not grant it. The Hyper-V provider supports no-network VMs and explicitly approved `outboundOnly` VMs.
+Docker inside a prepared guest image does not add host or outbound authority.
 
 ## Isolated source snapshots (SDK 3.46.1)
 
@@ -58,3 +60,9 @@ SDK 3.46.1 accepts `LifetimeSeconds: 0` for compute retained until the requester
 ## Compute test readiness (3.64.1)
 
 DeliveryComputeTest supports compute-test release bindings without certified packaging. It discovers application-managed project compute options and selects a compatible Docker or static recipe from the immutable source archive. All commands execute inside owned guest compute through existing grants. Source hash, exact command, exit status, HTTP marker, environment generation and provider URL receipts are validated by the platform. Pending operations and authority/setup waits retain durable state; wake hints and five-minute bounded discovery resume progress. Unknown results never authorize replacement command keys. Independent QA and technical review remain required. No host shell, provider credential, automatic network grant or public deployment is added.
+
+### Node development internet access (5.0.2)
+
+Provisioning recovery waits for the platform's observed `destroyed` state before using another stable desired-environment key. The attempt count is saved before submission, bounded to three replacements and available only before any guest command/source upload. Pending cleanup remains a durable wait. Once guest execution begins, unexplained generation changes and unknown command outcomes still stop readiness.
+
+New Node readiness runs select an `outboundOnly` VM and execute normal `npm ci --no-audit --no-fund` inside it. Compute provision/execute and `network.outbound.v1` grants must independently cover that specification; missing approval produces a durable wait. The SDK pins the exact source ZIP and lockfile without enumerating or transferring package tarballs. Existing saved requests retain their terms. The provider owns the development NAT connection and private/metadata destination guards. Local preview publication remains a separate instance-bound permission. Verbose npm tests/build logs remain in `validation.log`; failures return a bounded tail and successful runs preserve the final HTTP marker within the command-output limit.

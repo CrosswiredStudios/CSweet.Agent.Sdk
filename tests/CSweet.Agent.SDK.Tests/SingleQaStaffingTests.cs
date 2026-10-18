@@ -16,7 +16,7 @@ public sealed class SingleQaStaffingTests
         Assert.Equal("Active", plan.Status);
         Assert.Equal(f.EpicId, Assert.Single(plan.EpicItemIds));
         Assert.DoesNotContain(f.Configuration!.Assignments, x => x.ItemId == future.Id);
-        Assert.All(f.Configuration.Assignments.Where(x => x.Scope is "Story" or "Release"), x =>
+        Assert.All(f.Configuration.Assignments.Where(x => x.Scope == "Release"), x =>
             Assert.Equal(f.Qa.AgentInstallationId, x.Stages.Single(s => s.StageKey == "quality").AgentInstallationId));
         await Assert.ThrowsAsync<DeliveryStaffingException>(() => f.PrepareIncrement([future.Id]));
         Assert.Equal(1, f.ConfigurationCount);
@@ -69,9 +69,9 @@ public sealed class SingleQaStaffingTests
         var product = f.Finalizations.Single(x => x.ItemId == f.Product.Id);
         Assert.Equal(f.Developer.AgentInstallationId, product.StageAssignments.Single(x => x.StageKey == f.AuthorStage).AgentInstallationId);
         Assert.Equal(f.Qa.AgentInstallationId, product.StageAssignments.Single(x => x.StageKey == "quality").AgentInstallationId);
-        Assert.All(f.Configuration!.Assignments.Where(x => x.Scope is "Story" or "Release"), x =>
+        Assert.All(f.Configuration!.Assignments.Where(x => x.Scope == "Release"), x =>
             Assert.Equal(f.Qa.AgentInstallationId, x.Stages.Single(s => s.StageKey == "quality").AgentInstallationId));
-        Assert.All(f.Configuration.Assignments.Where(x => x.Scope is "Epic" or "Release"), x =>
+        Assert.All(f.Configuration.Assignments.Where(x => x.Scope == "Release"), x =>
             Assert.Equal(f.Technical.AgentInstallationId, x.Stages.Single(s => s.StageKey == "technical-review").AgentInstallationId));
         // The report gate is not self-review and the second pass does not redispatch work.
         Assert.NotEqual(report.StageAssignments[0].OrganizationUserId, report.StageAssignments[1].OrganizationUserId);
@@ -249,6 +249,12 @@ public sealed class SingleQaStaffingTests
             Items.AddRange([epic, story, Product, Report, architecture]);
             if (computeTest) Items[Items.IndexOf(Product)] = Product with { Planning = Product.Planning! with { DeliveryKind = "Code" } };
             var runtime = new AgentTestRuntime()
+                .RegisterCapability<CreateWorkItemRequest, WorkItem>(WorkItemCapabilities.Create, (r, _) => {
+                    var item = JsonSerializer.Deserialize<WorkItem>("{}")! with { Id = Guid.NewGuid(),
+                        Title = r.Title, Kind = r.Kind, TypeKey = r.TypeKey!, Planning = r.Planning, PlanningRevision = 1,
+                        StageAssignments = [], ExecutionMode = WorkItemExecutionModes.Container };
+                    Items.Add(item); return Task.FromResult(item); })
+            
                 .RegisterCapability<ReadWorkDeliveryPlansRequest, IReadOnlyList<WorkDeliveryPlanResponse>>(WorkDeliveryCapabilities.Read,
                     (_, _) => Task.FromResult<IReadOnlyList<WorkDeliveryPlanResponse>>(plan is null ? [] : [plan]))
                 .RegisterCapability<JsonElement, object>(WorkItemCapabilities.Read, (r, _) => Task.FromResult<object>(

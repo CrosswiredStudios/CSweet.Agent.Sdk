@@ -1,6 +1,22 @@
+SDK 5.0.2 runs ordinary networked npm restoration as a durable guest service with no overall installation deadline. Short compute commands launch or observe the job; runtime restarts reuse its stable identity and only a completed successful job receipt permits tests/build. A lost launch reply leads to observation rather than another install. The VM lease, explicit destruction and npm's own completion/failure remain authoritative.
+
 # Security Policy
 
-## Resource handoff boundary (SDK 4.6.4)
+## Compute outbound networking (5.0.2)
+
+New Node readiness requests explicitly select `outboundOnly` and require approved `network.outbound.v1` authority in addition to compute permissions. This is VM internet access, distinct from agent-runtime internet permissions. The provider controls the NAT switch and adapter; agents supply no host networking commands or credentials. Compute broker admission and signed dispatch recheck the full specification and each grant. Ordinary networked guest commands also require current outbound authority. Public endpoints and private/host access are not authorized by this mode. Node installation runs normally inside the VM; no package code runs on the provider host.
+
+## Interim increment boundary (SDK 5.0.2)
+
+An archive restart is allowed once only after known upload receipts, with current authorized candidate evidence, and before any validation/publication command. It retains the old hash and advances command keys rather than overwriting receipts. This cannot establish passing tests. The host still requires the exact current archive hash, successful validation script/HTTP marker, adjacent publication receipt and live environment. Repeated changes and unknown command results remain blockers.
+
+Compute readiness requires the exact owned command and publication receipts and current environment cursor. Matching the cursor advanced by one's own known operation is recovery of processing, not acceptance evidence by itself. Unknown outcomes, mismatched requests, intervening generations and stale links never authorize readiness. The platform independently checks adjacency, exact validation script, source archive, successful HTTP marker and provider link.
+
+Aggregate criterion checkpoints are installation-scoped evidence, never execution grants. Policy/input hashes bind the current exact candidate, planning, reviewer and prior evidence. `DeliveryScopeReview` checks current assignment, source and evidence before reuse and after generation, rejects conflicting durable judgments, and preserves all criterion and cross-candidate failures in the final result. Existing independent QA, manager acceptance and promotion checks still apply.
+
+An accepted progressive increment authorizes promotion only to the host-validated project integration branch. It grants no default-branch or public-deployment authority. The host preserves owner-recorded deferred release tasks across plan reconfiguration and successor plans; missing work, manual completion, stale candidate reviews and an omitted dependency cannot authorize final promotion. Each increment retains independent QA, technical review and manager acceptance. Only an authorized owner may amend the live interim milestone through the platform amendment service, and historical rejections remain auditable.
+
+## Resource handoff boundary (SDK 5.0.2)
 
 Resource requests are advisory, bounded execution-control results tied to the current work
 lease. A checkpoint receipt confers no execution, repository, network or spending authority.
@@ -321,3 +337,9 @@ Routine incident recovery uses only model-visible reads and idempotent tracked d
 work comments within the existing broker grants. It excludes chat replay, document mutation,
 spending and approval changes. Incident evidence and model classifications confer no authority.
 Owner input requires an explicit requirement; a failure or investigation alone is not approval.
+
+## Legacy managed compute dependency restore (4.7 compatibility)
+
+`ExecuteComputeCommandRequest.NodeDependencies` binds public npm tarballs to the exact candidate lockfile. `DeliveryNodeDependencies.Read` accepts npm lockfiles 2/3, registry.npmjs.org HTTPS tarballs and SHA-512 integrity; unsupported registries, local/git dependencies and conflicting or missing integrity fail closed. This optional operation requires current installation and scoped `compute.execute.v1` plus `network.outbound.v1` authority. Declarations are requests, never grants. An npm-only scoped grant does not authorize general VM networking or a public endpoint.
+
+The provider validates both recorded grants at dispatch and rechecks current authority during download/transfer and before execution. It rejects private/host/metadata DNS destinations, redirects, credentials, unbounded bytes and integrity mismatches. Packages are never extracted or executed on the provider host. Verified tarballs populate a guest-only offline npm cache; `npm ci` checks the actual source lockfile before tests/build. Unknown command outcomes remain fenced and cannot silently replay. Installation is not acceptance: exact-source tests, web build, HTTP proof and independent review still follow.

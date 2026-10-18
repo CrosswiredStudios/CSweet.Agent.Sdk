@@ -37,7 +37,7 @@ public sealed class HierarchicalDeliveryTests
         Assert.DoesNotContain(stages, x => x.Key.Contains("merge", StringComparison.Ordinal));
         Assert.Equal("technical-review", Assert.Single(transitions, x => x.FromStageKey == "development" && x.OutcomeCode == "completed").ToStageKey);
         Assert.Equal("quality", Assert.Single(transitions, x => x.OutcomeCode == "artifact-delivered").ToStageKey);
-        Assert.Equal("quality", Assert.Single(transitions, x => x.FromStageKey == "task-integration").ToStageKey);
+        Assert.Equal("quality", Assert.Single(transitions, x => x.FromStageKey == "task-integration" && x.OutcomeCode == "merged").ToStageKey);
         Assert.Equal("quality", Assert.Single(transitions, x => x.ToStageKey == "done").FromStageKey);
         Assert.Equal("development", Assert.Single(transitions, x => x.FromStageKey == "quality" && x.OutcomeCode == "changes_requested").ToStageKey);
         Assert.Contains(WorkManagementCapabilityNames.ExecutionRun, WorkManagementCapabilityNames.All);

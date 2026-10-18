@@ -15,23 +15,24 @@ public static class DeliveryBuildReadiness
     {
         try
         {
-            if (assignment.Scope != WorkExecutionScopes.Release || assignment.StageKey != "build-readiness" ||
+            if ((assignment.Scope != WorkExecutionScopes.Release && assignment.Scope != WorkExecutionScopes.Ticket) ||
+                (assignment.Handler is not ("build-readiness" or "compute-test") && assignment.StageKey != "build-readiness") ||
                 assignment.DeliveryPlanId is not { } planId || assignment.Candidate is not { } candidate || candidate.Repositories.Count == 0)
                 throw new InvalidOperationException("Build readiness requires the exact assigned release and complete repository candidate.");
             var plan = (await context.Platform.Work.ReadDeliveryPlansAsync(new(assignment.WorkstreamId, planId), ct)).Single();
             var execution = plan.Executions.Single(x => x.Id == assignment.ExecutionId);
             if (plan.Status != "Active" || plan.ScopeRevision != assignment.ScopeRevision || execution.Candidate?.Digest != candidate.Digest ||
-                execution.CurrentStageKey != "build-readiness" || execution.Stages.LastOrDefault() is not { } stage ||
-                stage.Id != assignment.StageExecutionId || stage.StageKey != "build-readiness" ||
+                execution.CurrentStageKey != assignment.StageKey || execution.Stages.LastOrDefault() is not { } stage ||
+                stage.Id != assignment.StageExecutionId || stage.StageKey != assignment.StageKey ||
                 stage.AgentInstallationId != assignment.AgentInstallationId || stage.OrganizationUserId != assignment.OrganizationUserId ||
                 stage.AgentInstallationId.ToString() != context.InstallationId || plan.WorkstreamId != assignment.WorkstreamId)
                 throw new UnauthorizedAccessException("The build assignment or candidate changed.");
-            if (plan.Branches.Where(x => x.Scope == WorkExecutionScopes.Release).All(x => x.ReadinessMode == "compute-test"))
+            if (plan.Branches.Where(x => x.Scope == assignment.Scope && x.ItemId == assignment.ItemId).All(x => x.ReadinessMode == "compute-test"))
                 return await DeliveryComputeTest.ExecuteAuthorizedAsync(assignment, plan, context, ct);
             var builds = new List<DeliveryBuildV2>();
             foreach (var repository in candidate.Repositories)
             {
-                var specification = plan.Branches.Single(x => x.Scope == WorkExecutionScopes.Release && x.RepositoryId == repository.RepositoryId).Build
+                var specification = plan.Branches.Single(x => x.Scope == assignment.Scope && x.ItemId == assignment.ItemId && x.RepositoryId == repository.RepositoryId).Build
                     ?? throw new InvalidOperationException("Ask the architect to configure the certified build recipe and packaging target.");
                 var build = await context.Platform.RequestBuildAsync(new(plan.WorkstreamId, null, specification.ToolchainDefinitionId,
                     specification.ProviderInstallationId, repository.RepositoryId, repository.CandidateCommitSha, specification.RecipeKey,
@@ -51,7 +52,7 @@ public static class DeliveryBuildReadiness
                 x.Outputs.Count == 0 || x.Provenance?.SourceRevision != x.SourceRevision ||
                 string.IsNullOrWhiteSpace(x.Provenance.NormalizedOutputManifestHash)))
                 throw new InvalidOperationException("One or more release repositories lack successful candidate-bound packaging and provenance.");
-            var scope = plan.Scopes.Single(x => x.Scope == WorkExecutionScopes.Release);
+            var scope = plan.Scopes.Single(x => x.Scope == assignment.Scope && x.ItemId == assignment.ItemId);
             var summary = "Certified provider builds produced exact-candidate packaging and provenance for every participating repository. Full release regression and technical acceptance must follow.";
             return DeliveryScopeReview.Outcome(assignment, new(candidate.Digest, true, summary,
                 scope.Planning.AcceptanceCriteria.Select(c => new WorkDeliveryCriterionResult(c, true,

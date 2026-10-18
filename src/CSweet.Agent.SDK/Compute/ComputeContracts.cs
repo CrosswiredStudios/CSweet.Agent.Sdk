@@ -15,6 +15,7 @@ public static class ComputeCapabilities
     public const string Execute = "compute.execute.v1";
     public const string Inbound = "network.inbound.v1";
     public const string PublishPort = "network.publish-port.v1";
+    public const string Outbound = "network.outbound.v1";
 }
 
 public static class ComputeEvents
@@ -50,7 +51,11 @@ public sealed record ComputeCommand(Guid RequestId, string Executable, string Wo
     IReadOnlyList<string> Arguments, int TimeoutSeconds = 30, int MaximumOutputBytes = 8192);
 
 public sealed record ExecuteComputeCommandRequest(Guid EnvironmentId, long ExpectedGeneration,
-    string IdempotencyKey, ComputeCommand Command);
+    string IdempotencyKey, ComputeCommand Command, ComputeNodeDependencies? NodeDependencies = null);
+
+/// <summary>Public npm packages pinned by the current source lockfile. Separate scoped outbound authority is required.</summary>
+public sealed record ComputeNodePackage(string Url, string Integrity);
+public sealed record ComputeNodeDependencies(string LockfileSha256, IReadOnlyList<ComputeNodePackage> Packages);
 
 public sealed record PublishComputePortRequest(Guid EnvironmentId, long ExpectedGeneration,
     string IdempotencyKey, int GuestPort);

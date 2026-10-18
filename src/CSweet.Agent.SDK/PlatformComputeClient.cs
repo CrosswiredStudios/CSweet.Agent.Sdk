@@ -79,8 +79,9 @@ public sealed class PlatformComputeClient
         if (command.Arguments.Any(a => a is null || a.Contains('\0')) ||
             command.Executable.Contains('\0') || command.WorkingDirectory.Contains('\0'))
             throw new ArgumentException("Command text must not contain null values or NUL characters.", nameof(request));
+        object workload = request.NodeDependencies is null ? new { command } : new { command, nodeDependencies = request.NodeDependencies };
         return _platform.InvokeAsync<object, ComputeOperation>(ComputeCapabilities.Execute,
-            new { request.EnvironmentId, request.ExpectedGeneration, request.IdempotencyKey, workload = new { command } }, token);
+            new { request.EnvironmentId, request.ExpectedGeneration, request.IdempotencyKey, workload }, token);
     }
 
     /// <summary>Publishes a guest HTTP port. Separate inbound and publish-port grants are required.

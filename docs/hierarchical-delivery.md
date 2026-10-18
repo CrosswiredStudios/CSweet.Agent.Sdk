@@ -1,6 +1,6 @@
 # Canonical execution in SDK 4.4.0
 
-SDK 4.4.0 uses `WorkArtifactDelivery` from WorkManagement.Contracts 4.0.0 for
+SDK 4.4.0 uses `WorkArtifactDelivery` from WorkManagement.Contracts 5.0.2 for
 both author output and artifact QA. Authors call `new WorkArtifactDelivery(artifactId,
 revisionId, sha256).ToOutput()` rather than constructing anonymous JSON. The reader
 accepts existing persisted PascalCase outcomes without rewriting history, and rejects
@@ -60,8 +60,18 @@ Managed delivery branch names use the model-independent `csweet/` namespace. New
 bindings use `csweet/story/<story-id>` and new release bindings use
 `csweet/release/<project-id>/<scope-key>`. Existing explicit bindings are retained.
 
-# Progressive increments (4.6.4)
+# Progressive increments (5.0.2)
+
+`DeliveryScopeReview.ExecuteAsync` uses `AggregateReviewChunks` for more than two criteria: each call assesses at most two, persists the validated result through installation-scoped operating state, and reports its progress. The final consistency check assesses requirements and cross-candidate interactions without overriding any retained failure. Checkpoints bind the review policy, plan/execution, scope revision, reviewer, planning, exact evidence/source and prior outcomes. Current assignment and evidence are reauthorized before each chunk and after generation. Idempotent writes returning a different judgment fail closed. A reconnect repeats only incomplete assessments; no checkpoint itself authorizes acceptance or promotion. Saved model output budgets remain authoritative, with a 128,000-token request where supported.
+
+`PrepareIncrementAsync` targets the stable project integration branch `csweet/integration/<project-id>`. The host initializes it from the default branch if missing, then creates each increment's release branch from the current integration head. All existing independent reviews, manager acceptance and readiness gates still apply. Completing an increment does not promote the default branch or authorize public deployment. A final-release plan uses the default target and must satisfy retained release-QA obligations as well as fresh candidate reviews.
 
 `HierarchicalProjectDelivery.PrepareIncrementAsync` accepts explicit board-local `epicItemIds` in addition to the normal manager, roster, repository and profile inputs. Publish the complete approved milestone/Story outline first, then detail only the next increment. Select only Epics whose Stories have executable leaves; future Epics and empty future Stories remain approved board scope outside the current delivery plan.
 
 The helper rejects empty, duplicate, foreign, terminal or undetailed selections and a selection differing from an existing active/draft plan. It retains the same independent task QA, aggregate Story/Epic/release reviews, integration, build readiness and host preflight as `PrepareAsync`. Starting a successor requires authoritative completion of the preceding delivery plan; task completion alone is insufficient. This is an additive authoring helper and requests no new capability.
+
+## Managed compute dependency restore (5.0.2)
+
+`ExecuteComputeCommandRequest.NodeDependencies` binds public npm tarballs to the exact candidate lockfile. `DeliveryNodeDependencies.Read` accepts npm lockfiles 2/3, registry.npmjs.org HTTPS tarballs and SHA-512 integrity; unsupported registries, local/git dependencies and conflicting or missing integrity fail closed. This optional operation requires current installation and scoped `compute.execute.v1` plus `network.outbound.v1` authority. Declarations are requests, never grants. An npm-only scoped grant does not authorize general VM networking or a public endpoint.
+
+The provider validates both recorded grants at dispatch and rechecks current authority during download/transfer and before execution. It rejects private/host/metadata DNS destinations, redirects, credentials, unbounded bytes and integrity mismatches. Packages are never extracted or executed on the provider host. Verified tarballs populate a guest-only offline npm cache; `npm ci` checks the actual source lockfile before tests/build. Unknown command outcomes remain fenced and cannot silently replay. Installation is not acceptance: exact-source tests, web build, HTTP proof and independent review still follow.

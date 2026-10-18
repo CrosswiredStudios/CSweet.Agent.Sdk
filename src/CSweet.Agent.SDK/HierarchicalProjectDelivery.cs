@@ -174,13 +174,13 @@ public static class HierarchicalProjectDelivery
         {
             var childIds = tasks.Where(x => x.ParentItemId == story.Id).Select(x => x.Id).ToArray();
             scopes.Add(new(WorkExecutionScopes.Story, story.Id, boardId,
-                [Select("quality", qaRole, childIds.Where(x => !selected[x].QaEvidence).Select(x => selected[x].Author.OrganizationUserId!.Value).ToArray())]));
+                [ManagerAssignment("source-preparation")]));
             if (childIds.Any(id => selected[id].Code)) branches.Add(new(repositoryId, WorkExecutionScopes.Story, story.Id,
                 $"csweet/story/{story.Id:N}", releaseBranch));
         }
         var epics = board.Items.Where(x => scopedEpics.Contains(x.Id)).ToArray();
         foreach (var epic in epics) scopes.Add(new(WorkExecutionScopes.Epic, epic.Id, boardId,
-            [Select("technical-review", technicalRole, codeAuthors)]));
+            [ManagerAssignment("collect-evidence")]));
         var computeReviewer = RoleTaxonomy.SelectAssignment(roster.Members,
             new WorkAssignmentRequirements("game-technical-director", [], [],
                 [WorkManagementCapabilityNames.ExecutionRun, DeliveryComputeTest.ExecutionCapability]))?.Teammate;
@@ -196,6 +196,8 @@ public static class HierarchicalProjectDelivery
             releaseStages.Add(Select("build-readiness", role, [], additionalCapabilities:
                 useComputeTest ? [DeliveryComputeTest.ExecutionCapability] : role == "game-build-release-engineer" ? [] : [DeliveryBuildReadiness.ExecutionCapability]));
         }
+        releaseStages = releaseStages.OrderBy(s => s.StageKey == "build-readiness" ? 0 : s.StageKey == "quality" ? 1 : 2).ToList();
+        releaseStages.Add(ManagerAssignment("manager-review"));
         scopes.Add(new(WorkExecutionScopes.Release, null, boardId, releaseStages));
         if (branches.Count > 0)
         {
@@ -211,7 +213,12 @@ public static class HierarchicalProjectDelivery
                 if (recipes.Length != 1) throw new DeliveryStaffingException("Delivery readiness needs either a Technical Director with compute-test support or an explicitly selected certified build recipe, provider, configuration and target. Sprint setup will resume after the available option is selected.");
                 build = recipes[0];
             }
-            branches.Add(new(repositoryId, WorkExecutionScopes.Release, null, releaseBranch, defaultBranch) { Build = build, ReadinessMode = useComputeTest ? "compute-test" : "certified-build" });
+            // Accepted increments accumulate on a project integration branch. Product release
+            // remains a separate plan with its own exact-candidate reviews and default target.
+            var targetBranch = selectedEpics is null ? defaultBranch : $"csweet/integration/{projectId:N}";
+            branches.Add(new(repositoryId, WorkExecutionScopes.Release, null, releaseBranch, targetBranch) {
+                TargetBaseBranch = selectedEpics is null ? null : defaultBranch,
+                Build = build, ReadinessMode = useComputeTest ? "compute-test" : "certified-build" });
         }
         // Retain explicitly selected branch/build topology when refreshing a draft.
         if (draft is not null)
@@ -220,11 +227,11 @@ public static class HierarchicalProjectDelivery
         var scopeChanged = draft is not null && draft.Scopes.Any(scope =>
             scope.ItemId is { } itemId && board.Items.SingleOrDefault(x => x.Id == itemId)?.PlanningRevision != scope.PlanningRevision ||
             scope.ChildPlanningRevisions.Any(child => board.Items.SingleOrDefault(x => x.Id == child.Key)?.PlanningRevision != child.Value) ||
-            !scope.ChildIds.Order().SequenceEqual((scope.Scope == WorkExecutionScopes.Release ? epics.Select(x => x.Id) :
+            !scope.ChildIds.Select(id => draft.Scopes.SingleOrDefault(s => s.TicketWorkflow?.TicketId == id)?.ItemId ?? id).Order().SequenceEqual((scope.Scope == WorkExecutionScopes.Release ? epics.Select(x => x.Id) :
                 board.Items.Where(x => x.ParentItemId == scope.ItemId).Select(x => x.Id)).Order()));
         var assignmentsChanged = draft is not null && scopes.Any(scope => !draft.Scopes.Any(x =>
             x.Scope == scope.Scope && x.ItemId == scope.ItemId && Same(x.Stages, scope.Stages)));
-        var plan = draft is not null && !scopeChanged && !assignmentsChanged ? draft : await context.Platform.Work.ConfigureDeliveryPlanAsync(new(projectId,
+        var plan = draft is not null && !scopeChanged && !assignmentsChanged ? draft : await TicketWorkflowPlanning.ConfigureAsync(new(projectId,
             draft?.Name ?? (selectedEpics is null ? "Initial release" : "Increment: " + string.Join(", ", epics.Select(x => x.Title))), managerId,
             epics.Select(x => x.Id).ToArray(), branches, scopes, $"delivery-plan:{projectId:N}:{releaseScopeKey}:{profileDigest}:{draft?.Revision ?? 0}:{roster.Revision}")
             {
@@ -232,7 +239,7 @@ public static class HierarchicalProjectDelivery
                 ReleasePlanning = draft?.Scopes.SingleOrDefault(x => x.Scope == WorkExecutionScopes.Release)?.Planning,
                 TaskAssignments = tasks.Select(task => new WorkDeliveryTaskAssignment(task.Id,
                     new[] { selected[task.Id].Author, selected[task.Id].Qa })).ToArray()
-            }, ct);
+            }, board.Items, context, ct);
         foreach (var task in tasks)
         {
             var assignment = selected[task.Id];
@@ -258,6 +265,16 @@ public static class HierarchicalProjectDelivery
         }
         plan = (await context.Platform.Work.ReadDeliveryPlansAsync(new(projectId, plan.Id), ct)).Single();
         return await context.Platform.Work.ControlDeliveryPlanAsync(new(plan.Id, plan.Revision, "activate", $"delivery-activate:{plan.Id:N}:{plan.Revision}"), ct);
+
+        WorkStageAssignment ManagerAssignment(string key)
+        {
+            var member = roster.Members.FirstOrDefault(m=>m.EmployeeId==managerId.ToString());
+            if(member?.EmployeeType=="Human") return new(key,"Human",managerId);
+            if(member?.AgentInstallationId is {} installation) return new(key,"AgentInstallation",managerId,installation);
+            if(context.Identity?.EmployeeId==managerId.ToString() && Guid.TryParse(context.InstallationId,out var self))
+                return new(key,"AgentInstallation",managerId,self);
+            throw new DeliveryStaffingException("Read the exact manager identity before declaring its workflow assignment.");
+        }
 
         WorkStageAssignment Select(string stage, string role, IReadOnlyList<Guid> excluded, Guid? preferred = null, Guid? requiredEmployee = null, string? subject = null, IReadOnlyList<string>? additionalCapabilities = null, WorkAssignmentRequirements? requestedRequirements = null)
         {
