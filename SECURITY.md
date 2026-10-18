@@ -1,6 +1,6 @@
 # Security Policy
 
-## Resource handoff boundary (SDK 4.6.0)
+## Resource handoff boundary (SDK 4.6.4)
 
 Resource requests are advisory, bounded execution-control results tied to the current work
 lease. A checkpoint receipt confers no execution, repository, network or spending authority.

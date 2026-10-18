@@ -201,7 +201,7 @@ public sealed class SingleQaStaffingTests
         var f = new Fixture(false, true) { ControlError = new(WorkDeliveryCapabilities.Control, PlatformCapabilityErrorCode.Conflict, "preflight unavailable") };
         await Assert.ThrowsAsync<DeliveryStaffingException>(f.Prepare);
         var original = f.plan!;
-        var release = original.Branches.Single(x => x.Scope == "Release") with { SourceBranch = "codex/release/custom" };
+        var release = original.Branches.Single(x => x.Scope == "Release") with { SourceBranch = "csweet/release/custom" };
         var story = original.Branches.Single(x => x.Scope == "Story") with { TargetBranch = release.SourceBranch };
         f.plan = original with { Branches = [story, release] };
         f.Items.Add(f.Items.Single(x => x.Id == f.Report.Id) with { Id = Guid.NewGuid(), Delivery = null, StageAssignments = [], Title = "Additional report" });

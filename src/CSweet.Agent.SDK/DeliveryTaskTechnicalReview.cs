@@ -74,9 +74,17 @@ public static class DeliveryTaskTechnicalReview
             string.IsNullOrWhiteSpace(result.Summary) || result.Findings.Any(string.IsNullOrWhiteSpace) ||
             (result.Approved ? result.Findings.Count != 0 : result.Findings.Count == 0))
             throw new InvalidOperationException("Technical Review must bind both exact commits and return a consistent decision.");
-        return AgentWorkResult.Success(new WorkExecutionOutcomeV1(assignment.StageExecutionId, assignment.AttemptId,
-            WorkExecutionDispositions.Completed, result.Approved ? "approved" : "rejected", result.Summary,
+        return AgentWorkResult.Success(Outcome(assignment, result));
+    }
+    internal static WorkExecutionOutcomeV1 Outcome(WorkExecutionAssignment assignment, BranchDiffTechnicalReview.Decision result)
+    {
+        // Stage/card summaries have a separate 4096-character storage contract. Keep the full
+        // accepted report in Output; this explicitly marked preview is presentation only.
+        const string suffix = "… [Full review summary is retained in output.summary.]";
+        var summary = result.Summary.Length <= 4096 ? result.Summary : result.Summary[..(4096 - suffix.Length)] + suffix;
+        return new(assignment.StageExecutionId, assignment.AttemptId,
+            WorkExecutionDispositions.Completed, result.Approved ? "approved" : "rejected", summary,
             JsonSerializer.SerializeToElement(result, Json),
-            [new("commit", "Reviewed task source", result.SourceCommitSha), new("target-commit", "Reviewed story target", result.TargetCommitSha)], result.Findings));
+            [new("commit", "Reviewed task source", result.SourceCommitSha), new("target-commit", "Reviewed story target", result.TargetCommitSha)], result.Findings);
     }
 }

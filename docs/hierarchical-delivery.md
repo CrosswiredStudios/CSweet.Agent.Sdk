@@ -56,7 +56,11 @@ final approval decision. Model-generated commit or offset fields cannot select t
 candidate. Ordered complete coverage and rejection of approval with unresolved page findings
 remain mandatory. `BranchDiffTechnicalReviewTests` covers reversed model identities, source or
 target changes, publication changes, digest/offset gaps and incomplete review content.
-# Progressive increments (4.6.0)
+Managed delivery branch names use the model-independent `csweet/` namespace. New Story
+bindings use `csweet/story/<story-id>` and new release bindings use
+`csweet/release/<project-id>/<scope-key>`. Existing explicit bindings are retained.
+
+# Progressive increments (4.6.4)
 
 `HierarchicalProjectDelivery.PrepareIncrementAsync` accepts explicit board-local `epicItemIds` in addition to the normal manager, roster, repository and profile inputs. Publish the complete approved milestone/Story outline first, then detail only the next increment. Select only Epics whose Stories have executable leaves; future Epics and empty future Stories remain approved board scope outside the current delivery plan.
 

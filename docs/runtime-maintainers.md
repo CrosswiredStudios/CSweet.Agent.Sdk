@@ -1,6 +1,6 @@
 # Runtime maintainer guide
 
-## Checkpointed resource handoff (SDK 4.6.0)
+## Checkpointed resource handoff (SDK 4.6.4)
 
 `AgentWorkLease.Resources` is a server snapshot, not allocation authority. Agents upload
 safe source with `PlatformGitWorkspaceClient.UploadCheckpointAsync` and yield

@@ -169,14 +169,14 @@ public static class HierarchicalProjectDelivery
         var scopes = new List<WorkDeliveryScopeAssignment>();
         var branches = new List<WorkDeliveryBranchBinding>();
         var releaseScopeKey = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("|", scopedEpics.Order()))))[..16];
-        var releaseBranch = $"codex/release/{projectId:N}/{releaseScopeKey}";
+        var releaseBranch = $"csweet/release/{projectId:N}/{releaseScopeKey}";
         foreach (var story in board.Items.Where(x => scopedStories.Contains(x.Id)))
         {
             var childIds = tasks.Where(x => x.ParentItemId == story.Id).Select(x => x.Id).ToArray();
             scopes.Add(new(WorkExecutionScopes.Story, story.Id, boardId,
                 [Select("quality", qaRole, childIds.Where(x => !selected[x].QaEvidence).Select(x => selected[x].Author.OrganizationUserId!.Value).ToArray())]));
             if (childIds.Any(id => selected[id].Code)) branches.Add(new(repositoryId, WorkExecutionScopes.Story, story.Id,
-                $"codex/story/{story.Id:N}", releaseBranch));
+                $"csweet/story/{story.Id:N}", releaseBranch));
         }
         var epics = board.Items.Where(x => scopedEpics.Contains(x.Id)).ToArray();
         foreach (var epic in epics) scopes.Add(new(WorkExecutionScopes.Epic, epic.Id, boardId,

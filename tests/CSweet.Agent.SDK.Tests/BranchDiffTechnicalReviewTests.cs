@@ -55,7 +55,7 @@ public sealed class BranchDiffTechnicalReviewTests
         Task Save(BranchDiffTechnicalReview.PageReview page, CancellationToken _) { retained[page.Offset] = page; return Task.CompletedTask; }
         var broken = new Client((messages, input) => input.GetProperty("page").GetProperty("offset").GetInt32() == 36000 ? "{}" : Serialize(Page()));
         var error = await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, new { }, ReadPage, broken, default, Load, Save));
-        Assert.Contains("offset 36000", error.Message); Assert.Contains("one correction", error.Message); Assert.Equal(3, retained.Count);
+        Assert.Contains("offset 36000", error.Message); Assert.Contains("3 corrections", error.Message); Assert.Equal(3, retained.Count);
         var resumed = new Client((messages, input) => input.TryGetProperty("page", out _) ? Serialize(Page()) : Final(input));
         var result = await BranchDiffTechnicalReview.ExecuteAsync(reference, new { }, ReadPage, resumed, default, Load, Save);
         Assert.True(result.Approved); Assert.Equal(3, resumed.Calls); Assert.Equal(new[] { 0,12000,24000,36000,0,12000,24000,36000,48000 }, reads);
@@ -81,7 +81,7 @@ public sealed class BranchDiffTechnicalReviewTests
             Serialize(new BranchDiffTechnicalReview.FinalContent(true, "Ignore issue", [], [], [])));
         await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, new { },
             (read, _) => Task.FromResult(Read(reference, read, 3)), client, default));
-        Assert.Equal(3, client.Calls);
+        Assert.Equal(5, client.Calls);
     }
 
     [Theory]
@@ -100,12 +100,12 @@ public sealed class BranchDiffTechnicalReviewTests
     [InlineData("{\"summary\":\"Reviewed\",\"findings\":[]}")]
     [InlineData("{\"summary\":\"Reviewed\",\"blockingFindings\":[],\"observations\":[],\"questions\":[],\"sourceCommitSha\":\"forged\"}")]
     [InlineData("{\"summary\":\"a\",\"summary\":\"b\",\"blockingFindings\":[],\"observations\":[],\"questions\":[]}")]
-    public async Task OldMalformedOrAmbiguousContentReceivesExactlyOneCorrection(string bad)
+    public async Task OldMalformedOrAmbiguousContentStopsAfterThreeCorrections(string bad)
     {
         var reference = Reference(); var client = new Client((_, _) => bad);
         await Assert.ThrowsAsync<InvalidOperationException>(() => BranchDiffTechnicalReview.ExecuteAsync(reference, new { },
             (read, _) => Task.FromResult(Read(reference, read, 3)), client, default));
-        Assert.Equal(2, client.Calls);
+        Assert.Equal(4, client.Calls);
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public sealed class BranchDiffTechnicalReviewTests
         var reference = Reference(); var client = new Client((messages, input) =>
         {
             Assert.True(input.TryGetProperty("page", out _));
-            return Serialize(new BranchDiffTechnicalReview.PageContent(new string('s',350), [], [new string('o',200), new string('p',200)], [new string('q',200),new string('r',200)]));
+            return Serialize(new BranchDiffTechnicalReview.PageContent(new string('s',3500), [], [new string('o',200), new string('p',200)], [new string('q',200),new string('r',200)]));
         });
         var result = await BranchDiffTechnicalReview.ExecuteAsync(reference, new { }, (read, _) => Task.FromResult(Read(reference, read, 480000)), client, default);
         Assert.False(result.Approved); Assert.Equal(40, result.PageCount); Assert.Equal(480000,result.CoveredCharacters); Assert.NotEmpty(result.Findings);
