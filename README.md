@@ -1,28 +1,28 @@
-SDK 5.0.2 runs ordinary networked npm restoration as a durable guest service with no overall installation deadline. Short compute commands launch or observe the job; runtime restarts reuse its stable identity and only a completed successful job receipt permits tests/build. A lost launch reply leads to observation rather than another install. The VM lease, explicit destruction and npm's own completion/failure remain authoritative.
+SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service with no overall installation deadline. Short compute commands launch or observe the job; runtime restarts reuse its stable identity and only a completed successful job receipt permits tests/build. A lost launch reply leads to observation rather than another install. The VM lease, explicit destruction and npm's own completion/failure remain authoritative.
 
 # C-Sweet Agent SDK
 
-SDK 5.0.2 waits for confirmed teardown after provisioning fails before selecting a new durable provisioning key, with at most three replacements before guest commands begin. Cleanup's generation change cannot masquerade as an unknown application command. Submitted guest commands retain their original replay fences and independent acceptance remains mandatory.
+SDK 5.0.4 waits for confirmed teardown after provisioning fails before selecting a new durable provisioning key, with at most three replacements before guest commands begin. Cleanup's generation change cannot masquerade as an unknown application command. Submitted guest commands retain their original replay fences and independent acceptance remains mandatory.
 
-SDK 5.0.2 provisions an approved outbound-network compute VM for new Node readiness runs and executes ordinary `npm ci`. It does not enumerate or transfer package tarballs through the managed bridge. Source and lockfile hashes remain pinned, operation receipts remain durable, and independent QA/technical acceptance remain mandatory. Existing in-flight requests retain their original terms. Verbose test/build output stays in the guest's `validation.log`; failures return a bounded diagnostic tail and successful runs retain the exact-source HTTP marker.
+SDK 5.0.4 provisions an approved outbound-network compute VM for new Node readiness runs and executes ordinary `npm ci`. It does not enumerate or transfer package tarballs through the managed bridge. Source and lockfile hashes remain pinned, operation receipts remain durable, and independent QA/technical acceptance remain mandatory. Existing in-flight requests retain their original terms. Verbose test/build output stays in the guest's `validation.log`; failures return a bounded diagnostic tail and successful runs retain the exact-source HTTP marker.
 
-SDK 5.0.2 permits one upload-only archive restart before any validation or publication starts. It preserves the previous archive hash, advances operation keys, and overwrites the transfer from offset zero. Repeated transport changes or unknown validation outcomes still stop readiness. Deploy the trusted host's deterministic ZIP serialization fix before recovering a legacy partial transfer; final readiness still verifies the exact archive and independently recorded test/link receipts.
+SDK 5.0.4 permits one upload-only archive restart before any validation or publication starts. It preserves the previous archive hash, advances operation keys, and overwrites the transfer from offset zero. Repeated transport changes or unknown validation outcomes still stop readiness. Deploy the trusted host's deterministic ZIP serialization fix before recovering a legacy partial transfer; final readiness still verifies the exact archive and independently recorded test/link receipts.
 
-SDK 5.0.2 reconciles compute generations as operation cursors: each accepted command or port publication advances the counter. Readiness resumes the exact saved request and receipt after interruption, persists publication terms before submission, and rejects unexplained cursor changes. Validation and publication evidence bind adjacent generations; neither a successful upload nor cursor recovery establishes application readiness.
+SDK 5.0.4 reconciles compute generations as operation cursors: each accepted command or port publication advances the counter. Readiness resumes the exact saved request and receipt after interruption, persists publication terms before submission, and rejects unexplained cursor changes. Validation and publication evidence bind adjacent generations; neither a successful upload nor cursor recovery establishes application readiness.
 
-SDK 5.0.2 divides aggregate reviews with more than two acceptance criteria into two-criterion assessments and a final whole-candidate consistency check. Exact-input checkpoints and progress survive interrupted callbacks; schema correction repeats only the affected assessment. Every criterion failure and finding remains blocking. Current authority, planning, source and evidence are checked before checkpoint reuse and before returning a verdict. Review calls request 128,000 output tokens; the platform's saved agent budget remains authoritative.
+SDK 5.0.4 divides aggregate reviews with more than two acceptance criteria into two-criterion assessments and a final whole-candidate consistency check. Exact-input checkpoints and progress survive interrupted callbacks; schema correction repeats only the affected assessment. Every criterion failure and finding remains blocking. Current authority, planning, source and evidence are checked before checkpoint reuse and before returning a verdict. Review calls request 128,000 output tokens; the platform's saved agent budget remains authoritative.
 
-SDK 5.0.2 applies the shared three-correction JSON reader to aggregate technical and manager reviews. Validation names incorrect identities and criteria, separates acceptance criteria from checklists, and preserves real rejections. The current candidate, reviewer, planning and evidence are reauthorized before any verdict is returned. Exhaustion reports an aggregate processing failure and grants no acceptance.
+SDK 5.0.4 applies the shared three-correction JSON reader to aggregate technical and manager reviews. Validation names incorrect identities and criteria, separates acceptance criteria from checklists, and preserves real rejections. The current candidate, reviewer, planning and evidence are reauthorized before any verdict is returned. Exhaustion reports an aggregate processing failure and grants no acceptance.
 
-SDK 5.0.2 directs progressive increments to `csweet/integration/<project-id>` after independent aggregate acceptance. Successors build from that shared branch; promotion to the repository default branch remains a separate final-release plan. Existing explicit bindings are retained. The platform preserves owner-recorded deferred release obligations across plans and checks them before final promotion.
+SDK 5.0.4 directs progressive increments to `csweet/integration/<project-id>` after independent aggregate acceptance. Successors build from that shared branch; promotion to the repository default branch remains a separate final-release plan. Existing explicit bindings are retained. The platform preserves owner-recorded deferred release obligations across plans and checks them before final promotion.
 
-SDK 5.0.2 adds bounded correction to exact-revision artifact QA. `ArtifactDeliveryReview` keeps acceptance criteria separate from requirement checklists, reports field-specific schema errors, allows three corrections, and rechecks current planning and document authorization before accepting a verdict. Artifact responses request 128,000 output tokens within the configured model ceiling and retain the 128,000-character response bound. Genuine findings remain failures; correction exhaustion is a C-Sweet artifact-QA processing issue for management.
+SDK 5.0.4 adds bounded correction to exact-revision artifact QA. `ArtifactDeliveryReview` keeps acceptance criteria separate from requirement checklists, reports field-specific schema errors, allows three corrections, and rechecks current planning and document authorization before accepting a verdict. Artifact responses request 128,000 output tokens within the configured model ceiling and retain the 128,000-character response bound. Genuine findings remain failures; correction exhaustion is a C-Sweet artifact-QA processing issue for management.
 
 Bounded task technical review allows 128,000 characters for requirements, synthesis input and each model response. Summary, evidence, resolution, finding and note fields allow 16,000 characters; repository paths allow 2,048. A response may contain 16 blockers, 16 observations and 16 questions; criterion/resolution citations may reference up to 512 reviewed offsets. The platform's configured model token ceiling remains authoritative.
 
 The response schema carries these bounds, and validation reports all text-bound violations with JSON paths and measured lengths. Three correction calls are allowed after the initial response; each retains only the latest failed response. Invalid responses never grant approval or silently truncate accepted evidence. Exhaustion identifies a C-Sweet review-processing issue for management escalation. Existing saved page policy/identity remains compatible and every reused page is reauthorized and hash checked.
 
-SDK 5.0.2 uses model-independent `csweet/story/` and `csweet/release/` names for new managed delivery branches. C-Sweet also uses `csweet/task/`, `csweet/epic/` and `csweet/candidate/`. Existing explicit branch bindings remain authoritative.
+SDK 5.0.4 uses model-independent `csweet/story/` and `csweet/release/` names for new managed delivery branches. C-Sweet also uses `csweet/task/`, `csweet/epic/` and `csweet/candidate/`. Existing explicit branch bindings remain authoritative.
 
 `HierarchicalProjectDelivery.PrepareIncrementAsync` selects fully detailed Epic increments while retaining future approved scope on the board. Each selected increment still requires task, Story, Epic and release acceptance, independent reviewers and existing preflight. An active plan cannot silently change its selected increment. See [hierarchical delivery](docs/hierarchical-delivery.md).
 
@@ -30,7 +30,7 @@ SDK 4.4.1 adds bounded retry of interrupted work heartbeat requests. It preserve
 same authenticated attempt and existing timeout; it does not revive expired leases
 or retry arbitrary capability mutations. See `docs/runtime-maintainers.md`.
 
-SDK 5.0.2 uses one execution capability, `work.execution.run`, and one scope-aware
+SDK 5.0.4 uses one execution capability, `work.execution.run`, and one scope-aware
 `WorkExecutionAssignment`. Staffing, task dispatch and aggregate reviews share the
 same contract. The SDK preserves the complete assignment when invoking task handlers,
 including principal, planning revision, delivery plan and permitted outcomes.
@@ -53,7 +53,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.0.2 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.0.4 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -70,7 +70,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.0.2
+  --SdkVersion 5.0.4
 cd ResearchAgent
 dotnet test
 ```
@@ -78,7 +78,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.0.2
+dotnet add package CSweet.Agent.SDK --version 5.0.4
 ```
 
 ```csharp
@@ -185,15 +185,15 @@ See [manager authoring](docs/manager-agents.md) for shared monitoring, assessmen
 
 ## Reviewed runtime public internet
 
-SDK 5.0.2 defines `RuntimePermissions.PublicInternet` (`runtime.internet.public.v1`). Declare it in `requires` with a purpose and `modelVisible: false`. It requests an execution-environment permission, not a callable MCP operation or provider binding. The installed manifest and owner-approved grant must both include it. It does not imply brokered web, credentials, private-network, inbound, compute or deployment authority.
+SDK 5.0.4 defines `RuntimePermissions.PublicInternet` (`runtime.internet.public.v1`). Declare it in `requires` with a purpose and `modelVisible: false`. It requests an execution-environment permission, not a callable MCP operation or provider binding. The installed manifest and owner-approved grant must both include it. It does not imply brokered web, credentials, private-network, inbound, compute or deployment authority.
 
 The certified development guest supplies Node/npm. Scoped project restores and portable tools may use the workload's writable directories when internet is approved; missing lockfiles are generated and verified through a clean restore. Workspace publication excludes `node_modules` and `.venv` while preserving lockfiles. Runtime-state reads report the effective network mode and expected development tools; command results remain the evidence that a particular validation ran.
 
 ## Manager blocker reports
 
-SDK 5.0.2 exposes shared evidence-based incident reports and human-selected recovery through `CSweetManagerAgentBase` and `ManagerIncidentCoordinator`. See [manager agents](docs/manager-agents.md) for hooks, reviewed grants, bounded analysis, durable decisions and rollout.
+SDK 5.0.4 exposes shared evidence-based incident reports and human-selected recovery through `CSweetManagerAgentBase` and `ManagerIncidentCoordinator`. See [manager agents](docs/manager-agents.md) for hooks, reviewed grants, bounded analysis, durable decisions and rollout.
 
-## Bounded task technical review (5.0.2)
+## Bounded task technical review (5.0.4)
 
 `DeliveryScopeReview` uses the latest relevant gate verdicts and includes each candidate document once. Large aggregate technical reviews inspect bounded source parts through `AggregateSourceReview`, retain exact file coverage and resumable evidence, and assess criteria against those inspections. Source findings survive the final synthesis. Completed inspections are reused only for the same candidate, scope and reviewer; every model request retains the 128k output allowance.
 
@@ -204,4 +204,4 @@ unresolved-finding checks remain enforced before trusted integration and indepen
 
 `DeliveryTaskTechnicalReview` starts with a publication/PR/branch reference and exact source/target commits, not a full patch in a model message. It reads contiguous diff pages through the existing authorized `git.merge.review.v1` capability, binding every page to the publication and patch digest. It refuses changed candidates, missing pages, oversized synthesis and approval that erases unresolved findings. Newly added or modified generated/dependency paths request source cleanup without model evaluation of their contents.
 
-Coding agents use `RepositorySourcePolicy.Instructions` to maintain `.gitignore`, preserve manifests/lockfiles and authored assets, and build deployment output through reproducible recipes. The trusted publisher applies Git's native root/nested ignore rules to new files in snapshot workspaces; already tracked files require explicit cleanup. Ship the platform broker and trusted Git publisher before installing SDK 5.0.2 consumers.
+Coding agents use `RepositorySourcePolicy.Instructions` to maintain `.gitignore`, preserve manifests/lockfiles and authored assets, and build deployment output through reproducible recipes. The trusted publisher applies Git's native root/nested ignore rules to new files in snapshot workspaces; already tracked files require explicit cleanup. Ship the platform broker and trusted Git publisher before installing SDK 5.0.4 consumers.

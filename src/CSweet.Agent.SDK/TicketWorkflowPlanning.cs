@@ -1,4 +1,6 @@
 using CSweet.WorkManagement.Contracts;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace CSweet.Agent.SDK;
 
@@ -39,7 +41,7 @@ public static class TicketWorkflowPlanning
                 items.Single(i => i.Id == scope.ItemId).Title + " — " + (scope.Scope == WorkExecutionScopes.Story ? "source preparation" : "evidence preparation");
             var ticket = await context.Platform.Work.CreateItemAsync(new(scope.BoardId, title,
                 "Execute the declared steps against the pinned evidence and acceptance criteria. Predecessor tickets determine when this work starts.",
-                "Task", "Medium", null, null, null, request.IdempotencyKey + ":ticket:" + scope.Scope + ":" + scope.ItemId)
+                "Task", "Medium", null, null, null, TicketKey(request.IdempotencyKey, scope.Scope, scope.ItemId))
                 { TypeKey = WorkItemTypeKeys.WorkflowTicketV1, Planning = planning, AccountableOrganizationUserId = request.ManagerOrganizationUserId }, ct);
             tickets.Add((scope.Scope, scope.ItemId), ticket);
         }
@@ -50,5 +52,14 @@ public static class TicketWorkflowPlanning
             return Declaration(scope, ticket.Id, children);
         }).ToArray();
         return await context.Platform.Work.ConfigureDeliveryPlanAsync(request with { TicketWorkflows = workflows }, ct);
+    }
+
+    internal static string TicketKey(string planKey, string scope, Guid? itemId)
+    {
+        var original = planKey + ":ticket:" + scope + ":" + itemId;
+        // Retain accepted keys for partial/repeated publication. A key above the
+        // broker's limit could never have created a ticket; hash its full identity.
+        return original.Length <= 160 ? original :
+            "workflow-ticket:v1:" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(original)));
     }
 }

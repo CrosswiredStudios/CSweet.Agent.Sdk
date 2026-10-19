@@ -1,12 +1,12 @@
-SDK 5.0.2 runs ordinary networked npm restoration as a durable guest service with no overall installation deadline. Short compute commands launch or observe the job; runtime restarts reuse its stable identity and only a completed successful job receipt permits tests/build. A lost launch reply leads to observation rather than another install. The VM lease, explicit destruction and npm's own completion/failure remain authoritative.
+SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service with no overall installation deadline. Short compute commands launch or observe the job; runtime restarts reuse its stable identity and only a completed successful job receipt permits tests/build. A lost launch reply leads to observation rather than another install. The VM lease, explicit destruction and npm's own completion/failure remain authoritative.
 
 # Security Policy
 
-## Compute outbound networking (5.0.2)
+## Compute outbound networking (5.0.4)
 
 New Node readiness requests explicitly select `outboundOnly` and require approved `network.outbound.v1` authority in addition to compute permissions. This is VM internet access, distinct from agent-runtime internet permissions. The provider controls the NAT switch and adapter; agents supply no host networking commands or credentials. Compute broker admission and signed dispatch recheck the full specification and each grant. Ordinary networked guest commands also require current outbound authority. Public endpoints and private/host access are not authorized by this mode. Node installation runs normally inside the VM; no package code runs on the provider host.
 
-## Interim increment boundary (SDK 5.0.2)
+## Interim increment boundary (SDK 5.0.4)
 
 An archive restart is allowed once only after known upload receipts, with current authorized candidate evidence, and before any validation/publication command. It retains the old hash and advances command keys rather than overwriting receipts. This cannot establish passing tests. The host still requires the exact current archive hash, successful validation script/HTTP marker, adjacent publication receipt and live environment. Repeated changes and unknown command results remain blockers.
 
@@ -16,7 +16,7 @@ Aggregate criterion checkpoints are installation-scoped evidence, never executio
 
 An accepted progressive increment authorizes promotion only to the host-validated project integration branch. It grants no default-branch or public-deployment authority. The host preserves owner-recorded deferred release tasks across plan reconfiguration and successor plans; missing work, manual completion, stale candidate reviews and an omitted dependency cannot authorize final promotion. Each increment retains independent QA, technical review and manager acceptance. Only an authorized owner may amend the live interim milestone through the platform amendment service, and historical rejections remain auditable.
 
-## Resource handoff boundary (SDK 5.0.2)
+## Resource handoff boundary (SDK 5.0.4)
 
 Resource requests are advisory, bounded execution-control results tied to the current work
 lease. A checkpoint receipt confers no execution, repository, network or spending authority.

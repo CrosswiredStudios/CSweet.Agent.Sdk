@@ -1,4 +1,4 @@
-SDK 5.0.2 runs ordinary networked npm restoration as a durable guest service with no overall installation deadline. Short compute commands launch or observe the job; runtime restarts reuse its stable identity and only a completed successful job receipt permits tests/build. A lost launch reply leads to observation rather than another install. The VM lease, explicit destruction and npm's own completion/failure remain authoritative.
+SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service with no overall installation deadline. Short compute commands launch or observe the job; runtime restarts reuse its stable identity and only a completed successful job receipt permits tests/build. A lost launch reply leads to observation rather than another install. The VM lease, explicit destruction and npm's own completion/failure remain authoritative.
 
 `AggregateSourceReview` partitions large aggregate source inputs before criterion assessment. `DeliveryScopeReview` removes duplicate document bodies and transient prior outcomes, supplies source inspection evidence to the criterion and consistency steps, and retains all source findings. Inspection checkpoints bind exact source/planning identities and are authorized again before reuse and persistence. This bounds request input without reducing the 128k output allowance or treating summaries as test execution.
 
@@ -8,7 +8,7 @@ SDK 5.0.2 runs ordinary networked npm restoration as a durable guest service wit
 
 `DeliveryScopeReview` uses `TechnicalReviewJson` for strict bounded correction and rechecks the current stage by its exact ID after generation. Failed schema validation is a processor failure, not product QA evidence. The platform may authorize an owner to restart only a failed technical/manager processor with no open findings and no finding resolutions; the restart requires fresh independent review and never records acceptance.
 
-## Internal progressive promotion (SDK 5.0.2)
+## Internal progressive promotion (SDK 5.0.4)
 
 Compute generation advances for every accepted workload. `DeliveryComputeTest` reconciles pending requests against their own returned generation before comparing current state; it never replays with a newly read expected generation. Publication terms are saved before submission. Lost command/publication responses reuse exact idempotent requests, while unknown results and unrelated generation changes stop readiness. Final evidence uses the publication generation; the host verifies validation immediately preceded publication without an intervening command or lifecycle action.
 
@@ -16,7 +16,7 @@ Compute generation advances for every accepted workload. `DeliveryComputeTest` r
 
 `HierarchicalProjectDelivery.PrepareIncrementAsync` chooses `csweet/integration/<project-id>`; it cannot grant branch access. Deploy the platform's `WorkDeliveryService.ValidateBranchesAsync`, integration provisioning and final-release obligation checks before installing this SDK's progressive manager consumers. The host checks exact scope/candidate/principals as before. Events only wake current-state reconciliation. The owner amendment operation creates fresh aggregate executions and supersedes historical findings as a scope change; it never supplies passing QA or acceptance.
 
-## Checkpointed resource handoff (SDK 5.0.2)
+## Checkpointed resource handoff (SDK 5.0.4)
 
 `AgentWorkLease.Resources` is a server snapshot, not allocation authority. Agents upload
 safe source with `PlatformGitWorkspaceClient.UploadCheckpointAsync` and yield
@@ -363,7 +363,7 @@ reports are refreshed rather than treated as owner decisions. `RoutineRecoveryFu
 stable episode/operation/target keys across event duplicates and source refreshes. Model text
 cannot certify a queued/running retry; the platform derives it from correlated execution records.
 
-## Managed compute dependency restore (5.0.2)
+## Managed compute dependency restore (5.0.4)
 
 `ExecuteComputeCommandRequest.NodeDependencies` binds public npm tarballs to the exact candidate lockfile. `DeliveryNodeDependencies.Read` accepts npm lockfiles 2/3, registry.npmjs.org HTTPS tarballs and SHA-512 integrity; unsupported registries, local/git dependencies and conflicting or missing integrity fail closed. This optional operation requires current installation and scoped `compute.execute.v1` plus `network.outbound.v1` authority. Declarations are requests, never grants. An npm-only scoped grant does not authorize general VM networking or a public endpoint.
 

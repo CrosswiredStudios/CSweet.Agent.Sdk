@@ -1,4 +1,4 @@
-SDK 5.0.2 runs ordinary networked npm restoration as a durable guest service with no overall installation deadline. Short compute commands launch or observe the job; runtime restarts reuse its stable identity and only a completed successful job receipt permits tests/build. A lost launch reply leads to observation rather than another install. The VM lease, explicit destruction and npm's own completion/failure remain authoritative.
+SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service with no overall installation deadline. Short compute commands launch or observe the job; runtime restarts reuse its stable identity and only a completed successful job receipt permits tests/build. A lost launch reply leads to observation rather than another install. The VM lease, explicit destruction and npm's own completion/failure remain authoritative.
 
 # Typed compute client
 
@@ -61,7 +61,7 @@ SDK 3.46.1 accepts `LifetimeSeconds: 0` for compute retained until the requester
 
 DeliveryComputeTest supports compute-test release bindings without certified packaging. It discovers application-managed project compute options and selects a compatible Docker or static recipe from the immutable source archive. All commands execute inside owned guest compute through existing grants. Source hash, exact command, exit status, HTTP marker, environment generation and provider URL receipts are validated by the platform. Pending operations and authority/setup waits retain durable state; wake hints and five-minute bounded discovery resume progress. Unknown results never authorize replacement command keys. Independent QA and technical review remain required. No host shell, provider credential, automatic network grant or public deployment is added.
 
-### Node development internet access (5.0.2)
+### Node development internet access (5.0.4)
 
 Provisioning recovery waits for the platform's observed `destroyed` state before using another stable desired-environment key. The attempt count is saved before submission, bounded to three replacements and available only before any guest command/source upload. Pending cleanup remains a durable wait. Once guest execution begins, unexplained generation changes and unknown command outcomes still stop readiness.
 

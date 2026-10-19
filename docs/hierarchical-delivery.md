@@ -1,6 +1,6 @@
 # Canonical execution in SDK 4.4.0
 
-SDK 4.4.0 uses `WorkArtifactDelivery` from WorkManagement.Contracts 5.0.2 for
+SDK 4.4.0 uses `WorkArtifactDelivery` from WorkManagement.Contracts 5.0.4 for
 both author output and artifact QA. Authors call `new WorkArtifactDelivery(artifactId,
 revisionId, sha256).ToOutput()` rather than constructing anonymous JSON. The reader
 accepts existing persisted PascalCase outcomes without rewriting history, and rejects
@@ -60,7 +60,7 @@ Managed delivery branch names use the model-independent `csweet/` namespace. New
 bindings use `csweet/story/<story-id>` and new release bindings use
 `csweet/release/<project-id>/<scope-key>`. Existing explicit bindings are retained.
 
-# Progressive increments (5.0.2)
+# Progressive increments (5.0.4)
 
 `DeliveryScopeReview.ExecuteAsync` uses `AggregateReviewChunks` for more than two criteria: each call assesses at most two, persists the validated result through installation-scoped operating state, and reports its progress. The final consistency check assesses requirements and cross-candidate interactions without overriding any retained failure. Checkpoints bind the review policy, plan/execution, scope revision, reviewer, planning, exact evidence/source and prior outcomes. Current assignment and evidence are reauthorized before each chunk and after generation. Idempotent writes returning a different judgment fail closed. A reconnect repeats only incomplete assessments; no checkpoint itself authorizes acceptance or promotion. Saved model output budgets remain authoritative, with a 128,000-token request where supported.
 
@@ -70,7 +70,7 @@ bindings use `csweet/story/<story-id>` and new release bindings use
 
 The helper rejects empty, duplicate, foreign, terminal or undetailed selections and a selection differing from an existing active/draft plan. It retains the same independent task QA, aggregate Story/Epic/release reviews, integration, build readiness and host preflight as `PrepareAsync`. Starting a successor requires authoritative completion of the preceding delivery plan; task completion alone is insufficient. This is an additive authoring helper and requests no new capability.
 
-## Managed compute dependency restore (5.0.2)
+## Managed compute dependency restore (5.0.4)
 
 `ExecuteComputeCommandRequest.NodeDependencies` binds public npm tarballs to the exact candidate lockfile. `DeliveryNodeDependencies.Read` accepts npm lockfiles 2/3, registry.npmjs.org HTTPS tarballs and SHA-512 integrity; unsupported registries, local/git dependencies and conflicting or missing integrity fail closed. This optional operation requires current installation and scoped `compute.execute.v1` plus `network.outbound.v1` authority. Declarations are requests, never grants. An npm-only scoped grant does not authorize general VM networking or a public endpoint.
 

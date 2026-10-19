@@ -26,6 +26,7 @@ public sealed class IncrementDeliveryPlanningTests
         var plans = new List<WorkDeliveryPlanResponse> { previous }; ConfigureWorkDeliveryPlanRequest? configured = null;
         var runtime = new AgentTestRuntime()
             .RegisterCapability<CreateWorkItemRequest, WorkItem>(WorkItemCapabilities.Create, (r, _) => {
+                    Assert.InRange(r.IdempotencyKey.Length, 1, 160);
                     var item = JsonSerializer.Deserialize<WorkItem>("{}")! with { Id = Guid.NewGuid(),
                         Title = r.Title, Kind = r.Kind, TypeKey = r.TypeKey!, Planning = r.Planning, PlanningRevision = 1,
                         StageAssignments = [], ExecutionMode = WorkItemExecutionModes.Container };
