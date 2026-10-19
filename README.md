@@ -1,3 +1,5 @@
+SDK 5.0.5 bounds derived workflow-ticket keys to the platform's 160-character limit. Short keys retain their existing identity; oversized keys use a stable 83-character SHA-256 identity so interrupted publication can replay without duplicate tickets.
+
 SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service with no overall installation deadline. Short compute commands launch or observe the job; runtime restarts reuse its stable identity and only a completed successful job receipt permits tests/build. A lost launch reply leads to observation rather than another install. The VM lease, explicit destruction and npm's own completion/failure remain authoritative.
 
 # C-Sweet Agent SDK
@@ -53,7 +55,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.0.4 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.0.5 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -70,7 +72,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.0.4
+  --SdkVersion 5.0.5
 cd ResearchAgent
 dotnet test
 ```
@@ -78,7 +80,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.0.4
+dotnet add package CSweet.Agent.SDK --version 5.0.5
 ```
 
 ```csharp

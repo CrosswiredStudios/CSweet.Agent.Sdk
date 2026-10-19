@@ -9,6 +9,7 @@ public sealed class TicketWorkflowKeyTests
     [InlineData(20)]
     [InlineData(110)]
     [InlineData(111)]
+    [InlineData(120)]
     [InlineData(150)]
     [InlineData(200)]
     [InlineData(400)]
@@ -23,7 +24,26 @@ public sealed class TicketWorkflowKeyTests
         Assert.NotEqual(key, TicketWorkflowPlanning.TicketKey(plan + "x", "Story", item));
         var original = plan + ":ticket:Story:" + item;
         if (original.Length <= 160) Assert.Equal(original, key);
-        else Assert.StartsWith("workflow-ticket:v1:", key);
+        else
+        {
+            Assert.StartsWith("workflow-ticket:v1:", key);
+            Assert.Equal(83, key.Length);
+        }
+    }
+
+    [Theory]
+    [InlineData(110, 160)]
+    [InlineData(111, 83)]
+    [InlineData(120, 83)]
+    public void Valid_plan_keys_remain_valid_after_appending_ticket_identity(int planLength, int expectedLength)
+    {
+        var item = Guid.Parse("12345678-1234-1234-1234-123456789abc");
+        var plan = new string('p', planLength);
+
+        var key = TicketWorkflowPlanning.TicketKey(plan, "Story", item);
+
+        Assert.Equal(expectedLength, key.Length);
+        if (planLength == 110) Assert.Equal(plan + ":ticket:Story:" + item, key);
     }
 
     [Fact]
@@ -33,13 +53,14 @@ public sealed class TicketWorkflowKeyTests
         var board = Guid.NewGuid(); var manager = Guid.NewGuid();
         var request = JsonSerializer.Deserialize<ConfigureWorkDeliveryPlanRequest>("{}")! with {
             WorkstreamId = Guid.NewGuid(), Name = "Prototype", ManagerOrganizationUserId = manager,
-            EpicItemIds = [epic.Id], Branches = [], IdempotencyKey = new string('p', 190),
-            Assignments = [new("Release", null, board, [])]
+            EpicItemIds = [epic.Id], Branches = [], IdempotencyKey = new string('p', 120),
+            Assignments = [new("Epic", epic.Id, board, [])]
         };
         var created = new Dictionary<string, WorkItem>(); var configurationCalls = 0;
         var runtime = new AgentTestRuntime()
             .RegisterCapability<CreateWorkItemRequest, WorkItem>(WorkItemCapabilities.Create, (r, _) => {
                 Assert.InRange(r.IdempotencyKey.Length, 1, 160);
+                Assert.StartsWith("workflow-ticket:v1:", r.IdempotencyKey);
                 if (!created.TryGetValue(r.IdempotencyKey, out var ticket))
                     created[r.IdempotencyKey] = ticket = epic with { Id = Guid.NewGuid(), Title = r.Title, Planning = r.Planning, TypeKey = r.TypeKey! };
                 return Task.FromResult(ticket);

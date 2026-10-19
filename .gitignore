@@ -399,3 +399,8 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Authored release notes are source, not build outputs.
+!/releases/
+/releases/*
+!/releases/5.0.5.md
