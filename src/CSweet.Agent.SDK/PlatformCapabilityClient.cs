@@ -31,6 +31,8 @@ public sealed class PlatformCapabilityClient
         ProjectHealth = new PlatformProjectHealthClient(this);
         Delegation = new PlatformDelegationClient(this);
         WorkTracking = new PlatformWorkTrackingClient(this);
+        Research = new PlatformResearchClient(this);
+        ExecutionCheckpoints = new PlatformExecutionCheckpointClient(this);
     }
 
     internal IPlatformToolInvoker Tools => _tools;
@@ -51,6 +53,8 @@ public sealed class PlatformCapabilityClient
     public PlatformProjectHealthClient ProjectHealth { get; }
     public PlatformDelegationClient Delegation { get; }
     public PlatformWorkTrackingClient WorkTracking { get; }
+    public PlatformResearchClient Research { get; }
+    public PlatformExecutionCheckpointClient ExecutionCheckpoints { get; }
 
     public Task<BusinessProfileResponse> ReadBusinessProfileAsync(CancellationToken token = default) =>
         InvokeAsync<object, BusinessProfileResponse>(PlatformCapabilities.BusinessProfileRead, new { }, token);

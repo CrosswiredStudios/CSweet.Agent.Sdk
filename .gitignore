@@ -404,3 +404,4 @@ FodyWeavers.xsd
 !/releases/
 /releases/*
 !/releases/5.0.5.md
+!/releases/5.1.0.md

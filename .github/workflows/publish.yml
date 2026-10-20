@@ -79,5 +79,7 @@ jobs:
         run: |
           gh release view $env:RELEASE_TAG --repo '${{ github.repository }}' *> $null
           if ($LASTEXITCODE -eq 0) { exit 0 }
-          gh release create $env:RELEASE_TAG --repo '${{ github.repository }}' --target '${{ github.sha }}' --title "$env:PACKAGE_ID $env:PACKAGE_VERSION" --generate-notes
+          $notes = "releases/$($env:PACKAGE_VERSION).md"
+          if (-not (Test-Path $notes)) { throw "Matching versioned release notes are required: $notes" }
+          gh release create $env:RELEASE_TAG --repo '${{ github.repository }}' --target '${{ github.sha }}' --title "$env:PACKAGE_ID $env:PACKAGE_VERSION" --notes-file $notes
           if ($LASTEXITCODE -ne 0) { throw "GitHub release creation failed." }

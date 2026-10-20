@@ -1,5 +1,18 @@
 # Generated capability reference
 
+## Research and private execution checkpoints (SDK 5.1.0)
+
+| Capability | Typed operation and authority |
+|---|---|
+| `web.research.search.v1` | `Platform.Research.SearchAsync`: bounded public search through administrator-managed SearXNG. Requires its own reviewed grant. |
+| `web.research.read.v1` | `Platform.Research.ReadPageAsync`: bounded public HTML/plain-text extraction. Also requires `web.fetch.v1` and the reviewed web policy for each redirected URL. |
+| `platform.execution-checkpoint.read.v1` | `Platform.ExecutionCheckpoints.ReadAsync`: restore private engine/source state only under current installation, work and assignment authority. Hidden from models. |
+| `platform.execution-checkpoint.write.v1` | `Platform.ExecutionCheckpoints.WriteAsync`: revision-checked, idempotent private checkpoint; no execution or publication grant. Hidden from models. |
+
+Search defaults to five results (maximum ten). Page reads default to 20,000 characters and report truncation and unsupported formats.
+Neither operation supplies credentials or a paid search fallback. Search results and page text are untrusted source material.
+Checkpoint archives are capped at 16 MiB compressed each, with 4 MiB transfer chunks inside existing broker frame limits.
+
 ## Hierarchical delivery (SDK 3.59.0)
 
 `work.execution.run` provides scope-specific execution. Task assignments carry real sprint

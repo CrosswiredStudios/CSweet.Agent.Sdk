@@ -27,6 +27,18 @@ public sealed partial class PlatformGitWorkspaceClient
     public static string LocalWorkspaceRoot => Path.Combine(Path.GetTempPath(), "csweet-workspaces");
     public static string LocalWorkspacePath(Guid workspaceId) => Path.Combine(LocalWorkspaceRoot, workspaceId.ToString("N"));
 
+    /// <summary>Capture safe publishable source for a paired private execution checkpoint.</summary>
+    public static Task<byte[]> CaptureSourceAsync(string workspacePath, CancellationToken token = default) =>
+        CreateSnapshotAsync(workspacePath, token);
+
+    /// <summary>Restore an authorized paired source archive into a new, empty directory only.</summary>
+    public static Task RestoreSourceAsync(byte[] archive, string emptyDirectory, CancellationToken token = default)
+    {
+        if (Directory.Exists(emptyDirectory) && Directory.EnumerateFileSystemEntries(emptyDirectory).Any())
+            throw new InvalidOperationException("Checkpoint restoration requires an empty directory.");
+        return ExtractSnapshotAsync(archive, emptyDirectory, token);
+    }
+
     /// <summary>Download the authorized snapshot into this isolated runtime's writable temporary storage.
     /// Existing edits are preserved. A runtime restart can recover from Core's retained snapshot.</summary>
     public async Task<GitWorkspaceResult> MaterializeAsync(GitWorkspaceResult workspace, long assignmentRevision, CancellationToken ct = default)

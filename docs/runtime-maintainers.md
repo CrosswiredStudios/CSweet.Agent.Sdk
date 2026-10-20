@@ -4,6 +4,20 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Runtime maintainer guide
 
+## Private engine checkpoints and research (5.1.0)
+
+`PlatformExecutionCheckpointClient` keeps private engine archives separate from publishable Git
+snapshots. `ExecutionCheckpointStore` in Core uses immutable protected blobs and the existing
+revision-controlled `PluginOperationalState` metadata table. No metadata schema migration is needed.
+Writes serialize with `RuntimeCheckpointGate`; reads and writes require a current work lease and
+source-assignment authorization. Transfers larger than 4 MiB use independently authorized chunks,
+then an atomic manifest commit. Restoration verifies revision and digests; partial staging is never
+a resume point. Cleanup retains referenced generations and reclaims abandoned transfers after a grace period.
+
+`PlatformResearchClient` routes search to configured SearXNG and page reading through the existing
+public web proxy. Research grants do not replace the reviewed `web.fetch.v1`/network policy.
+No provider credential or internal search-service address enters the agent API.
+
 `DeliveryComputeTest` persists its network choice before provisioning: new Node candidates request `outboundOnly` and normal `npm ci`; retained legacy operations keep their exact recorded terms. Missing network authority produces an explicit wait. `DeliveryNodeDependencies.LockfileHash` pins the actual lockfile without enumerating registry tarballs in the networked path. `ValidationScript` keeps verbose npm logs inside the guest and returns a bounded failure tail or the final HTTP marker, preventing successful readiness evidence from being lost to output truncation. Unknown operations still require explicit recovery; they are never silently rerun.
 
 `DeliveryScopeReview` uses `TechnicalReviewJson` for strict bounded correction and rechecks the current stage by its exact ID after generation. Failed schema validation is a processor failure, not product QA evidence. The platform may authorize an owner to restart only a failed technical/manager processor with no open findings and no finding resolutions; the restart requires fresh independent review and never records acceptance.

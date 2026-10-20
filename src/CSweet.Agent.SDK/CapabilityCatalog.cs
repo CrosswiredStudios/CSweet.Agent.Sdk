@@ -8,6 +8,16 @@ namespace CSweet.Agent.SDK;
 /// </summary>
 public static class CapabilityNames
 {
+    public static class Research
+    {
+        public const string Search = "web.research.search.v1";
+        public const string Read = "web.research.read.v1";
+    }
+    public static class ExecutionCheckpoint
+    {
+        public const string Read = "platform.execution-checkpoint.read.v1";
+        public const string Write = "platform.execution-checkpoint.write.v1";
+    }
     public static class Runtime
     {
         public const string PublicInternet = RuntimePermissions.PublicInternet;
@@ -398,6 +408,8 @@ public static class CapabilityCatalog
             ["agent-catalog"] = Set(
                 CapabilityNames.AgentCatalog.Search),
             ["platform"] = Set(
+                CapabilityNames.ExecutionCheckpoint.Read,
+                CapabilityNames.ExecutionCheckpoint.Write,
                 CapabilityNames.Platform.LlmChatStream,
                 CapabilityNames.Platform.BusinessProfileRead,
                 CapabilityNames.Platform.BusinessProfileUpdateExplicit,
@@ -590,6 +602,8 @@ public static class CapabilityCatalog
                 CapabilityNames.GitMerge.Review,
                 CapabilityNames.GitMerge.Authorize),
             ["web"] = Set(
+                CapabilityNames.Research.Search,
+                CapabilityNames.Research.Read,
                 CapabilityNames.Web.Fetch,
                 CapabilityNames.Web.Request,
                 CapabilityNames.Web.Render,

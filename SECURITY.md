@@ -2,6 +2,18 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Security Policy
 
+## Research and private execution checkpoints (5.1.0)
+
+Research requires reviewed grants. Page reading reuses public-address validation, pinned
+connections and redirect authorization. The internal SearXNG URL is host configuration and
+is never agent-selected. Page contents are untrusted source material.
+
+Execution checkpoint capabilities are hidden from model discovery. Core binds storage to the
+authenticated installation and current work lease, checks source assignment authority, protects
+immutable blobs at rest and atomically advances a revisioned manifest. Archive validation rejects
+links, unsafe paths and excessive expansion. Chunking preserves existing Office frame limits.
+Checkpoints, comment replies and restored narratives never grant execution or publication.
+
 ## Compute outbound networking (5.0.4)
 
 New Node readiness requests explicitly select `outboundOnly` and require approved `network.outbound.v1` authority in addition to compute permissions. This is VM internet access, distinct from agent-runtime internet permissions. The provider controls the NAT switch and adapter; agents supply no host networking commands or credentials. Compute broker admission and signed dispatch recheck the full specification and each grant. Ordinary networked guest commands also require current outbound authority. Public endpoints and private/host access are not authorized by this mode. Node installation runs normally inside the VM; no package code runs on the provider host.
