@@ -5,6 +5,27 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class PlatformGitWorkspaceClientTests
 {
     [Fact]
+    public async Task Inspect_history_uses_only_workspace_assignment_and_bounded_page_fields()
+    {
+        var workspace = Guid.NewGuid(); var repository = Guid.NewGuid(); var commit = new string('a', 40);
+        var history = new GitWorkspaceHistory(repository, commit, commit, new('b', 40), "work/task", "main", new('b', 40), true,
+            [new(commit, [new string('b', 40)], "feat(task): implement", false)], 20);
+        var runtime = new AgentTestRuntime().RegisterCapability<InspectGitWorkspaceRequest, GitWorkspaceInspection>(
+            GitWorkspaceCapabilities.Inspect, (request, _) =>
+            {
+                Assert.Equal(workspace, request.WorkspaceId); Assert.Equal(7, request.AssignmentRevision);
+                Assert.True(request.IncludeHistory); Assert.Equal(0, request.HistoryOffset); Assert.Equal(20, request.HistoryLimit);
+                return Task.FromResult(new GitWorkspaceInspection(workspace, "Clean", false, [], []) { History = history });
+            });
+        var observed = (await runtime.CreateContext().Platform.Git.InspectAsync(new(workspace, 7) { IncludeHistory = true })).History!;
+        Assert.Equal(repository, observed.RepositoryId); Assert.Equal(commit, observed.AssignedCommitSha);
+        Assert.Equal(history.PublicationBaseCommitSha, observed.PublicationBaseCommitSha);
+        Assert.Equal(history.PublicationBranch, observed.PublicationBranch); Assert.Equal(20, observed.NextOffset);
+        Assert.Equal(commit, Assert.Single(observed.Commits).Sha);
+        Assert.Equal(history.Commits[0].ParentShas, observed.Commits[0].ParentShas);
+    }
+
+    [Fact]
     public async Task FileLocksPreserveAssignmentAndExposeOwnershipWithoutCredentials()
     {
         var workspace = Guid.NewGuid(); var lockId = Guid.NewGuid().ToString("N");

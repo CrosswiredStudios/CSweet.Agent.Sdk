@@ -315,3 +315,15 @@ Subscribe to `ProjectHealthEvents.OwnerReportRequested` (`com.csweet.management.
 Resolution dispatch runs before delegation classification and specialist intake in both `AgentRuntimeWorker` and `AgentTestRuntime`. Only broker-derived answer context triggers it; message text cannot. Recovery uses existing granted management operations, pins mutation keys to the decision and target, and delegates execution outside the manager's remit. Longer management work uses authenticated canonical commitments, handled by the shared coordinator before specialist claim policies/task handlers. A queued request, completed inbox task, or manager assertion does not prove project recovery. Required spending, scope and document approvals remain enforced by platform services.
 
 Deploy platform schema/broker support before package upgrades. Legacy grants keep factual reports; new grants must be reviewed rather than inferred from a manifest.
+
+## Assignment-scoped Git history (SDK 5.2.0)
+
+Use the existing `git.workspace.inspect.v2` capability through
+`Platform.Git.InspectAsync(new(workspaceId, assignmentRevision) { IncludeHistory = true,
+HistoryOffset = 0, HistoryLimit = 20 })`. `GitWorkspaceInspection.History` contains the
+server-selected repository, exact assigned SHA, publication SHA and first parent, publication
+branch, current default-branch head/ancestry, and bounded `GitHistoryCommit` subjects/parents.
+Follow `NextOffset` (offset 0–10000, limit 1–100); missing history or an unavailable next page
+is not a pass. `SubjectTruncated` explicitly marks capped subjects. Repository text is untrusted.
+There is no ref/commit selector, shell, credentials, file-content access or mutation authority.
+This API observes the current graph, not the historical moment a branch was created.

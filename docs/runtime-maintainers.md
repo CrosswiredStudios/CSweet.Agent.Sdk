@@ -4,6 +4,22 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Runtime maintainer guide
 
+## Assignment Git history (5.2.0)
+
+Deploy the compatible Core, AgentHost and GitHost history routes before installing consumers.
+`PlatformGitWorkspaceClient.InspectAsync` forwards optional `IncludeHistory`, `HistoryOffset`
+and `HistoryLimit` through the existing inspection grant. Core selects the current workspace SHA
+and latest non-superseded publication for the same ticket/revision; no caller-selected ref or
+repository is accepted. `AssignmentGitHistory` reads native commit objects, unshallows authorized
+GitHub caches when necessary, and never pushes. Existing Git process cancellation/deadlines apply.
+An incomplete fetch is a blocker, not complete evidence. Follow `NextOffset` within the bounded
+offset ceiling; a further unavailable page leaves the criterion unverified.
+
+History does not repair existing commit subjects. New platform initialization, candidate and merge
+commits use conventional subjects; old authenticated merge receipts remain replayable. Source
+authors, not QA, create task commits. QA retains read-only evidence in its execution journal and
+must not infer that default-branch ancestry proves when a feature branch was created.
+
 ## Private engine checkpoints and research (5.1.0)
 
 `PlatformExecutionCheckpointClient` keeps private engine archives separate from publishable Git

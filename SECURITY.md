@@ -2,6 +2,16 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Security Policy
 
+## Assignment-scoped Git history (5.2.0)
+
+`InspectGitWorkspaceRequest.IncludeHistory` reuses `git.workspace.inspect.v2`; it grants no
+publication, merge, arbitrary-ref or credential access. Core reauthorizes the current assignment,
+repository and team, and derives the assigned commit and publication from persisted records.
+GitHost returns bounded ancestor metadata only. GitHub access rechecks the active private repository
+and keeps installation tokens inside GitHost. Shallow graphs fail closed rather than implying
+complete history. Subjects are untrusted data and may be truncated; neither missing pages nor
+current default-branch ancestry establish historical branch-creation intent or acceptance.
+
 ## Research and private execution checkpoints (5.1.0)
 
 Research requires reviewed grants. Page reading reuses public-address validation, pinned

@@ -129,7 +129,12 @@ public sealed record GitWorkspaceRefreshResult(
 
 public sealed record InspectGitWorkspaceRequest(
     Guid WorkspaceId,
-    long AssignmentRevision);
+    long AssignmentRevision)
+{
+    public bool IncludeHistory { get; init; }
+    public int HistoryOffset { get; init; }
+    public int HistoryLimit { get; init; } = 20;
+}
 
 public sealed record GitWorkspaceInspection(
     Guid WorkspaceId,
@@ -141,7 +146,13 @@ public sealed record GitWorkspaceInspection(
     public bool HasTrackedChanges { get; init; }
     public IReadOnlyList<string> TrackedChangedFiles { get; init; } = [];
     public string? DiffSummary { get; init; }
+    public GitWorkspaceHistory? History { get; init; }
 }
+
+public sealed record GitHistoryCommit(string Sha, IReadOnlyList<string> ParentShas, string Subject, bool SubjectTruncated);
+public sealed record GitWorkspaceHistory(Guid RepositoryId, string AssignedCommitSha, string PublicationCommitSha,
+    string PublicationBaseCommitSha, string PublicationBranch, string DefaultBranch, string? DefaultBranchHeadSha,
+    bool DefaultBranchHeadIsAncestorOfPublicationBase, IReadOnlyList<GitHistoryCommit> Commits, int? NextOffset);
 
 public sealed record GitValidationResult(
     string Command,
