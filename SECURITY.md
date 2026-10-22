@@ -2,6 +2,14 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Security Policy
 
+## Operating-state validation (5.3.0)
+
+`AgentOperatingStateKey` bounds identifiers without truncating digests; its hashes grant no access
+and are not encryption. `AgentOperatingStateValidation` is shared by the platform handler, hidden
+tool schemas, authoring client and test runtime. Installation/organization scoping and optimistic
+concurrency remain server-enforced. The generic operational-state database column stays wider for
+other record kinds; public agent checkpoint bounds are independent of that storage detail.
+
 ## Assignment-scoped Git history (5.2.0)
 
 `InspectGitWorkspaceRequest.IncludeHistory` reuses `git.workspace.inspect.v2`; it grants no

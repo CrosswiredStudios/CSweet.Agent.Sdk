@@ -31,6 +31,7 @@ public sealed class AgentTestRuntime
             modelVisible,
             async (arguments, token) =>
             {
+                AgentOperatingStateValidation.ValidateInput(capability, arguments);
                 var request = arguments.Deserialize<TRequest>(JsonOptions)
                     ?? throw new InvalidOperationException($"Test capability '{capability}' received an empty request.");
                 return JsonSerializer.SerializeToElement(await handler(request, token), JsonOptions);

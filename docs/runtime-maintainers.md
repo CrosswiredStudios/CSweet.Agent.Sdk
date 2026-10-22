@@ -4,6 +4,16 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Runtime maintainer guide
 
+## Operating-state contract (5.3.0)
+
+Use `AgentOperatingStateValidation.ReadInputSchema` and `WriteInputSchema` in `McpToolCatalog` and
+the same typed `Validate` methods in `PluginOperationsCapabilityHandler`. `PlatformCapabilityClient`
+and `AgentTestRuntime` validate operating-state input too. Never relax production-only bounds to
+compensate for a test fake that accepts arbitrary identifiers. `AgentOperatingStateKey.Create`
+hashes structured identities beneath a bounded scope; generated keys do not grant resource access.
+The hidden tool pattern uses the platform's .NET nonbacktracking regex engine and absolute end
+anchoring to reject trailing newlines. Shared limits do not widen existing state or its authority.
+
 ## Assignment Git history (5.2.0)
 
 Deploy the compatible Core, AgentHost and GitHost history routes before installing consumers.

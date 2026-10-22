@@ -367,10 +367,9 @@ public sealed class PlatformCapabilityClient
         TRequest payload,
         CancellationToken cancellationToken = default)
     {
-        var result = await _tools.InvokeAsync(
-            capability,
-            JsonSerializer.SerializeToElement(payload, JsonOptions),
-            cancellationToken);
+        var arguments = JsonSerializer.SerializeToElement(payload, JsonOptions);
+        AgentOperatingStateValidation.ValidateInput(capability, arguments);
+        var result = await _tools.InvokeAsync(capability, arguments, cancellationToken);
         try
         {
             return result.Deserialize<TResponse>(JsonOptions)

@@ -1,5 +1,35 @@
 # Authoring agents under the operating contract
 
+## Operating-state keys
+
+SDK 5.3.0 provides `AgentOperatingStateKey.Create(scope, identity)` for checkpoint identities:
+
+```csharp
+var stateKey = AgentOperatingStateKey.Create("project-inference-attempt:v1",
+    new { acceptedRevisionId, providerId, modelName });
+```
+
+The result is the versioned scope, a colon, and a full lowercase SHA-256 digest of the identity's
+default System.Text.Json serialization. Keep the identity's property order and serialization shape
+stable. Changing a source revision or model selects a different attempt; keep accepted-result
+identity separate from retry configuration. Do not include secrets. This digest is an identifier,
+not authorization or encryption. Array/structured values preserve component boundaries.
+
+Scopes accept ASCII letters, digits and `._/:-`, with at most 95 characters. Generated keys are at
+most 160 characters. `AgentOperatingStateKey.Validate` also accepts existing valid literal keys
+without changing them. Read an existing accepted checkpoint before attempting fresh inference;
+adopting this builder must preserve or explicitly migrate already saved identities.
+
+`AgentOperatingStateValidation` owns the request schemas and metadata/payload bounds used by the
+platform, typed client and `AgentTestRuntime`, including raw registered test tools. Keys are capped
+at 160 characters, decision fingerprints at 128, and serialized object payloads at 128,000. The
+platform schema patterns target its .NET nonbacktracking validator. Use a separate digest for a
+decision fingerprint instead of assuming every valid state key fits that field. Database storage
+is shared with other operational records and does not define this public request contract.
+
+Tests should use `AgentTestRuntime` and exercise configuration changes, duplicate wakes and saved
+accepted-state reuse. Registering an in-memory dictionary does not bypass operating-state bounds.
+
 Protocol-v2 agent manifests may declare a role policy:
 
 ```json
