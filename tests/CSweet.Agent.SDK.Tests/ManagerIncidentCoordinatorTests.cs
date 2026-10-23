@@ -5,6 +5,56 @@ namespace CSweet.Agent.SDK.Tests;
 
 public sealed class ManagerIncidentCoordinatorTests
 {
+    [Theory]
+    [InlineData("Open", false)]
+    [InlineData("Resolved", true)]
+    public async Task FollowupCompletionRequiresAuthoritativeRecoveryRatherThanSuccessfulModelProse(string status, bool complete)
+    {
+        var self = Guid.NewGuid(); var incident = Incident(self); var decision = Guid.NewGuid(); var turn = Guid.NewGuid();
+        var chat = Guid.NewGuid(); var message = Guid.NewGuid(); var current = incident;
+        var agent = new Manager("creative direction");
+        var runtime = new AgentTestRuntime()
+            .RegisterCapability<ReadIncidentResolution, IncidentResolutionContext>(ProjectHealthCapabilities.Resolution,
+                (_, _) => Task.FromResult(new IncidentResolutionContext(incident, decision, 1, "Resolve the project decision", "a", null, true)
+                    { ConversationId = chat, SourceMessageId = message }))
+            .RegisterCapability<ReadManagementIncidents, ManagementIncidentPage>(ProjectHealthCapabilities.Incidents,
+                (_, _) => { current = incident with { Status = status }; return Task.FromResult(new ManagementIncidentPage([current], null)); })
+            .RegisterCapability<UpdateManagementIncidentPresentation, ManagementIncident>(ProjectHealthCapabilities.Presentation,
+                (_, _) => Task.FromResult(current))
+            .RegisterCapability<JsonElement, JsonElement>(CommunicationCapabilities.ChatCreate, (_, _) => Task.FromResult(JsonSerializer.SerializeToElement(new {
+                chat = new { id = chat, participants = new[] { new { organizationUserId = incident.CurrentRecipientId, employeeType = "Human" } } }
+            })))
+            .RegisterCapability<JsonElement, JsonElement>(CommunicationCapabilities.MessageSend, (_, _) => Task.FromResult(JsonSerializer.SerializeToElement(new { id = Guid.NewGuid(), chatId = chat })));
+        var item = JsonSerializer.Deserialize<CSweet.WorkManagement.Contracts.PersonalTodoItem>("{}")! with {
+            Id = Guid.NewGuid(), SourceConversationId = chat, SourceMessageId = message,
+            CorrelationId = $"incident-resolution:{decision:N}:{turn:N}",
+            WorkContext = new(WorkstreamId: incident.WorkstreamId)
+        };
+        var result = await ManagerIncidentCoordinator.HandlePersonalCommitmentAsync(agent, item, runtime.CreateContext(), default);
+        Assert.Equal(complete, result!.IsCompleted);
+        Assert.Equal(!complete, result.KeepInProgress);
+        Assert.Equal(!complete, result.NextReviewAt.HasValue);
+        Assert.Equal(1, agent.Recoveries); // AlreadyHandled only acknowledges the original click.
+    }
+
+    [Fact]
+    public async Task ClosedFollowupDoesNotReplayRecoveryAndWrongSourceCannotComplete()
+    {
+        var incident = Incident(Guid.NewGuid()) with { Status = "Resolved" }; var decision = Guid.NewGuid(); var turn = Guid.NewGuid();
+        var chat = Guid.NewGuid(); var message = Guid.NewGuid(); var agent = new Manager("creative direction");
+        var runtime = new AgentTestRuntime().RegisterCapability<ReadIncidentResolution, IncidentResolutionContext>(ProjectHealthCapabilities.Resolution,
+            (_, _) => Task.FromResult(new IncidentResolutionContext(incident, decision, 1, "Resolve", "a", null, true)
+                { ConversationId = chat, SourceMessageId = message }));
+        var item = JsonSerializer.Deserialize<CSweet.WorkManagement.Contracts.PersonalTodoItem>("{}")! with {
+            SourceConversationId = chat, SourceMessageId = message, CorrelationId = $"incident-resolution:{decision:N}:{turn:N}",
+            WorkContext = new(WorkstreamId: incident.WorkstreamId)
+        };
+        var valid = await ManagerIncidentCoordinator.HandlePersonalCommitmentAsync(agent, item, runtime.CreateContext(), default);
+        Assert.True(valid!.IsCompleted); Assert.Equal(0, agent.Recoveries);
+        var forged = await ManagerIncidentCoordinator.HandlePersonalCommitmentAsync(agent, item with { SourceMessageId = Guid.NewGuid() }, runtime.CreateContext(), default);
+        Assert.False(forged!.IsCompleted); Assert.False(forged.KeepInProgress); Assert.Equal(0, agent.Recoveries);
+    }
+
     [Fact]
     public void RoutineToolsExcludeReplayApprovalsAndDocumentMutation()
     {

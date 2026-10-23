@@ -4,7 +4,7 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Runtime maintainer guide
 
-## Operating-state contract (5.3.0)
+## Operating-state contract (5.3.1)
 
 Use `AgentOperatingStateValidation.ReadInputSchema` and `WriteInputSchema` in `McpToolCatalog` and
 the same typed `Validate` methods in `PluginOperationsCapabilityHandler`. `PlatformCapabilityClient`
