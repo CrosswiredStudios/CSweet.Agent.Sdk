@@ -34,6 +34,7 @@ public sealed class CapabilityCatalogTests
                 "agent-catalog",
                 "assistant",
                 "calendar",
+                "chief-leadership",
                 "communication",
                 "compute",
                 "delegation",

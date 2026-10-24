@@ -8,6 +8,14 @@ namespace CSweet.Agent.SDK;
 /// </summary>
 public static class CapabilityNames
 {
+    public static class ChiefLeadership
+    {
+        public const string Read = "platform.chief-leadership.read.v1";
+        public const string Present = "platform.chief-leadership.present-focus.v1";
+        public const string Capture = "platform.chief-leadership.capture-focus.v1";
+        public const string Assess = "platform.chief-leadership.assess.v1";
+        public const string Control = "platform.chief-leadership.control.v1";
+    }
     public static class Research
     {
         public const string Search = "web.research.search.v1";
@@ -391,6 +399,7 @@ public static class CapabilityCatalog
     public static IReadOnlyDictionary<string, IReadOnlySet<string>> ByService { get; } =
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
         {
+            ["chief-leadership"] = ChiefLeadershipCapabilities.All,
             ["project-health"] = Set(ProjectHealthCapabilities.Read, ProjectHealthCapabilities.Diagnostics, ProjectHealthCapabilities.Incidents,
                 ProjectHealthCapabilities.Report, ProjectHealthCapabilities.Forward, ProjectHealthCapabilities.Presentation, ProjectHealthCapabilities.Resolution),
             ["compute"] = Set(CapabilityNames.Compute.Provision, CapabilityNames.Compute.Read, CapabilityNames.Compute.List,

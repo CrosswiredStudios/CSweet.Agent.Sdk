@@ -24,8 +24,8 @@ public static class ConnectorContractValidator
         var enhanced = manifest.Kind == "connector" || dependencies.Count > 0 || operations.Length > 0 ||
             manifest.Connections.Any(x => x.Provider is not null) || manifest.Setup?.Assistance is not null ||
             manifest.Setup?.Flows.SelectMany(x => x.Steps).Any(x => x.AccountOptions is not null) == true;
-        if (enhanced && manifest.Protocol?.MinimumVersion is not ("2.1" or "2.2" or "2.3"))
-            errors.Add("Connector contracts and dependencies require protocol minimumVersion 2.1, 2.2 or 2.3.");
+        if (enhanced && manifest.Protocol?.MinimumVersion is not ("2.1" or "2.2" or "2.3" or "2.4"))
+            errors.Add("Connector contracts and dependencies require protocol minimumVersion 2.1 through 2.4.");
         if (manifest.Setup?.Assistance is { } assistance &&
             (manifest.Kind != "agent" || assistance.Profile != "conversation.v1" || !manifest.Setup.Required ||
              manifest.WebAccess.Mode != "None" || manifest.Runtime.WorkspaceAccess != "None"))
@@ -54,8 +54,8 @@ public static class ConnectorContractValidator
                 errors.Add("Connectors use only declared host-materialized operations, not raw credentials, network, or transitive dependencies.");
             if (manifest.RolePolicy is not null || manifest.Requires.Count > 0)
                 errors.Add("Deterministic connectors cannot request agent roles or platform/model tools.");
-            if (manifest.Connections.Count != 1 || !manifest.Runtime.SupportsMultipleInstallations)
-                errors.Add("A connector must declare exactly one connection and support separate installations.");
+            if (manifest.Connections.Count != 1 || manifest.Accounts is null && !manifest.Runtime.SupportsMultipleInstallations)
+                errors.Add("A connector must declare exactly one connection and support separate installations or enterprise account management.");
             if (operations.Length == 0 || manifest.Provides.Any(x => !operations.Any(o => o.Capability == x.Name)))
                 errors.Add("Every connector capability must have a closed HTTP operation mapping.");
         }
@@ -131,9 +131,9 @@ public static class ConnectorContractValidator
             if (http.SecretResponseFields.Any(x => !Pointer.IsMatch(x.Replace("/*/", "/0/", StringComparison.Ordinal))))
                 errors.Add("Secret response fields require JSON pointers with optional array wildcards.");
             if (http.ResourceChecks.Count > 8) errors.Add("An operation can check at most eight resource relationships.");
-            if (http.ResponseResourcePointers.Count > 0 && (manifest.Protocol?.MinimumVersion is not ("2.2" or "2.3") || http.Bootstrap))
+            if (http.ResponseResourcePointers.Count > 0 && (manifest.Protocol?.MinimumVersion is not ("2.2" or "2.3" or "2.4") || http.Bootstrap))
                 errors.Add("Response resource binding requires protocol 2.2 and a confirmed, non-bootstrap connection.");
-            if (http.IfMatchInput is { } etag && (manifest.Protocol?.MinimumVersion != "2.3" || http.Bootstrap || http.MediaInput is not null ||
+            if (http.IfMatchInput is { } etag && (manifest.Protocol?.MinimumVersion is not ("2.3" or "2.4") || http.Bootstrap || http.MediaInput is not null ||
                 http.Method is not ("PUT" or "PATCH" or "DELETE") || operation.Effect == "read" || etag.Length > 256 ||
                 !Pointer.IsMatch(etag) || etag.Any(char.IsControl) || !RequiredBoundedString(operation.InputSchema, etag)))
                 errors.Add("If-Match requires protocol 2.3, a non-media conditional mutation and a required bounded string input.");
@@ -147,6 +147,7 @@ public static class ConnectorContractValidator
                 string.IsNullOrWhiteSpace(check.ResourceQuery) || check.QueryConstants.ContainsKey(check.ResourceQuery))
                 errors.Add("Resource checks require an approved origin and exact input/owner pointers.");
         }
+        errors.AddRange(PluginAccountContractValidator.Validate(manifest));
         return errors;
     }
 

@@ -35,6 +35,9 @@ internal static class TechnicalReviewJson
                 return node;
             }
         });
+        // Every review requires a nonnull object below. Reflection-exported reference
+        // roots otherwise allow null, which structured-output providers reject.
+        schema["type"] = "object";
         var options = new ChatOptions { MaxOutputTokens = maxOutputTokens,
             ResponseFormat = ChatResponseFormat.ForJsonSchema(JsonSerializer.SerializeToElement(schema), "technical_review") };
         var originalMessages = messages.ToArray();

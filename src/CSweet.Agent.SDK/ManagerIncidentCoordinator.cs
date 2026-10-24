@@ -42,6 +42,8 @@ public static class ManagerIncidentCoordinator
         if (item.SourceConversationId != resolution.ConversationId || item.SourceMessageId != resolution.SourceMessageId ||
             item.WorkContext?.WorkstreamId != resolution.Incident.WorkstreamId)
             return PersonalTodoResult.Blocked("The manager recovery commitment's source or project changed.");
+        if (resolution.Incident.Status is "Resolved" or "Superseded")
+            return PersonalTodoResult.Completed("The current incident is " + resolution.Incident.Status + ". Its recorded disposition was verified; historical recovery actions were not replayed.");
         var outcome = await agent.ExecuteIncidentResolutionAsync(resolution with { IsFollowUp = true, Commitment = item }, context, token);
         var current = (await context.Platform.ProjectHealth.ReadIncidentsAsync(new(IncidentId: resolution.Incident.Id), token)).Incidents.Single();
         if (current.Status == "Open")
@@ -49,7 +51,12 @@ public static class ManagerIncidentCoordinator
                 $"resolution-followup:{decision:N}:{item.Id:N}:{item.Revision}", ResolutionDecisionId: decision, ResolutionOutcome: outcome), token);
         await context.Platform.Communication.SendDirectMessageAsync(current.CurrentRecipientId, outcome,
             $"incident-followup:{decision:N}:{item.Id:N}:{item.Revision}", token);
-        return PersonalTodoResult.Completed(outcome);
+        // Model prose and a successful callback are not evidence that the requested recovery finished.
+        // The platform closes incidents from authoritative work/decision state. Keep ownership until then.
+        return current.Status is "Resolved" or "Superseded"
+            ? PersonalTodoResult.Completed(outcome)
+            : PersonalTodoResult.WaitingUntil(DateTimeOffset.UtcNow.AddMinutes(15),
+                "Recovery actions are recorded, but the current incident has not cleared. " + outcome);
     }
 
     public static IncidentOwnerReport? FactualFallback(ManagerIncidentContext review)

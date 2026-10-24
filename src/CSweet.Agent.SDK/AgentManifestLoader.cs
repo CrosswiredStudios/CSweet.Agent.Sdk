@@ -93,7 +93,7 @@ public static class AgentManifestLoader
         ValidateWorkstreamProfiles(manifest.WorkstreamProfiles, errors);
         ValidateToolchainAdapters(manifest.ToolchainAdapters, errors);
         if (manifest.Protocol is null ||
-            manifest.Protocol.MinimumVersion is not ("2.0" or "2.1" or "2.2" or "2.3") ||
+            manifest.Protocol.MinimumVersion is not ("2.0" or "2.1" or "2.2" or "2.3" or "2.4") ||
             !manifest.Protocol.MaximumVersion.StartsWith("2.", StringComparison.Ordinal))
         {
             errors.Add("Executable plugins must require MCP runtime protocol 2.0 through 2.x.");
@@ -159,6 +159,7 @@ public static class AgentManifestLoader
         Dependencies = manifest.Dependencies ?? [],
         FileTransferTargets = manifest.FileTransferTargets ?? [],
         Setup = manifest.Setup,
+        Accounts = manifest.Accounts,
         WebAccess = manifest.WebAccess ?? new AgentWebAccessManifest(),
         Ui = manifest.Ui ?? [],
         Catalog = manifest.Catalog ?? new AgentCatalogMetadata(),

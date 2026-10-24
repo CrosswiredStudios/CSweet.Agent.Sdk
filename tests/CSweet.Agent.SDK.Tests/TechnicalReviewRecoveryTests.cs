@@ -34,9 +34,29 @@ public sealed class TechnicalReviewRecoveryTests
         Assert.Equal(621, Assert.Single(result.Criteria).Evidence.Length);
         var format = Assert.IsType<ChatResponseFormatJson>(Assert.Single(client.Options).ResponseFormat);
         var schema = format.Schema!.Value;
+        Assert.Equal(JsonValueKind.String, schema.GetProperty("type").ValueKind);
+        Assert.Equal("object", schema.GetProperty("type").GetString());
         Assert.Equal(16000, schema.GetProperty("properties").GetProperty("summary").GetProperty("maxLength").GetInt32());
         Assert.Contains("\"maxItems\":16", schema.GetRawText());
         Assert.Equal(32768, client.Options[0].MaxOutputTokens);
+    }
+
+    private sealed record NullableReviewNote(string? Note);
+
+    [Fact]
+    public async Task Object_root_does_not_remove_nested_nullability_or_accept_a_null_review()
+    {
+        var client = new Client((_, _) => "{\"note\":null}");
+        var value = await TechnicalReviewJson.ReadAsync<NullableReviewNote>(client, [new(ChatRole.User, "Review evidence")],
+            "nullable note", _ => { }, default);
+        Assert.Null(value.Note);
+        var schema = Assert.IsType<ChatResponseFormatJson>(client.Options[0].ResponseFormat).Schema!.Value;
+        Assert.Equal("object", schema.GetProperty("type").GetString());
+        Assert.Contains("null", schema.GetProperty("properties").GetProperty("note").GetRawText());
+        var invalid = new Client((_, _) => "null");
+        await Assert.ThrowsAsync<InvalidOperationException>(() => TechnicalReviewJson.ReadAsync<NullableReviewNote>(invalid,
+            [new(ChatRole.User, "Review evidence")], "null review", _ => { }, default));
+        Assert.Equal(4, invalid.Calls);
     }
 
     [Fact]

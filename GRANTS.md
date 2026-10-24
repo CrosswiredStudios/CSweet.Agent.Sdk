@@ -1,5 +1,27 @@
 # Generated capability reference
 
+## Enterprise account declarations (SDK 5.5.0)
+
+Protocol 2.4 `accounts.permissions` groups existing exact connector operations for native
+business-access review. They introduce no implicit grants or model tools. Provider consent,
+business resource access and each consuming agent's binding are separate, host-enforced checks.
+Read-only bootstrap discovery and identity capabilities cannot be granted through these groups.
+
+## Chief leadership (SDK 5.4.0)
+
+These capabilities are hidden from models and restricted to the currently assigned Chief.
+Manifest requests require reviewed platform grants. They do not grant hiring or spending authority.
+
+| Capability | Typed operation |
+|---|---|
+| `platform.chief-leadership.read.v1` | `Platform.ChiefLeadership.ReadAsync`: bounded current focus, coverage and recovery |
+| `platform.chief-leadership.present-focus.v1` | `PresentAsync`: bind a native focus decision to its purpose and source revision |
+| `platform.chief-leadership.capture-focus.v1` | `CaptureAsync`: authenticate the immutable owner answer or current explicit priority |
+| `platform.chief-leadership.assess.v1` | `AssessAsync`: retain evidence and atomically link required work or a recommendation |
+| `platform.chief-leadership.control.v1` | `ControlAsync`: authenticate a current owner pause/resume instruction |
+
+`ChiefLeadershipCapabilities.Changed` is a durable wake hint. Re-read current authorized state.
+
 ## Research and private execution checkpoints (SDK 5.1.0)
 
 | Capability | Typed operation and authority |

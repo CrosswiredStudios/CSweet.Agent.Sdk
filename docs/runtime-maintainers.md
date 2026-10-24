@@ -4,7 +4,33 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Runtime maintainer guide
 
-## Operating-state contract (5.3.0)
+## Enterprise plugin account declarations (5.5.0)
+
+`ConnectorContractValidator` includes `PluginAccountContractValidator`. Mirror the `accounts`
+DTO in host contracts and use the shared validator when importing and executing. The JSON
+schema and typed DTOs reject remote/executable UI extensions. Deploy protocol 2.4 only after
+enterprise account/resource storage, per-business grants, per-consumer bindings, OAuth context
+and every broker path enforce those identities and revisions. Merely accepting the manifest
+version is unsafe. Legacy organization connectors remain supported separately.
+
+Persist setup per connection attempt, not on the shared installation. Discover through the
+declared read-only bootstrap operation with bounded pagination. Filter business views before
+serializing counts/names. Bind approval to the reviewed package digest and profile, never just
+a claimed publisher. Disconnect must fence all consumers before durable revocation/purge;
+local business-grant revocation must not revoke a shared provider authorization.
+
+## Chief leadership contract (5.4.0)
+
+Deploy Core's additive leadership tables and AgentHost's five hidden leadership handlers before
+requiring the new grants in Chief. `PlatformChiefLeadershipClient` forwards stable operation keys,
+expected focus/assessment revisions and input fingerprints. Reads support bounded continuation by
+assessment identity. Core derives organization/installation scope from the authenticated session;
+only the active assigned Chief may use this surface. Decision text is a wake hint. Native answer
+identity and an authenticated owner turn establish consent. Assessments never widen hiring authority.
+Treat `ChiefLeadershipCapabilities.Changed` as a wake hint and read current state before acting.
+Platform proactive execution defaults off. Pause for rollback and retain unresolved records.
+
+## Operating-state contract (5.3.1)
 
 Use `AgentOperatingStateValidation.ReadInputSchema` and `WriteInputSchema` in `McpToolCatalog` and
 the same typed `Validate` methods in `PluginOperationsCapabilityHandler`. `PlatformCapabilityClient`
