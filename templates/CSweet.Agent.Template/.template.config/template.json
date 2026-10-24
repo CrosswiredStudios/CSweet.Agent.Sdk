@@ -60,9 +60,9 @@
     "SdkVersion": {
       "type": "parameter",
       "datatype": "string",
-      "defaultValue": "5.4.0",
+      "defaultValue": "5.4.1",
       "description": "Pinned CSweet.Agent.SDK NuGet version.",
-      "replaces": "5.4.0"
+      "replaces": "5.4.1"
     }
   },
   "sources": [
