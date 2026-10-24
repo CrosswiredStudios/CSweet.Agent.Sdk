@@ -1,4 +1,42 @@
-# Protocol 2.1/2.2/2.3 connector contracts (SDK 3.46.1)
+# Protocol 2.1–2.4 connector contracts (SDK 5.5.0)
+
+## Enterprise accounts and resources (protocol 2.4)
+
+An optional top-level `accounts` declaration selects the fixed native
+`accounts-and-resources.v1` management layout. It names one connection declaration,
+an existing setup flow, a read-only bootstrap discovery capability, bounded JSON
+projections, business permission groups, public policy links and lifecycle intervals.
+The plugin supplies provider terminology; the host supplies all rendering and controls.
+No scripts, HTML, redirects, expressions or remote UI extensions are accepted.
+Use minimum protocol `2.4`; older hosts must reject these semantics. Earlier connector
+contracts retain their installation behavior.
+
+An enterprise account group is not an OAuth token. One group can contain independently
+authorized resource connections. Import only resources proven by authenticated discovery;
+never infer parent identity from an email address, display name or an account-picker hint.
+If an `identity` bootstrap operation is declared, its immutable subject is evidence from
+the reviewed authenticated provider endpoint, not an ID token decoded without validation.
+Without that evidence, grouping must be explicitly labeled administrative rather than
+claiming a provider-verified parent. Subject/project revocation can affect multiple tokens.
+
+Pagination requires both `pageTokenInput` and `resourceProjection.nextPageTokenPointer`.
+The input must be optional, bounded to 2048 characters and mapped to the discovery query.
+The host must enforce maximum resource/page budgets and detect repeated continuation tokens.
+Partial discovery is not a complete inventory and must never widen access or remove resources.
+
+`permissions` map friendly labels to exact normal-operation capabilities and scope-set IDs.
+They do not grant access, request consent or expose bootstrap operations to a model.
+Provider consent, account/business grants and consumer bindings remain independent.
+Whole-account grants covering future imports require explicit acknowledgement; selected-resource
+grants never expand. Consumer bindings freeze a narrower resource and grant revision.
+All reads, effects, media chunks and result delivery must recheck current authority.
+
+Install completion and connecting an account are separate. `setup.required: false` permits
+an installed enterprise integration with zero accounts; `accounts.setupFlow` starts a new
+resumable account connection when an authorized user selects Connect Account. The host must
+not mark every account unavailable merely because another account needs reauthorization.
+These declarations are not a statement that a particular host implements protocol 2.4:
+hosts must reject installation until persistence, OAuth, grants and execution enforcement exist.
 
 ## Conditional changes (protocol 2.3)
 
@@ -64,7 +102,7 @@ Use durable personal work while waiting; do not keep an agent turn alive. Indete
 must reconcile or visibly block, never retry under a fresh key. Credentials, account selection,
 approval authority, request destinations and upload URLs are not arguments to this API.
 
-Connector packages are deterministic integration providers, not employees. Declare
+Legacy protocol 2.1–2.3 connector packages are deterministic integration providers, not employees. Declare
 `kind: connector`, one organization account connection, protocol minimum `2.1`,
 multiple installations, and closed `providerOperations[].http` mappings. They cannot
 request model/platform tools, raw network access, direct credentials, filesystem

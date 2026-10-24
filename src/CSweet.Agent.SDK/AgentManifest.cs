@@ -42,6 +42,7 @@ public sealed class AgentManifest
     public IReadOnlyList<AgentProviderOperationDeclaration> ProviderOperations { get; init; } = [];
     public IReadOnlyList<AgentFileTransferTargetDeclaration> FileTransferTargets { get; init; } = [];
     public AgentSetupManifest? Setup { get; init; }
+    public PluginAccountManagement? Accounts { get; init; }
     public AgentWebAccessManifest WebAccess { get; init; } = new();
     public IReadOnlyList<AgentUiContribution> Ui { get; init; } = [];
     public AgentCatalogMetadata Catalog { get; init; } = new();

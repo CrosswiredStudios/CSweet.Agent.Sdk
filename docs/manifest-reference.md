@@ -1,5 +1,11 @@
 # Manifest v2 reference
 
+SDK 5.5.0 adds provider-neutral enterprise `accounts` management for protocol 2.4 connectors.
+See [enterprise account contracts](connectors.md) for the native layout, bounded discovery,
+permission groups and policy links. Account setup uses `setup.required: false` and an explicit
+OAuth step in `accounts.setupFlow`; installation does not connect a user or grant business access.
+Older hosts must reject unsupported account semantics.
+
 SDK 3.35.0 adds protocol 2.1 [connector and dependency contracts](connectors.md).
 These require explicit host enforcement; declarations are not authority.
 

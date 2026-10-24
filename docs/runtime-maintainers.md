@@ -4,6 +4,21 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Runtime maintainer guide
 
+## Enterprise plugin account declarations (5.5.0)
+
+`ConnectorContractValidator` includes `PluginAccountContractValidator`. Mirror the `accounts`
+DTO in host contracts and use the shared validator when importing and executing. The JSON
+schema and typed DTOs reject remote/executable UI extensions. Deploy protocol 2.4 only after
+enterprise account/resource storage, per-business grants, per-consumer bindings, OAuth context
+and every broker path enforce those identities and revisions. Merely accepting the manifest
+version is unsafe. Legacy organization connectors remain supported separately.
+
+Persist setup per connection attempt, not on the shared installation. Discover through the
+declared read-only bootstrap operation with bounded pagination. Filter business views before
+serializing counts/names. Bind approval to the reviewed package digest and profile, never just
+a claimed publisher. Disconnect must fence all consumers before durable revocation/purge;
+local business-grant revocation must not revoke a shared provider authorization.
+
 ## Chief leadership contract (5.4.0)
 
 Deploy Core's additive leadership tables and AgentHost's five hidden leadership handlers before

@@ -1,5 +1,12 @@
 # Generated capability reference
 
+## Enterprise account declarations (SDK 5.5.0)
+
+Protocol 2.4 `accounts.permissions` groups existing exact connector operations for native
+business-access review. They introduce no implicit grants or model tools. Provider consent,
+business resource access and each consuming agent's binding are separate, host-enforced checks.
+Read-only bootstrap discovery and identity capabilities cannot be granted through these groups.
+
 ## Chief leadership (SDK 5.4.0)
 
 These capabilities are hidden from models and restricted to the currently assigned Chief.

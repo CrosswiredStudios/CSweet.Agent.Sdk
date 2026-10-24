@@ -2,6 +2,17 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Security Policy
 
+## Enterprise plugin accounts (5.5.0 / protocol 2.4)
+
+Account-management declarations are untrusted data and confer no enterprise, business,
+credential or consumer authority. The native fixed layout rejects executable extensions.
+Discovery/identity operations are reviewed authenticated bootstrap reads; business permission
+groups may expose only normal operations with matching scopes. Email and display names are
+not immutable account identities. Hosts must freeze and recheck account/resource/authorization,
+business grant and consumer binding revisions at every request and result boundary. Existing
+2.0–2.3 hosts must reject 2.4 rather than reuse organization-installation assumptions.
+Revoking one business grant must not revoke credentials shared with other businesses.
+
 ## Chief leadership (5.4.0)
 
 `Platform.ChiefLeadership` carries typed data through five separately granted, model-hidden

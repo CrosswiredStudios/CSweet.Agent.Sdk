@@ -263,7 +263,7 @@ public sealed class ConnectorContractTests
     private static JsonNode Http(JsonNode node) => node["providerOperations"]![0]!["http"]!;
     private static IReadOnlyList<string> Validate(JsonNode node) => ConnectorContractValidator.Validate(
         node.Deserialize<AgentManifest>(new JsonSerializerOptions(JsonSerializerDefaults.Web))!);
-    private static JsonNode Manifest() => JsonNode.Parse("""
+    internal static JsonNode Manifest() => JsonNode.Parse("""
         {
           "kind":"connector", "id":"com.example.connector", "name":"Example", "version":"0.1.0",
           "publisher":{"id":"com.example","name":"Example"},
