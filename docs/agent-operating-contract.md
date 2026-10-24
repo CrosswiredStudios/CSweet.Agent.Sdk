@@ -2,7 +2,7 @@
 
 ## Operating-state keys
 
-SDK 5.3.1 provides `AgentOperatingStateKey.Create(scope, identity)` for checkpoint identities:
+SDK 5.4.0 provides `AgentOperatingStateKey.Create(scope, identity)` for checkpoint identities:
 
 ```csharp
 var stateKey = AgentOperatingStateKey.Create("project-inference-attempt:v1",

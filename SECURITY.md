@@ -2,6 +2,15 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Security Policy
 
+## Chief leadership (5.4.0)
+
+`Platform.ChiefLeadership` carries typed data through five separately granted, model-hidden
+capabilities. Callers supply no organization or installation identity. Core revalidates the
+current responsible Chief, immutable native decision, active human owner, conversation, purpose
+and revisions. Model interpretations and English decision labels confer no authority. Hiring
+retains existing delegation, configuration and spending checks. Native answers, focus history,
+source-linked work and operation receipts persist across replacement; delegation does not transfer.
+
 ## Operating-state validation (5.3.0)
 
 `AgentOperatingStateKey` bounds identifiers without truncating digests; its hashes grant no access
