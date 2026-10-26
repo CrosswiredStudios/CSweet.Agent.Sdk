@@ -438,3 +438,8 @@ The provider validates both recorded grants at dispatch and rechecks current aut
 ## Delegation project context (5.5.1)
 
 `DelegationRuntime.BindExecutionContext` restores the current authorized delegation's project, team and task context before nested classification and native callbacks. Both the incoming message and event envelope carry the same context. Conflicting organization, project, team or task identities fail closed. Metadata restoration creates no execution, artifact, board or repository grant; every capability still reauthorizes its current resource.
+
+
+## Pre-integration candidate review (5.5.2)
+
+`BranchDiffTechnicalReview.StageBoundary` applies the same candidate-stage responsibility contract to every diff page and final synthesis. Criteria remain verbatim; review evidence distinguishes candidate implementation/validation from downstream integration, independent QA and delivery. Missing integration alone cannot create a circular source-review gate. Real code and validation defects still reject the candidate. `BranchDiffTechnicalReview.Policy` participates in `DeliveryTaskTechnicalReview` checkpoint identities, so pages assessed under an earlier review policy are not reused as current-policy evidence. Candidate/target authorization and final rereads are unchanged.
