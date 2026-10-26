@@ -77,6 +77,8 @@ internal static class DelegationRuntime
             if (execution is null) return true;
             if (ExecutionStatus(execution) is "Cancelled" or "Completed" or "Declined" or "AttentionRequired") return true;
             if (execution.ExecutionHandled) return true;
+            incoming = BindExecutionContext(execution, incoming, context);
+            envelope = envelope with { Data = JsonSerializer.SerializeToElement(incoming, Json), WorkContext = incoming.WorkContext };
             var nested = await agent.ClassifyDelegationIntentAsync(incoming, context, token);
             if (nested.Kind != "Other")
             {
@@ -105,6 +107,25 @@ internal static class DelegationRuntime
         if (intent.Kind == "Other") return false;
         await PublishIntent(intent, incoming, chat, context, token);
         return true;
+    }
+
+    internal static CommunicationMessageReceivedEvent BindExecutionContext(DelegationSnapshot execution,
+        CommunicationMessageReceivedEvent incoming, AgentRuntimeContext context)
+    {
+        // Current authorized delegation state is authoritative; a chat transport may omit its project context.
+        if (execution.WorkContext?.WorkstreamId is not { } project) return incoming;
+        if (project == Guid.Empty || !Guid.TryParse(context.BusinessId, out var organization))
+            throw new InvalidOperationException("Delegation execution requires a valid organization and project.");
+        var source = execution.WorkContext;
+        var prior = incoming.WorkContext;
+        if (prior is not null && (prior.OrganizationId != organization || prior.WorkstreamId != project ||
+            source.TeamId.HasValue && prior.TeamId.HasValue && source.TeamId != prior.TeamId ||
+            source.WorkItemId.HasValue && prior.WorkItemId.HasValue && source.WorkItemId != prior.WorkItemId))
+            throw new InvalidOperationException("Delegation execution context conflicts with the current authorized delegation.");
+        var bound = prior ?? new AgentWorkContext(organization, project, source.TeamId, null,
+            source.WorkItemId, null, null, execution.Id, null, null);
+        return incoming with { WorkContext = bound with {
+            TeamId = source.TeamId ?? bound.TeamId, WorkItemId = source.WorkItemId ?? bound.WorkItemId } };
     }
 
     private static async Task<string> PublishIntent(DelegationIntent intent, CommunicationMessageReceivedEvent incoming,

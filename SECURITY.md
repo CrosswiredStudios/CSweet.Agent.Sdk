@@ -2,7 +2,7 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Security Policy
 
-## Enterprise plugin accounts (5.5.0 / protocol 2.4)
+## Enterprise plugin accounts (5.5.1 / protocol 2.4)
 
 Account-management declarations are untrusted data and confer no enterprise, business,
 credential or consumer authority. The native fixed layout rejects executable extensions.
@@ -393,3 +393,5 @@ Owner input requires an explicit requirement; a failure or investigation alone i
 `ExecuteComputeCommandRequest.NodeDependencies` binds public npm tarballs to the exact candidate lockfile. `DeliveryNodeDependencies.Read` accepts npm lockfiles 2/3, registry.npmjs.org HTTPS tarballs and SHA-512 integrity; unsupported registries, local/git dependencies and conflicting or missing integrity fail closed. This optional operation requires current installation and scoped `compute.execute.v1` plus `network.outbound.v1` authority. Declarations are requests, never grants. An npm-only scoped grant does not authorize general VM networking or a public endpoint.
 
 The provider validates both recorded grants at dispatch and rechecks current authority during download/transfer and before execution. It rejects private/host/metadata DNS destinations, redirects, credentials, unbounded bytes and integrity mismatches. Packages are never extracted or executed on the provider host. Verified tarballs populate a guest-only offline npm cache; `npm ci` checks the actual source lockfile before tests/build. Unknown command outcomes remain fenced and cannot silently replay. Installation is not acceptance: exact-source tests, web build, HTTP proof and independent review still follow.
+
+Delegation execution context is restored only from a freshly authorized delegation read. Transport context cannot replace its organization, project, team or task binding. Missing transport metadata may be completed from that read; this creates no new capability or resource authority.

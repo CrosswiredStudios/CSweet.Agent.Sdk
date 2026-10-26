@@ -4,7 +4,7 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # C-Sweet Agent SDK
 
-SDK 5.5.0 adds provider-neutral enterprise account-management declarations for protocol 2.4.
+SDK 5.5.1 adds provider-neutral enterprise account-management declarations for protocol 2.4.
 Plugins describe native account/resource pages, discovery, policy links and permission groups;
 the host remains responsible for OAuth, account/business grants and execution enforcement.
 See [connector contracts](docs/connectors.md). Declarations alone do not enable a host.
@@ -72,7 +72,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.5.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.5.1 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -89,7 +89,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.5.0
+  --SdkVersion 5.5.1
 cd ResearchAgent
 dotnet test
 ```
@@ -97,7 +97,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.5.0
+dotnet add package CSweet.Agent.SDK --version 5.5.1
 ```
 
 ```csharp
