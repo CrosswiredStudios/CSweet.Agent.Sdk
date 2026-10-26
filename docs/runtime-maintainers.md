@@ -4,7 +4,7 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Runtime maintainer guide
 
-## Enterprise plugin account declarations (5.5.0)
+## Enterprise plugin account declarations (5.5.1)
 
 `ConnectorContractValidator` includes `PluginAccountContractValidator`. Mirror the `accounts`
 DTO in host contracts and use the shared validator when importing and executing. The JSON
@@ -434,3 +434,7 @@ cannot certify a queued/running retry; the platform derives it from correlated e
 `ExecuteComputeCommandRequest.NodeDependencies` binds public npm tarballs to the exact candidate lockfile. `DeliveryNodeDependencies.Read` accepts npm lockfiles 2/3, registry.npmjs.org HTTPS tarballs and SHA-512 integrity; unsupported registries, local/git dependencies and conflicting or missing integrity fail closed. This optional operation requires current installation and scoped `compute.execute.v1` plus `network.outbound.v1` authority. Declarations are requests, never grants. An npm-only scoped grant does not authorize general VM networking or a public endpoint.
 
 The provider validates both recorded grants at dispatch and rechecks current authority during download/transfer and before execution. It rejects private/host/metadata DNS destinations, redirects, credentials, unbounded bytes and integrity mismatches. Packages are never extracted or executed on the provider host. Verified tarballs populate a guest-only offline npm cache; `npm ci` checks the actual source lockfile before tests/build. Unknown command outcomes remain fenced and cannot silently replay. Installation is not acceptance: exact-source tests, web build, HTTP proof and independent review still follow.
+
+## Delegation project context (5.5.1)
+
+`DelegationRuntime.BindExecutionContext` restores the current authorized delegation's project, team and task context before nested classification and native callbacks. Both the incoming message and event envelope carry the same context. Conflicting organization, project, team or task identities fail closed. Metadata restoration creates no execution, artifact, board or repository grant; every capability still reauthorizes its current resource.

@@ -1,6 +1,6 @@
 # Generated capability reference
 
-## Enterprise account declarations (SDK 5.5.0)
+## Enterprise account declarations (SDK 5.5.1)
 
 Protocol 2.4 `accounts.permissions` groups existing exact connector operations for native
 business-access review. They introduce no implicit grants or model tools. Provider consent,
