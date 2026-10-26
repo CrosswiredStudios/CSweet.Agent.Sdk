@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj
+      - releases/*.md
     tags:
       - "v*.*.*"
   workflow_dispatch:
