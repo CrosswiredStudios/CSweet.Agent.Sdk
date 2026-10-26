@@ -10,7 +10,14 @@ namespace CSweet.Agent.SDK;
 internal static class BranchDiffTechnicalReview
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-    internal const string Policy = "bounded-review-2026-10-15";
+    internal const string Policy = "candidate-review-2026-10-26";
+    internal const string StageBoundary = "This is pre-integration candidate source review. Evaluate whether the exact candidate is technically ready for platform integration, not whether integration has already happened. " +
+        "Keep every supplied acceptance criterion verbatim and assess its candidate-code and supplied-validation obligations at this stage. " +
+        "For criteria combining implementation with committed/integrated/delivered lifecycle state, explicitly separate the evidenced candidate obligations from downstream integration and QA obligations in the evidence text. " +
+        "A satisfied review criterion means its candidate obligations are evidenced; it never certifies that the platform has merged the candidate or that independent QA or delivery has completed. " +
+        "Missing target-branch integration alone is not a code-review defect and must not block this pre-integration stage. " +
+        "Reject actual defects, incompatible target changes, or missing required candidate validation; do not waive scope, assume unseen evidence, or invent test runs. " +
+        "Platform integration, exact integrated-revision verification, independent QA and final acceptance remain mandatory downstream gates.";
     internal sealed record Issue(string Path, string Problem, string Evidence, string Correction);
     internal sealed record PageContent(string Summary, IReadOnlyList<Issue> BlockingFindings,
         IReadOnlyList<string> Observations, IReadOnlyList<string> Questions);
@@ -74,7 +81,7 @@ internal static class BranchDiffTechnicalReview
                     "Complete response <=128000 characters; summary <=16000; at most 16 blocking findings (path <=2048, other fields <=16000 each); at most 16 observations and 16 questions, each <=16000. " +
                     "A blocker is a concrete defect or unmet current acceptance criterion with visible evidence. Optional hardening, stylistic preferences, " +
                     "'no defect' and a function on another page are NOT blocking findings. Put cross-page uncertainty in questions. " +
-                    "Do not demand later release, product-wide performance certification or independent QA before this task review. " +
+                    StageBoundary + " Do not demand later release or product-wide performance certification before this task review. " +
                     "The SDK binds commits and offsets. Do not return identity fields or invent test runs. A page cannot approve or merge."),
                  new(ChatRole.User, JsonSerializer.Serialize(new { Reference = metadata, Page = page }, Json))],
                 $"diff page offset {offset}", ValidatePage, ct);
@@ -104,7 +111,7 @@ internal static class BranchDiffTechnicalReview
                 "Resolution needs actual contrary or cross-file evidence; never dismiss a real defect merely to approve. Deduplicate equivalent blockers with an evidenced reason. " +
                 "Observations are nonblocking; answer cross-page questions from the complete evidence. Cover EVERY exact supplied acceptance criterion once " +
                 "(evidence <=16000 and 1–512 reviewed page offsets). Do not invent independent test runs. Approve only when all criteria are satisfied and no unresolved/new blocker remains. " +
-                "The SDK binds the exact source/target pair. Trusted integration and independent QA still follow."),
+                StageBoundary + " The SDK binds the exact source/target pair."),
              new(ChatRole.User, JsonSerializer.Serialize(synthesis, Json))], "final synthesis", value => ValidateFinal(value, issues, reviews, requirements), ct);
         var findings = final.Resolutions.Where(r => r.Disposition == "unresolved").Select(r => Describe(issues[r.FindingId]))
             .Concat(final.BlockingFindings.Select(Describe)).Concat(final.Criteria.Where(c => !c.Satisfied)
