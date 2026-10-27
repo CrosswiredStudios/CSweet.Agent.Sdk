@@ -1,6 +1,6 @@
 # Manifest v2 reference
 
-SDK 5.5.4 supports provider-neutral enterprise `accounts` management for protocol 2.4 connectors.
+SDK 5.6.0 adds provider-neutral enterprise `accounts` management for protocol 2.4 connectors.
 See [enterprise account contracts](connectors.md) for the native layout, bounded discovery,
 permission groups and policy links. Account setup uses `setup.required: false` and an explicit
 OAuth step in `accounts.setupFlow`; installation does not connect a user or grant business access.
@@ -252,3 +252,21 @@ grants and assignment checks. Creation and membership are authenticated human se
 Declare `rolePolicy.baseType: "manager"` with `profile: "manager.v1"` and derive from
 `CSweetManagerAgentBase`. Product management and game production are specialized manager roles.
 See [manager authoring](manager-agents.md) for shared monitoring, assessment, recovery hooks and required grants.
+
+## Reviewed host remote MCP (5.6.0)
+
+The initial reviewed provider uses `kind: "remote-mcp"`, runtime
+`runtime.type: "host-remote-mcp"`, manifest version 2.0 and protocol minimum 2.5.
+`reviewedRemoteMcp` identifies the closed `realtyleads.read.v1` profile, fixed
+HTTPS endpoint, `api-key` authentication with `X-Api-Key`,
+`owner-business-installation.v1` binding, `stateless-post` transport and MCP
+2025-03-26. `ReviewedRemoteMcpValidator` requires the exact reviewed capability
+schemas and rejects executable code, configuration, credentials, connections,
+network permissions and provider operation mappings. This is not a generic remote
+server declaration. Existing OAuth connector validation remains unchanged.
+
+Account entry and explicit consumer grants belong to the native host. Agent
+manifests depend on the provider and request its typed business capabilities;
+they cannot contain keys, endpoint overrides or account selectors. Older hosts
+reject the mode. Coordinated host rollout is required; a valid manifest grants
+no authority. See [security](../SECURITY.md) for the account boundary.

@@ -72,8 +72,8 @@ public static class AgentManifestLoader
         Required(manifest.Name, "name", errors);
         if (!SemanticVersionPattern.IsMatch(manifest.Version ?? string.Empty))
             errors.Add("Plugin manifest version must be a semantic version such as 1.2.3.");
-        if (manifest.Kind is not ("agent" or "service" or "connector"))
-            errors.Add("Plugin manifest kind must be agent, service, or connector.");
+        if (manifest.Kind is not ("agent" or "service" or "connector" or "remote-mcp"))
+            errors.Add("Plugin manifest kind must be agent, service, connector, or remote-mcp.");
         if (manifest.ManifestVersion != "2.0")
             errors.Add("Executable plugins must use manifestVersion 2.0.");
 
@@ -87,13 +87,14 @@ public static class AgentManifestLoader
 
         if (manifest.Catalog is { } catalog)
             errors.AddRange(AgentCatalogBranding.Validate(catalog.ImageUrl, catalog.CompanyLogoUrl, catalog.AccentColor, catalog.LongDescription));
-        ValidateRuntime(manifest.Runtime, errors);
+        if (manifest.Kind != "remote-mcp") ValidateRuntime(manifest.Runtime, errors);
+        errors.AddRange(ReviewedRemoteMcpValidator.Validate(manifest));
         ValidateRolePolicy(manifest, errors);
         ValidateWorkItemTypes(manifest.WorkItemTypes, errors);
         ValidateWorkstreamProfiles(manifest.WorkstreamProfiles, errors);
         ValidateToolchainAdapters(manifest.ToolchainAdapters, errors);
         if (manifest.Protocol is null ||
-            manifest.Protocol.MinimumVersion is not ("2.0" or "2.1" or "2.2" or "2.3" or "2.4") ||
+            manifest.Protocol.MinimumVersion is not ("2.0" or "2.1" or "2.2" or "2.3" or "2.4" or "2.5") ||
             !manifest.Protocol.MaximumVersion.StartsWith("2.", StringComparison.Ordinal))
         {
             errors.Add("Executable plugins must require MCP runtime protocol 2.0 through 2.x.");
@@ -155,6 +156,7 @@ public static class AgentManifestLoader
         Credentials = manifest.Credentials ?? [],
         Connections = manifest.Connections ?? [],
         McpServers = manifest.McpServers ?? [],
+        ReviewedRemoteMcp = manifest.ReviewedRemoteMcp,
         ProviderOperations = manifest.ProviderOperations ?? [],
         Dependencies = manifest.Dependencies ?? [],
         FileTransferTargets = manifest.FileTransferTargets ?? [],

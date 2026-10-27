@@ -38,6 +38,7 @@ public sealed class AgentManifest
     public IReadOnlyList<AgentManifestConfigurationField> Configuration { get; init; } = [];
     public IReadOnlyList<AgentCredentialBinding> Credentials { get; init; } = [];
     public IReadOnlyList<AgentConnectionDeclaration> Connections { get; init; } = [];
+    public ReviewedRemoteMcpManifest? ReviewedRemoteMcp { get; init; }
     public IReadOnlyList<AgentMcpServerDeclaration> McpServers { get; init; } = [];
     public IReadOnlyList<AgentProviderOperationDeclaration> ProviderOperations { get; init; } = [];
     public IReadOnlyList<AgentFileTransferTargetDeclaration> FileTransferTargets { get; init; } = [];
