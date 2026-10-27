@@ -73,7 +73,7 @@ public sealed class PlatformComputeClient
         if (command.TimeoutSeconds is < 1 or > 30 || command.MaximumOutputBytes is < 1 or > 8192 ||
             command.Arguments is null || command.Arguments.Count > 64 ||
             string.IsNullOrWhiteSpace(command.Executable) || string.IsNullOrWhiteSpace(command.WorkingDirectory))
-            throw new ArgumentException("Commands require guest paths, at most 64 arguments, a 1–30 second timeout and 1–8192 output bytes.", nameof(request));
+            throw new ArgumentException("Commands require guest paths, at most 64 arguments, a 1â€“30 second timeout and 1â€“8192 output bytes.", nameof(request));
         // The broker validates paths against the actual guest OS, not the agent's OS.
         command = command with { Arguments = command.Arguments.ToArray() };
         if (command.Arguments.Any(a => a is null || a.Contains('\0')) ||
@@ -83,6 +83,48 @@ public sealed class PlatformComputeClient
         return _platform.InvokeAsync<object, ComputeOperation>(ComputeCapabilities.Execute,
             new { request.EnvironmentId, request.ExpectedGeneration, request.IdempotencyKey, workload }, token);
     }
+
+    /// <summary>Queues one archive export under existing compute execute authority. Does not execute a browser test.</summary>
+    public Task<ComputeOperation> ExportEvidenceAsync(ExportComputeEvidenceRequest request, CancellationToken token = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        Scope(request.EnvironmentId, request.ExpectedGeneration, request.IdempotencyKey);
+        var archive = request.Archive ?? throw new ArgumentException("An archive identity is required.");
+        if (archive.SourceCommitSha is not { Length: 40 or 64 } || archive.SourceCommitSha.Any(c => !Uri.IsHexDigit(c) || char.IsUpper(c)) ||
+            !EvidenceHash(archive.BuildSha256) || !EvidenceHash(archive.Sha256) || archive.ScriptSha256 is not null && !EvidenceHash(archive.ScriptSha256) ||
+            archive.Length is < 1 or > 4 * 1024 * 1024) throw new ArgumentException("Invalid pinned evidence identity or length.");
+        return _platform.InvokeAsync<object, ComputeOperation>(ComputeCapabilities.Execute,
+            new { request.EnvironmentId, request.ExpectedGeneration, request.IdempotencyKey, workload = new { evidenceArchive = archive } }, token);
+    }
+
+    /// <summary>Downloads a completed retained archive in one callback, with bounded internal reads and final hash verification.
+    /// Cancellation leaves the immutable artifact available; a later callback can restart this read without replaying tests.</summary>
+    public async Task<byte[]> ReadEvidenceAsync(ComputeOperation operation, CancellationToken token = default)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        Id(operation.Id);
+        var artifact = operation.Result?.Artifact;
+        if (operation.Status != "Completed" || operation.Result?.ErrorCode is not null || artifact is null ||
+            !EvidenceHash(artifact.Sha256) || artifact.Length is < 1 or > 4 * 1024 * 1024)
+            throw new InvalidOperationException("A completed retained evidence artifact is required.");
+        using var bytes = new MemoryStream(artifact.Length);
+        using var hash = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
+        for (var offset = 0; offset < artifact.Length;)
+        {
+            var page = await _platform.InvokeAsync<object, ComputeEvidencePage>(ComputeCapabilities.Read,
+                new { artifactId = operation.Id, offset }, token);
+            var expected = Math.Min(64 * 1024, artifact.Length - offset);
+            if (page.ArtifactId != operation.Id || page.Sha256 != artifact.Sha256 || page.Length != artifact.Length ||
+                page.Offset != offset || page.Content is not { } content || content.Length != expected)
+                throw new InvalidDataException("Evidence artifact read changed or was truncated.");
+            hash.AppendData(content); await bytes.WriteAsync(content, token); offset += content.Length;
+        }
+        if (Convert.ToHexStringLower(hash.GetHashAndReset()) != artifact.Sha256)
+            throw new InvalidDataException("Evidence artifact digest mismatch.");
+        return bytes.ToArray();
+    }
+
+    private static bool EvidenceHash(string? value) => value is { Length: 64 } && value.All(c => c is >= 'a' and <= 'f' or >= '0' and <= '9');
 
     /// <summary>Publishes a guest HTTP port. Separate inbound and publish-port grants are required.
     /// Read the returned operation for a verified URL and expiry; the current provider returns local-machine links.</summary>

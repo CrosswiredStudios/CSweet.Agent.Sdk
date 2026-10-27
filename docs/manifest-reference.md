@@ -1,6 +1,6 @@
 # Manifest v2 reference
 
-SDK 5.5.4 supports provider-neutral enterprise `accounts` management for protocol 2.4 connectors.
+SDK 5.6.0 supports provider-neutral enterprise `accounts` management for protocol 2.4 connectors.
 See [enterprise account contracts](connectors.md) for the native layout, bounded discovery,
 permission groups and policy links. Account setup uses `setup.required: false` and an explicit
 OAuth step in `accounts.setupFlow`; installation does not connect a user or grant business access.

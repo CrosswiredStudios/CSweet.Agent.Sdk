@@ -444,10 +444,14 @@ The provider validates both recorded grants at dispatch and rechecks current aut
 
 `BranchDiffTechnicalReview.StageBoundary` applies the same candidate-stage responsibility contract to every diff page and final synthesis. Criteria remain verbatim; review evidence distinguishes candidate implementation/validation from downstream integration, independent QA and delivery. Missing integration alone cannot create a circular source-review gate. Real code and validation defects still reject the candidate. `BranchDiffTechnicalReview.Policy` participates in `DeliveryTaskTechnicalReview` checkpoint identities, so pages assessed under an earlier review policy are not reused as current-policy evidence. Candidate/target authorization and final rereads are unchanged.
 
-## Runtime transport log budget (5.5.4)
+## Runtime transport log budget (5.6.0)
 
 `DependencyInjection.AddCSweetAgent` defaults the private named runtime HttpClient category to Warning. Frequent successful broker calls no longer consume the isolated workload lifetime log budget; warnings, errors and SDK work-failure diagnostics remain enabled. Application loggers and other HTTP clients retain their own configured levels. Explicit application filters added afterward can enable transport tracing for bounded diagnostics. This changes no grants, audit persistence, isolation, workload log limits or execution authority.
 
 ## Work claim response deadline
 
 Work claims reserve the configured bounded long-poll wait (1-25 seconds) plus the ordinary control-response timeout. The default is 25 + 30 = 55 seconds. The previous shared 30-second deadline left only five seconds to prepare and deliver a claim arriving late in the poll; a committed claim could lose its response and then expire without ever reaching the worker. Other control deadlines, work lease duration, caller cancellation, authorization and unknown-outcome replay rules remain unchanged. A timed-out claim is never automatically replayed by the transport.
+
+## Pinned compute evidence archives (5.6.0)
+
+`PlatformComputeClient.ExportEvidenceAsync` submits one asynchronous `compute.execute.v1` operation for a source/build/script/hash/length-bound browser archive, capped at 4 MiB. Providers derive guest paths; callers supply no URLs, paths or credentials. Ordinary command output remains limited to 8 KiB. `ReadEvidenceAsync` uses bounded authorized `compute.read.v1` pages inside one callback, checks identity/length/offset and final SHA-256, and never reexecutes a browser test. Cancellation retains the operation; a later callback can repeat artifact reads. Status responses contain metadata only.

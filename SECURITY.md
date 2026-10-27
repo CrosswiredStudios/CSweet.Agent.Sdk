@@ -10,7 +10,7 @@ Discovery/identity operations are reviewed authenticated bootstrap reads; busine
 groups may expose only normal operations with matching scopes. Email and display names are
 not immutable account identities. Hosts must freeze and recheck account/resource/authorization,
 business grant and consumer binding revisions at every request and result boundary. Existing
-2.0–2.3 hosts must reject 2.4 rather than reuse organization-installation assumptions.
+2.0â€“2.3 hosts must reject 2.4 rather than reuse organization-installation assumptions.
 Revoking one business grant must not revoke credentials shared with other businesses.
 
 ## Chief leadership (5.4.0)
@@ -395,3 +395,7 @@ Owner input requires an explicit requirement; a failure or investigation alone i
 The provider validates both recorded grants at dispatch and rechecks current authority during download/transfer and before execution. It rejects private/host/metadata DNS destinations, redirects, credentials, unbounded bytes and integrity mismatches. Packages are never extracted or executed on the provider host. Verified tarballs populate a guest-only offline npm cache; `npm ci` checks the actual source lockfile before tests/build. Unknown command outcomes remain fenced and cannot silently replay. Installation is not acceptance: exact-source tests, web build, HTTP proof and independent review still follow.
 
 Delegation execution context is restored only from a freshly authorized delegation read. Transport context cannot replace its organization, project, team or task binding. Missing transport metadata may be completed from that read; this creates no new capability or resource authority.
+
+## Pinned compute evidence archives (5.6.0)
+
+`PlatformComputeClient.ExportEvidenceAsync` submits one asynchronous `compute.execute.v1` operation for a source/build/script/hash/length-bound browser archive, capped at 4 MiB. Providers derive guest paths; callers supply no URLs, paths or credentials. Ordinary command output remains limited to 8 KiB. `ReadEvidenceAsync` uses bounded authorized `compute.read.v1` pages inside one callback, checks identity/length/offset and final SHA-256, and never reexecutes a browser test. Cancellation retains the operation; a later callback can repeat artifact reads. Status responses contain metadata only.
