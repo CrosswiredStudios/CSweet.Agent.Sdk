@@ -72,7 +72,16 @@ public sealed record ComputeOperation(Guid Id, Guid EnvironmentId, long Generati
     string? FailureCode, ComputeWorkloadResult? Result);
 
 public sealed record ComputeWorkloadResult(ComputeCommandResult? Command = null, string? Url = null,
-    DateTimeOffset? UrlExpiresAt = null, string? ErrorCode = null);
+    DateTimeOffset? UrlExpiresAt = null, string? ErrorCode = null, ComputeEvidenceArtifact? Artifact = null);
+
+/// <summary>One pinned browser archive transfer. Guest paths are derived by the provider.</summary>
+public sealed record ComputeEvidenceArchive(string SourceCommitSha, string BuildSha256, string Sha256,
+    int Length, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ScriptSha256 = null);
+public sealed record ExportComputeEvidenceRequest(Guid EnvironmentId, long ExpectedGeneration, string IdempotencyKey,
+    ComputeEvidenceArchive Archive);
+/// <summary>ArtifactId is the export operation ID. Content is read only through the authorized SDK stream method.</summary>
+public sealed record ComputeEvidenceArtifact(string SourceCommitSha, string BuildSha256, string Sha256, int Length, string? ScriptSha256 = null);
+public sealed record ComputeEvidencePage(Guid ArtifactId, string Sha256, int Length, int Offset, byte[] Content);
 
 /// <summary>Output is byte-exact; text accessors decode UTF-8 for convenience. An absent exit code or
 /// an error such as outcome-unknown is not success and must not cause automatic command re-execution.</summary>

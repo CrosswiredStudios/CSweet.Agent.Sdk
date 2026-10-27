@@ -25,7 +25,7 @@ primitive that owns each responsibility before implementing handlers:
 
 Do not replace these systems with an in-memory queue, retained chat transcript, polling loop, direct
 database access, or provider credentials. A callback may be delivered again and the process may stop
-between any two awaits, so the durable platform record—not the process—is the source of truth.
+between any two awaits, so the durable platform recordâ€”not the processâ€”is the source of truth.
 
 ## 1. Scaffold the repository
 
@@ -40,7 +40,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.6.0
+  --SdkVersion 5.7.0
 cd ResearchAgent
 dotnet test
 ```
@@ -339,4 +339,4 @@ See [manager authoring](manager-agents.md) for shared monitoring, assessment, re
 
 ## Shared delegation
 
-SDK 5.6.0 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
+SDK 5.7.0 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.

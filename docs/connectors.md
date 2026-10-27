@@ -1,4 +1,4 @@
-# Protocol 2.1–2.4 connector contracts (SDK 5.6.0)
+# Protocol 2.1â€“2.4 connector contracts (SDK 5.7.0)
 
 ## Enterprise accounts and resources (protocol 2.4)
 
@@ -102,7 +102,7 @@ Use durable personal work while waiting; do not keep an agent turn alive. Indete
 must reconcile or visibly block, never retry under a fresh key. Credentials, account selection,
 approval authority, request destinations and upload URLs are not arguments to this API.
 
-Legacy protocol 2.1–2.3 connector packages are deterministic integration providers, not employees. Declare
+Legacy protocol 2.1â€“2.3 connector packages are deterministic integration providers, not employees. Declare
 `kind: connector`, one organization account connection, protocol minimum `2.1`,
 multiple installations, and closed `providerOperations[].http` mappings. They cannot
 request model/platform tools, raw network access, direct credentials, filesystem

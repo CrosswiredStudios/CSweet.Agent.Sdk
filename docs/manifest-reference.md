@@ -1,6 +1,6 @@
 # Manifest v2 reference
 
-SDK 5.6.0 adds provider-neutral enterprise `accounts` management for protocol 2.4 connectors.
+SDK 5.7.0 adds provider-neutral enterprise `accounts` management for protocol 2.4 connectors.
 See [enterprise account contracts](connectors.md) for the native layout, bounded discovery,
 permission groups and policy links. Account setup uses `setup.required: false` and an explicit
 OAuth step in `accounts.setupFlow`; installation does not connect a user or grant business access.
@@ -86,7 +86,7 @@ machine-readable definition is [`schemas/csweet-plugin.v2.schema.json`](../schem
 | `$schema` | Optional editor hint; use the checked-in v2 schema URL |
 | `manifestVersion` | Exactly `2.0` |
 | `kind` | `agent` or `service` |
-| `id` | Stable 1–200 character identifier using letters, numbers, dots, `_`, or `-` |
+| `id` | Stable 1â€“200 character identifier using letters, numbers, dots, `_`, or `-` |
 | `name` | Human display name |
 | `version` | Semantic version such as `1.2.3` |
 | `publisher` | Stable `id` plus display `name` |
@@ -94,7 +94,7 @@ machine-readable definition is [`schemas/csweet-plugin.v2.schema.json`](../schem
 | `runtime.projectPath` | Relative `.csproj` path with no parent traversal |
 | `runtime.targetFramework` | .NET target framework; current authoring target is `net10.0` |
 | `runtime.defaultActivationMode` | `AlwaysOn`, `OnDemand`, or `Scheduled`; prefer `OnDemand` for event-driven agents |
-| `runtime.defaultTickFrequencySeconds` | Preferred platform-owned attention/run cadence, 60–86400 seconds; installation policy may impose a higher minimum |
+| `runtime.defaultTickFrequencySeconds` | Preferred platform-owned attention/run cadence, 60â€“86400 seconds; installation policy may impose a higher minimum |
 | `runtime.supportsMultipleInstallations` | Whether separate installations can run independently |
 | `runtime.maximumConcurrentJobs` | At least 1; start at 1 until concurrency safety is proven |
 | `protocol` | `minimumVersion` `2.0`, `maximumVersion` beginning with `2.` |
@@ -126,7 +126,7 @@ not embed credentials in the manifest.
 ## Capability descriptors
 
 Each `provides` entry requires a namespaced name, description, object input/output schemas, timeout
-from 1–86400 seconds, and one idempotency mode:
+from 1â€“86400 seconds, and one idempotency mode:
 
 - `work-item`: repeating the same durable work item is the same logical operation.
 - `caller-key`: the input schema carries a stable caller-provided domain key.
@@ -156,7 +156,7 @@ Effects are `read`, `write`, `fiscal-write`, or `security-sensitive-write`. Runt
 require an exact, unexpired, payload-hash-bound approval for every non-read effect.
 
 `fileTransferTargets` supports restricted brokered transfer only. SFTP declarations require port
-1–65535, a non-root relative path, at least one approved hostname suffix, and operations from
+1â€“65535, a non-root relative path, at least one approved hostname suffix, and operations from
 `probe`, `list`, `stat`, and `upload`. The declaration cannot authorize SSH, arbitrary commands,
 path traversal, reusable credentials, or broader filesystem access.
 
@@ -189,7 +189,7 @@ relationships cannot reference themselves or form cycles. A required conditional
 only while it is visible.
 ## Role policy and specialization
 
-Every agent manifest declares a `rolePolicy`. `declaredRoleKeys` contains the stable, high-level role categories the agent can fill, such as `software-architect` or `software-developer`. These keys—not display names or job titles—control role eligibility.
+Every agent manifest declares a `rolePolicy`. `declaredRoleKeys` contains the stable, high-level role categories the agent can fill, such as `software-architect` or `software-developer`. These keysâ€”not display names or job titlesâ€”control role eligibility.
 
 `specializationKeys` contains strengths such as `game-development`, `distributed-systems`, or `realtime-3d`. A staffing preference ranks matching specializations higher without excluding other agents in the same core role. A work item may separately declare a genuinely required specialization; that explicit requirement remains an eligibility gate.
 
@@ -253,7 +253,7 @@ Declare `rolePolicy.baseType: "manager"` with `profile: "manager.v1"` and derive
 `CSweetManagerAgentBase`. Product management and game production are specialized manager roles.
 See [manager authoring](manager-agents.md) for shared monitoring, assessment, recovery hooks and required grants.
 
-## Reviewed host remote MCP (5.6.0)
+## Reviewed host remote MCP (5.7.0)
 
 The initial reviewed provider uses `kind: "remote-mcp"`, runtime
 `runtime.type: "host-remote-mcp"`, manifest version 2.0 and protocol minimum 2.5.
