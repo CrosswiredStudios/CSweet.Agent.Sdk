@@ -3,6 +3,6 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CSweet.Agent.SDK" Version="5.5.3" />
+    <PackageReference Include="CSweet.Agent.SDK" Version="5.5.4" />
   </ItemGroup>
 </Project>

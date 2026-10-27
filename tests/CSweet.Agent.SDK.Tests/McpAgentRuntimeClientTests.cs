@@ -10,6 +10,65 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class McpAgentRuntimeClientTests
 {
     [Theory]
+    [InlineData(-1, 1)]
+    [InlineData(10, 10)]
+    [InlineData(99, 25)]
+    public async Task Claim_budget_uses_the_same_bounded_poll_as_the_wire_request(int configured, int expected)
+    {
+        await using var fixture = await StreamingFixture.CreateAsync(null, claimLongPollSeconds: configured);
+        Assert.Equal(TimeSpan.FromSeconds(2 + expected), fixture.Client.ResolveRequestTimeout("csweet/work/claim"));
+    }
+
+    [Fact]
+    public async Task Claim_reserves_control_response_budget_after_the_server_poll()
+    {
+        await using var fixture = await StreamingFixture.CreateAsync(null,
+            controlTimeout: TimeSpan.FromMilliseconds(50), claimLongPollSeconds: 1);
+        fixture.Handler.ControlAsync = async (method, _, token) =>
+        {
+            Assert.Equal("csweet/work/claim", method);
+            // A late claim response may exceed the ordinary control deadline while
+            // remaining within the poll plus response deadline. Never replay it.
+            await Task.Delay(150, token);
+            return new HttpResponseMessage(HttpStatusCode.OK)
+                { Content = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"work\":null}}") };
+        };
+        Assert.Null(await fixture.Client.ClaimAsync(1, default));
+        Assert.Equal(TimeSpan.FromMilliseconds(1050), fixture.Client.ResolveRequestTimeout("csweet/work/claim"));
+        Assert.Equal(TimeSpan.FromMilliseconds(50), fixture.Client.ResolveRequestTimeout("csweet/work/renew"));
+        Assert.Equal(TimeSpan.FromSeconds(2), fixture.Client.ResolveRequestTimeout("tools/call"));
+    }
+
+    [Fact]
+    public async Task Claim_timeout_remains_bounded_and_does_not_replay_unknown_claim()
+    {
+        await using var fixture = await StreamingFixture.CreateAsync(null,
+            controlTimeout: TimeSpan.FromMilliseconds(50), claimLongPollSeconds: 1);
+        var calls = 0;
+        fixture.Handler.ControlAsync = async (_, _, token) =>
+        {
+            calls++;
+            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            throw new InvalidOperationException("Unreachable");
+        };
+        await Assert.ThrowsAsync<TimeoutException>(() => fixture.Client.ClaimAsync(1, default));
+        Assert.Equal(1, calls);
+    }
+
+    [Fact]
+    public async Task Claim_preserves_caller_cancellation()
+    {
+        await using var fixture = await StreamingFixture.CreateAsync(null);
+        fixture.Handler.ControlAsync = async (_, _, token) =>
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            throw new InvalidOperationException("Unreachable");
+        };
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => fixture.Client.ClaimAsync(1, cancellation.Token));
+    }
+
+    [Theory]
     [InlineData(0, 2, true)] // Lost response, then recovery.
     [InlineData(503, 2, true)]
     [InlineData(0, 10, false)] // Exhaust bounded retries.
@@ -343,7 +402,8 @@ public sealed class McpAgentRuntimeClientTests
         public McpAgentRuntimeClient Client { get; }
         public ScriptedHandler Handler { get; }
 
-        public static async Task<StreamingFixture> CreateAsync(string? streamBody, object? toolResult = null)
+        public static async Task<StreamingFixture> CreateAsync(string? streamBody, object? toolResult = null,
+            TimeSpan? controlTimeout = null, int claimLongPollSeconds = 25)
         {
             var tokenPath = Path.GetTempFileName();
             await File.WriteAllTextAsync(tokenPath, "workload-token");
@@ -354,6 +414,7 @@ public sealed class McpAgentRuntimeClientTests
                 Options.Create(new AgentRuntimeOptions
                 {
                     McpEndpoint = "http://agenthost/mcp",
+                    ClaimLongPollSeconds = claimLongPollSeconds,
                     WorkloadTokenFile = tokenPath,
                     InstallationId = Guid.NewGuid().ToString(),
                     BusinessId = Guid.NewGuid().ToString(),
@@ -361,7 +422,7 @@ public sealed class McpAgentRuntimeClientTests
                     TickId = Guid.NewGuid().ToString()
                 }),
                 NullLogger<McpAgentRuntimeClient>.Instance,
-                TimeSpan.FromSeconds(2),
+                controlTimeout ?? TimeSpan.FromSeconds(2),
                 TimeSpan.FromSeconds(2));
             await client.InitializeAsync(Manifest(), CancellationToken.None);
             return new StreamingFixture(tokenPath, http, client, handler);
@@ -379,6 +440,7 @@ public sealed class McpAgentRuntimeClientTests
     {
         public int NonStreamingCalls { get; private set; }
         public Func<string, string, HttpResponseMessage>? Control { get; set; }
+        public Func<string, string, CancellationToken, Task<HttpResponseMessage>>? ControlAsync { get; set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
@@ -386,6 +448,7 @@ public sealed class McpAgentRuntimeClientTests
         {
             var requestJson = await request.Content!.ReadAsStringAsync(cancellationToken);
             var method = JsonDocument.Parse(requestJson).RootElement.GetProperty("method").GetString();
+            if (ControlAsync is not null) return await ControlAsync(method!, requestJson, cancellationToken);
             if (Control is not null) return Control(method!, requestJson);
             if (method == "initialize")
                 return JsonResponse(new

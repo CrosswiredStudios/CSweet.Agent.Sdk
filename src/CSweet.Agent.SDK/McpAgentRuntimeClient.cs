@@ -499,14 +499,24 @@ internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
         return request;
     }
 
+    internal TimeSpan ResolveRequestTimeout(string method) => method switch
+    {
+        "tools/call" => _capabilityRequestTimeout,
+        // Long polling consumes time before claim preparation and delivery can begin.
+        // Preserve a full control-response budget after the requested server wait;
+        // otherwise a late claim can commit after the caller has already disconnected.
+        // This does not extend the platform's work lease or replay a lost claim.
+        "csweet/work/claim" => _controlRequestTimeout +
+            TimeSpan.FromSeconds(Math.Clamp(_options.ClaimLongPollSeconds, 1, 25)),
+        _ => _controlRequestTimeout
+    };
+
     private async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         string method,
         CancellationToken cancellationToken)
     {
-        var timeout = string.Equals(method, "tools/call", StringComparison.Ordinal)
-            ? _capabilityRequestTimeout
-            : _controlRequestTimeout;
+        var timeout = ResolveRequestTimeout(method);
         using var timeoutCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCancellation.CancelAfter(timeout);
         try
