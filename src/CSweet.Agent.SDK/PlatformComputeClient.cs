@@ -73,7 +73,7 @@ public sealed class PlatformComputeClient
         if (command.TimeoutSeconds is < 1 or > 30 || command.MaximumOutputBytes is < 1 or > 8192 ||
             command.Arguments is null || command.Arguments.Count > 64 ||
             string.IsNullOrWhiteSpace(command.Executable) || string.IsNullOrWhiteSpace(command.WorkingDirectory))
-            throw new ArgumentException("Commands require guest paths, at most 64 arguments, a 1â€“30 second timeout and 1â€“8192 output bytes.", nameof(request));
+            throw new ArgumentException("Commands require guest paths, at most 64 arguments, a 1–30 second timeout and 1–8192 output bytes.", nameof(request));
         // The broker validates paths against the actual guest OS, not the agent's OS.
         command = command with { Arguments = command.Arguments.ToArray() };
         if (command.Arguments.Any(a => a is null || a.Contains('\0')) ||

@@ -446,7 +446,7 @@ The provider validates both recorded grants at dispatch and rechecks current aut
 
 ## Reviewed remote MCP support
 
-SDK 5.7.0 defines `ReviewedRemoteMcpManifest` and `ReviewedRemoteMcpValidator` for
+SDK 5.7.1 defines `ReviewedRemoteMcpManifest` and `ReviewedRemoteMcpValidator` for
 protocol 2.5. `ConnectorContractValidator` retains its OAuth-only security guards.
 The companion C-Sweet implementation binds the authenticated human owner, business,
 provider installation, approved consumer and current account generation at the host;
@@ -465,6 +465,6 @@ This additive contract requires coordinated host rollout; SDK validation is not 
 
 Work claims reserve the configured bounded long-poll wait (1-25 seconds) plus the ordinary control-response timeout. The default is 25 + 30 = 55 seconds. The previous shared 30-second deadline left only five seconds to prepare and deliver a claim arriving late in the poll; a committed claim could lose its response and then expire without ever reaching the worker. Other control deadlines, work lease duration, caller cancellation, authorization and unknown-outcome replay rules remain unchanged. A timed-out claim is never automatically replayed by the transport.
 
-## Pinned compute evidence archives (5.7.0)
+## Pinned compute evidence archives (5.7.1)
 
 `PlatformComputeClient.ExportEvidenceAsync` submits one asynchronous `compute.execute.v1` operation for a source/build/script/hash/length-bound browser archive, capped at 4 MiB. Providers derive guest paths; callers supply no URLs, paths or credentials. Ordinary command output remains limited to 8 KiB. `ReadEvidenceAsync` uses bounded authorized `compute.read.v1` pages inside one callback, checks identity/length/offset and final SHA-256, and never reexecutes a browser test. Cancellation retains the operation; a later callback can repeat artifact reads. Status responses contain metadata only.
