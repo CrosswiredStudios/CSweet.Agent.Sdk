@@ -25,7 +25,7 @@ primitive that owns each responsibility before implementing handlers:
 
 Do not replace these systems with an in-memory queue, retained chat transcript, polling loop, direct
 database access, or provider credentials. A callback may be delivered again and the process may stop
-between any two awaits, so the durable platform record—not the process—is the source of truth.
+between any two awaits, so the durable platform recordâ€”not the processâ€”is the source of truth.
 
 ## 1. Scaffold the repository
 

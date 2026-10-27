@@ -396,6 +396,20 @@ The provider validates both recorded grants at dispatch and rechecks current aut
 
 Delegation execution context is restored only from a freshly authorized delegation read. Transport context cannot replace its organization, project, team or task binding. Missing transport metadata may be completed from that read; this creates no new capability or resource authority.
 
+## Reviewed remote MCP (SDK 5.7.0)
+
+`kind: remote-mcp` with protocol minimum 2.5 is a distinct host-owned mode. It is
+not an OAuth connector and cannot declare workload code, raw network access,
+credentials, connection objects or model tools. The initial profile admits only
+RealtyLeadsAI inheritance search/lookup, the exact HTTPS endpoint, API-key header,
+and reviewed schemas. Older hosts reject the new kind/protocol. The companion C-Sweet feature branch implements native authorization and dispatch;
+SDK validation alone does not grant access or imply a deployed host upgrade.
+
+Keys must enter the trusted native host UI, remain in encrypted scope-bound
+storage and be injected only by the broker. The SDK never exposes a key-bearing
+client. Account identity must come from authenticated host bindings, not model
+arguments. Rotation/revocation invalidates generation-bound work and results.
+
 ## Pinned compute evidence archives (5.7.0)
 
 `PlatformComputeClient.ExportEvidenceAsync` submits one asynchronous `compute.execute.v1` operation for a source/build/script/hash/length-bound browser archive, capped at 4 MiB. Providers derive guest paths; callers supply no URLs, paths or credentials. Ordinary command output remains limited to 8 KiB. `ReadEvidenceAsync` uses bounded authorized `compute.read.v1` pages inside one callback, checks identity/length/offset and final SHA-256, and never reexecutes a browser test. Cancellation retains the operation; a later callback can repeat artifact reads. Status responses contain metadata only.

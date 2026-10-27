@@ -4,9 +4,11 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # C-Sweet Agent SDK
 
-SDK 5.7.0 limits routine private runtime HTTP logging so long-running agents do not exhaust their isolated workload log budgets. Transport warnings, errors and SDK failure summaries remain visible.
+SDK 5.7.0 adds one-operation, hash-pinned compute evidence exports and verified retained-artifact downloads within one agent callback.
 
-The SDK includes provider-neutral enterprise account-management declarations for protocol 2.4.
+SDK 5.7.0 adds the reviewed, host-owned RealtyLeadsAI API-key MCP profile for protocol 2.5. It includes the 5.5.3 runtime log-budget and 5.5.4 claim-deadline fixes.
+
+The SDK also supports provider-neutral enterprise account-management declarations for protocol 2.4.
 Plugins describe native account/resource pages, discovery, policy links and permission groups;
 the host remains responsible for OAuth, account/business grants and execution enforcement.
 See [connector contracts](docs/connectors.md). Declarations alone do not enable a host.

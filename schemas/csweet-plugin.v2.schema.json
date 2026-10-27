@@ -37,11 +37,144 @@
       }
     },
     {
-      "if": { "required": ["accounts"] },
+      "if": {
+        "required": [
+          "accounts"
+        ]
+      },
       "then": {
         "properties": {
-          "kind": { "const": "connector" },
-          "protocol": { "properties": { "minimumVersion": { "const": "2.4" } } }
+          "kind": {
+            "const": "connector"
+          },
+          "protocol": {
+            "properties": {
+              "minimumVersion": {
+                "const": "2.4"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "remote-mcp"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "reviewedRemoteMcp"
+        ],
+        "properties": {
+          "protocol": {
+            "properties": {
+              "minimumVersion": {
+                "const": "2.5"
+              }
+            }
+          },
+          "runtime": {
+            "properties": {
+              "type": {
+                "const": "host-remote-mcp"
+              }
+            }
+          },
+          "requires": {
+            "maxItems": 0
+          },
+          "dependencies": {
+            "maxItems": 0
+          },
+          "configuration": {
+            "maxItems": 0
+          },
+          "credentials": {
+            "maxItems": 0
+          },
+          "connections": {
+            "maxItems": 0
+          },
+          "mcpServers": {
+            "maxItems": 0
+          },
+          "providerOperations": {
+            "maxItems": 0
+          },
+          "fileTransferTargets": {
+            "maxItems": 0
+          },
+          "ui": {
+            "maxItems": 0
+          },
+          "webAccess": {
+            "properties": {
+              "mode": {
+                "const": "None"
+              },
+              "rules": {
+                "maxItems": 0
+              }
+            }
+          },
+          "events": {
+            "properties": {
+              "subscribes": {
+                "maxItems": 0
+              },
+              "publishes": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "accounts"
+              ]
+            },
+            {
+              "required": [
+                "setup"
+              ]
+            },
+            {
+              "required": [
+                "rolePolicy"
+              ]
+            }
+          ]
+        }
+      },
+      "else": {
+        "not": {
+          "required": [
+            "reviewedRemoteMcp"
+          ]
+        },
+        "properties": {
+          "runtime": {
+            "properties": {
+              "type": {
+                "const": "dotnet-project"
+              }
+            }
+          },
+          "protocol": {
+            "properties": {
+              "minimumVersion": {
+                "not": {
+                  "const": "2.5"
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -55,6 +188,49 @@
       "type": "object",
       "additionalProperties": {
         "type": "object"
+      }
+    },
+    "reviewedRemoteMcp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "endpoint",
+        "authentication",
+        "header",
+        "accountBinding",
+        "transport",
+        "protocolVersions"
+      ],
+      "properties": {
+        "profile": {
+          "const": "realtyleads.read.v1"
+        },
+        "endpoint": {
+          "const": "https://realtyleads.ai/mcp"
+        },
+        "authentication": {
+          "const": "api-key"
+        },
+        "header": {
+          "const": "X-Api-Key"
+        },
+        "accountBinding": {
+          "const": "owner-business-installation.v1"
+        },
+        "transport": {
+          "const": "stateless-post"
+        },
+        "protocolVersions": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "const": "2025-03-26"
+            }
+          ],
+          "minItems": 1,
+          "maxItems": 1
+        }
       }
     },
     "manifestVersion": {
@@ -94,62 +270,94 @@
       }
     },
     "runtime": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "type",
-        "projectPath",
-        "targetFramework",
-        "defaultActivationMode",
-        "supportsMultipleInstallations",
-        "maximumConcurrentJobs"
-      ],
-      "properties": {
-        "type": {
-          "const": "dotnet-project"
-        },
-        "projectPath": {
-          "type": "string",
-          "pattern": "^(?![\\\\/])(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+\\.csproj$"
-        },
-        "targetFramework": {
-          "type": "string",
-          "pattern": "^net\\d+\\.\\d+(?:-[A-Za-z0-9.-]+)?$"
-        },
-        "defaultActivationMode": {
-          "enum": [
-            "AlwaysOn",
-            "OnDemand",
-            "Scheduled"
-          ]
-        },
-        "defaultTickFrequencySeconds": {
-          "type": "integer",
-          "minimum": 60,
-          "maximum": 86400
-        },
-        "supportsMultipleInstallations": {
-          "type": "boolean"
-        },
-        "maximumConcurrentJobs": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "environmentProfile": {
-          "type": [
-            "string",
-            "null"
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "projectPath",
+            "targetFramework",
+            "defaultActivationMode",
+            "supportsMultipleInstallations",
+            "maximumConcurrentJobs"
           ],
-          "pattern": "^[a-z0-9][a-z0-9.-]{0,127}$"
+          "properties": {
+            "type": {
+              "const": "dotnet-project"
+            },
+            "projectPath": {
+              "type": "string",
+              "pattern": "^(?![\\\\/])(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+\\.csproj$"
+            },
+            "targetFramework": {
+              "type": "string",
+              "pattern": "^net\\d+\\.\\d+(?:-[A-Za-z0-9.-]+)?$"
+            },
+            "defaultActivationMode": {
+              "enum": [
+                "AlwaysOn",
+                "OnDemand",
+                "Scheduled"
+              ]
+            },
+            "defaultTickFrequencySeconds": {
+              "type": "integer",
+              "minimum": 60,
+              "maximum": 86400
+            },
+            "supportsMultipleInstallations": {
+              "type": "boolean"
+            },
+            "maximumConcurrentJobs": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "environmentProfile": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[a-z0-9][a-z0-9.-]{0,127}$"
+            },
+            "workspaceAccess": {
+              "enum": [
+                "None",
+                "ReadOnly",
+                "ReadWrite"
+              ]
+            }
+          }
         },
-        "workspaceAccess": {
-          "enum": [
-            "None",
-            "ReadOnly",
-            "ReadWrite"
-          ]
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "workspaceAccess",
+            "supportsMultipleInstallations",
+            "defaultActivationMode",
+            "maximumConcurrentJobs"
+          ],
+          "properties": {
+            "type": {
+              "const": "host-remote-mcp"
+            },
+            "workspaceAccess": {
+              "const": "None"
+            },
+            "supportsMultipleInstallations": {
+              "const": false
+            },
+            "defaultActivationMode": {
+              "const": "OnDemand"
+            },
+            "maximumConcurrentJobs": {
+              "const": 1
+            }
+          }
         }
-      }
+      ]
     },
     "rolePolicy": {
       "type": "object",
