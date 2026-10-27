@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 5.5.3
+     --SdkVersion 5.5.4
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed
@@ -207,4 +207,4 @@ See [manager authoring](docs/manager-agents.md) for shared monitoring, assessmen
 
 ## Shared delegation
 
-SDK 5.5.3 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
+SDK 5.5.4 supplies typed delegation and work tracking with shared dispatch, durable reporting receipts, current access checks and bounded wake recovery. Follow the SDK docs/delegation-with-tracking.md guide. Delegation does not grant execution authority; memory does not own outstanding obligations.
