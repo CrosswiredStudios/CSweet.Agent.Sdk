@@ -10,7 +10,7 @@ Discovery/identity operations are reviewed authenticated bootstrap reads; busine
 groups may expose only normal operations with matching scopes. Email and display names are
 not immutable account identities. Hosts must freeze and recheck account/resource/authorization,
 business grant and consumer binding revisions at every request and result boundary. Existing
-2.0â€“2.3 hosts must reject 2.4 rather than reuse organization-installation assumptions.
+2.0–2.3 hosts must reject 2.4 rather than reuse organization-installation assumptions.
 Revoking one business grant must not revoke credentials shared with other businesses.
 
 ## Chief leadership (5.4.0)
@@ -396,7 +396,7 @@ The provider validates both recorded grants at dispatch and rechecks current aut
 
 Delegation execution context is restored only from a freshly authorized delegation read. Transport context cannot replace its organization, project, team or task binding. Missing transport metadata may be completed from that read; this creates no new capability or resource authority.
 
-## Reviewed remote MCP (SDK 5.7.0)
+## Reviewed remote MCP (SDK 5.7.1)
 
 `kind: remote-mcp` with protocol minimum 2.5 is a distinct host-owned mode. It is
 not an OAuth connector and cannot declare workload code, raw network access,
@@ -410,6 +410,6 @@ storage and be injected only by the broker. The SDK never exposes a key-bearing
 client. Account identity must come from authenticated host bindings, not model
 arguments. Rotation/revocation invalidates generation-bound work and results.
 
-## Pinned compute evidence archives (5.7.0)
+## Pinned compute evidence archives (5.7.1)
 
 `PlatformComputeClient.ExportEvidenceAsync` submits one asynchronous `compute.execute.v1` operation for a source/build/script/hash/length-bound browser archive, capped at 4 MiB. Providers derive guest paths; callers supply no URLs, paths or credentials. Ordinary command output remains limited to 8 KiB. `ReadEvidenceAsync` uses bounded authorized `compute.read.v1` pages inside one callback, checks identity/length/offset and final SHA-256, and never reexecutes a browser test. Cancellation retains the operation; a later callback can repeat artifact reads. Status responses contain metadata only.
