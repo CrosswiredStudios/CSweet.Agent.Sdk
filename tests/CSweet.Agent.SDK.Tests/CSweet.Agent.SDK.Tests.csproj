@@ -13,4 +13,4 @@
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
-</Project>
+<ItemGroup><None Update="realtyleads-manifest.json" CopyToOutputDirectory="PreserveNewest" /></ItemGroup></Project>

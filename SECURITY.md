@@ -395,3 +395,17 @@ Owner input requires an explicit requirement; a failure or investigation alone i
 The provider validates both recorded grants at dispatch and rechecks current authority during download/transfer and before execution. It rejects private/host/metadata DNS destinations, redirects, credentials, unbounded bytes and integrity mismatches. Packages are never extracted or executed on the provider host. Verified tarballs populate a guest-only offline npm cache; `npm ci` checks the actual source lockfile before tests/build. Unknown command outcomes remain fenced and cannot silently replay. Installation is not acceptance: exact-source tests, web build, HTTP proof and independent review still follow.
 
 Delegation execution context is restored only from a freshly authorized delegation read. Transport context cannot replace its organization, project, team or task binding. Missing transport metadata may be completed from that read; this creates no new capability or resource authority.
+
+## Reviewed remote MCP (SDK 5.6.0)
+
+`kind: remote-mcp` with protocol minimum 2.5 is a distinct host-owned mode. It is
+not an OAuth connector and cannot declare workload code, raw network access,
+credentials, connection objects or model tools. The initial profile admits only
+RealtyLeadsAI inheritance search/lookup, the exact HTTPS endpoint, API-key header,
+and reviewed schemas. Older hosts reject the new kind/protocol. The companion C-Sweet feature branch implements native authorization and dispatch;
+SDK validation alone does not grant access or imply a deployed host upgrade.
+
+Keys must enter the trusted native host UI, remain in encrypted scope-bound
+storage and be injected only by the broker. The SDK never exposes a key-bearing
+client. Account identity must come from authenticated host bindings, not model
+arguments. Rotation/revocation invalidates generation-bound work and results.
