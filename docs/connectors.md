@@ -1,4 +1,4 @@
-# Protocol 2.1–2.4 connector contracts (SDK 5.5.2)
+# Protocol 2.1–2.4 connector contracts (SDK 5.5.3)
 
 ## Enterprise accounts and resources (protocol 2.4)
 

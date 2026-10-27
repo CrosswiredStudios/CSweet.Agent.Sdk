@@ -443,3 +443,7 @@ The provider validates both recorded grants at dispatch and rechecks current aut
 ## Pre-integration candidate review (5.5.2)
 
 `BranchDiffTechnicalReview.StageBoundary` applies the same candidate-stage responsibility contract to every diff page and final synthesis. Criteria remain verbatim; review evidence distinguishes candidate implementation/validation from downstream integration, independent QA and delivery. Missing integration alone cannot create a circular source-review gate. Real code and validation defects still reject the candidate. `BranchDiffTechnicalReview.Policy` participates in `DeliveryTaskTechnicalReview` checkpoint identities, so pages assessed under an earlier review policy are not reused as current-policy evidence. Candidate/target authorization and final rereads are unchanged.
+
+## Runtime transport log budget (5.5.3)
+
+`DependencyInjection.AddCSweetAgent` defaults the private named runtime HttpClient category to Warning. Frequent successful broker calls no longer consume the isolated workload lifetime log budget; warnings, errors and SDK work-failure diagnostics remain enabled. Application loggers and other HTTP clients retain their own configured levels. Explicit application filters added afterward can enable transport tracing for bounded diagnostics. This changes no grants, audit persistence, isolation, workload log limits or execution authority.

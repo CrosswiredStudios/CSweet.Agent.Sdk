@@ -45,6 +45,12 @@ public static class DependencyInjection
                 "CSweet:Agent:TickId must be a UUID.")
             .ValidateOnStart();
 
+        // Routine broker calls are frequent during event-driven work. HttpClient's
+        // four Information records per call can exhaust the guest's lifetime log
+        // budget and terminate otherwise healthy work. Preserve transport warnings
+        // and SDK work-failure diagnostics without logging each successful poll.
+        builder.Logging.AddFilter("System.Net.Http.HttpClient.CSweet.Agent.Runtime", LogLevel.Warning);
+
         builder.Services.AddHttpClient("CSweet.Agent.Runtime", client =>
         {
             client.Timeout = Timeout.InfiniteTimeSpan;
