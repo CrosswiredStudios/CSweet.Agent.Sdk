@@ -73,7 +73,7 @@
           "protocol": {
             "properties": {
               "minimumVersion": {
-                "const": "2.5"
+                "const": "2.6"
               }
             }
           },
@@ -170,7 +170,10 @@
             "properties": {
               "minimumVersion": {
                 "not": {
-                  "const": "2.5"
+                  "enum": [
+                    "2.5",
+                    "2.6"
+                  ]
                 }
               }
             }
@@ -193,6 +196,7 @@
     "reviewedRemoteMcp": {
       "type": "object",
       "additionalProperties": false,
+      "description": "Publisher-declared reviewed remote MCP (protocol 2.6). The endpoint is approved by a human at install review; the host enforces the declared closed schemas.",
       "required": [
         "profile",
         "endpoint",
@@ -200,20 +204,29 @@
         "header",
         "accountBinding",
         "transport",
-        "protocolVersions"
+        "protocolVersions",
+        "tools"
       ],
       "properties": {
         "profile": {
-          "const": "realtyleads.read.v1"
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,62}(\\.[a-z0-9-]{1,62}){0,4}\\.v[1-9][0-9]{0,3}$"
         },
         "endpoint": {
-          "const": "https://realtyleads.ai/mcp"
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://[a-z0-9.-]+/[^?#\\s]*$",
+          "maxLength": 256
         },
         "authentication": {
-          "const": "api-key"
+          "enum": [
+            "api-key",
+            "bearer"
+          ]
         },
         "header": {
-          "const": "X-Api-Key"
+          "type": "string",
+          "pattern": "^(X-[A-Za-z0-9][A-Za-z0-9-]{0,39}|Authorization)$"
         },
         "accountBinding": {
           "const": "owner-business-installation.v1"
@@ -223,13 +236,41 @@
         },
         "protocolVersions": {
           "type": "array",
-          "prefixItems": [
-            {
-              "const": "2025-03-26"
-            }
-          ],
+          "items": {
+            "enum": [
+              "2025-03-26"
+            ]
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "tools": {
+          "type": "array",
           "minItems": 1,
-          "maxItems": 1
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "capability",
+              "remoteTool",
+              "effect"
+            ],
+            "properties": {
+              "capability": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "remoteTool": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+              },
+              "effect": {
+                "const": "read"
+              }
+            }
+          }
         }
       }
     },
@@ -519,7 +560,9 @@
             "2.1",
             "2.2",
             "2.3",
-            "2.4"
+            "2.4",
+            "2.5",
+            "2.6"
           ]
         },
         "maximumVersion": {

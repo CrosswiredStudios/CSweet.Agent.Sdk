@@ -396,19 +396,32 @@ The provider validates both recorded grants at dispatch and rechecks current aut
 
 Delegation execution context is restored only from a freshly authorized delegation read. Transport context cannot replace its organization, project, team or task binding. Missing transport metadata may be completed from that read; this creates no new capability or resource authority.
 
-## Reviewed remote MCP (SDK 5.7.1)
+## Reviewed remote MCP (SDK 5.8.0)
 
-`kind: remote-mcp` with protocol minimum 2.5 is a distinct host-owned mode. It is
+`kind: remote-mcp` with protocol minimum 2.6 is a distinct host-owned mode. It is
 not an OAuth connector and cannot declare workload code, raw network access,
-credentials, connection objects or model tools. The initial profile admits only
-RealtyLeadsAI inheritance search/lookup, the exact HTTPS endpoint, API-key header,
-and reviewed schemas. Older hosts reject the new kind/protocol. The companion C-Sweet feature branch implements native authorization and dispatch;
-SDK validation alone does not grant access or imply a deployed host upgrade.
+credentials, configuration, connection objects, events, UI or model tools.
+Any publisher may declare its own endpoint; **a human approves that endpoint at
+install review**, and a valid manifest grants nothing.
+
+Validation is structural rather than identity-pinned:
+
+- The endpoint is `https` on port 443 with a public DNS host (no IP literals,
+  `localhost`, `.local`, `.internal` or `.home.arpa`), a path, and no userinfo,
+  query or fragment. The host still resolves it to public IPv4 only at dispatch.
+- `api-key` authentication uses an `X-` header; `bearer` uses `Authorization`.
+  `Cookie`, `Host` and other headers are rejected.
+- `reviewedRemoteMcp.tools` maps every provided capability to exactly one remote
+  tool with `effect: read`. Remote writes are rejected in this mode.
+- Input and output schemas must stay inside `ClosedJsonSchema`: closed objects,
+  bounded strings and arrays, depth at most 8, and no `$ref`, combinators or
+  patterns. The trusted host enforces the same schemas on every input and result.
 
 Keys must enter the trusted native host UI, remain in encrypted scope-bound
 storage and be injected only by the broker. The SDK never exposes a key-bearing
 client. Account identity must come from authenticated host bindings, not model
 arguments. Rotation/revocation invalidates generation-bound work and results.
+The retired closed 2.5 RealtyLeads profile is rejected; update such plugins to 2.6.
 
 ## Pinned compute evidence archives (5.7.1)
 

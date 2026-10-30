@@ -253,20 +253,56 @@ Declare `rolePolicy.baseType: "manager"` with `profile: "manager.v1"` and derive
 `CSweetManagerAgentBase`. Product management and game production are specialized manager roles.
 See [manager authoring](manager-agents.md) for shared monitoring, assessment, recovery hooks and required grants.
 
-## Reviewed host remote MCP (5.7.1)
+## Reviewed host remote MCP (5.8.0)
 
-The initial reviewed provider uses `kind: "remote-mcp"`, runtime
-`runtime.type: "host-remote-mcp"`, manifest version 2.0 and protocol minimum 2.5.
-`reviewedRemoteMcp` identifies the closed `realtyleads.read.v1` profile, fixed
-HTTPS endpoint, `api-key` authentication with `X-Api-Key`,
-`owner-business-installation.v1` binding, `stateless-post` transport and MCP
-2025-03-26. `ReviewedRemoteMcpValidator` requires the exact reviewed capability
-schemas and rejects executable code, configuration, credentials, connections,
-network permissions and provider operation mappings. This is not a generic remote
-server declaration. Existing OAuth connector validation remains unchanged.
+A reviewed remote MCP provider uses `kind: "remote-mcp"`, `runtime.type: "host-remote-mcp"`,
+manifest version 2.0 and protocol minimum **2.6**. The trusted host holds the key and
+calls the remote server; no plugin process exists.
+
+```json
+"reviewedRemoteMcp": {
+  "profile": "acme.read.v1",
+  "endpoint": "https://api.acme.example/mcp",
+  "authentication": "api-key",
+  "header": "X-Api-Key",
+  "accountBinding": "owner-business-installation.v1",
+  "transport": "stateless-post",
+  "protocolVersions": ["2025-03-26"],
+  "tools": [
+    { "capability": "acme.orders.search.v1", "remoteTool": "search_orders", "effect": "read" }
+  ]
+}
+```
+
+| Field | Rule |
+|---|---|
+| `profile` | Lowercase dotted identifier ending in `.vN` |
+| `endpoint` | `https`, port 443, public DNS host, a path; no IP, credentials, query or fragment. Shown to the human at install review |
+| `authentication` / `header` | `api-key` with an `X-` header, or `bearer` with `Authorization` |
+| `accountBinding` | `owner-business-installation.v1` |
+| `transport` | `stateless-post` (one request, one bounded JSON or single-event SSE response) |
+| `protocolVersions` | Unique values from the host-supported MCP set (`2025-03-26`) |
+| `tools` | Exactly one mapping per `provides` entry; unique capability and remote tool names; `effect: "read"` |
+
+Each `provides` entry uses `idempotency: "none"` and a timeout of at most 30 seconds.
+Its schemas must stay inside the closed, bounded subset in `ClosedJsonSchema`:
+
+- Allowed keywords: `type`, `properties`, `required`, `items`, `additionalProperties`, `maxLength`, `minLength`, `maxItems`, `minItems`, `minimum`, `maximum`, `enum`, `format` (`uuid` only) and `description`.
+- Every schema declares exactly one non-null type (optionally plus `null`); every object sets `additionalProperties: false` and declares at most 64 properties.
+- Every string has `maxLength` (at most 4096), `format: "uuid"` or an `enum`; every array has `maxItems` (at most 100); depth is at most 8.
+- The input schema root is a non-nullable object.
+
+The remote tool's result must be a single MCP `text` content item whose text is JSON
+matching `outputSchema`; anything else is withheld. At dispatch the host also checks that
+each mapped remote tool is advertised with the same input property names and types.
+Unmapped remote tools are ignored and can never be called.
+
+Remote-MCP manifests cannot declare executable code, configuration, credentials,
+connections, provider operations, accounts, setup, a role policy, web access, events or
+UI. Protocol minimums 2.5 and 2.6 are reserved for this kind. The retired 5.7.x closed
+RealtyLeads profile (protocol 2.5) is rejected with an update message.
 
 Account entry and explicit consumer grants belong to the native host. Agent
 manifests depend on the provider and request its typed business capabilities;
-they cannot contain keys, endpoint overrides or account selectors. Older hosts
-reject the mode. Coordinated host rollout is required; a valid manifest grants
-no authority. See [security](../SECURITY.md) for the account boundary.
+they cannot contain keys, endpoint overrides or account selectors. A valid manifest
+grants no authority. See [security](../SECURITY.md) for the account boundary.

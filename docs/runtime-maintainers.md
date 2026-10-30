@@ -446,16 +446,27 @@ The provider validates both recorded grants at dispatch and rechecks current aut
 
 ## Reviewed remote MCP support
 
-SDK 5.7.1 defines `ReviewedRemoteMcpManifest` and `ReviewedRemoteMcpValidator` for
-protocol 2.5. `ConnectorContractValidator` retains its OAuth-only security guards.
-The companion C-Sweet implementation binds the authenticated human owner, business,
-provider installation, approved consumer and current account generation at the host;
-these are never MCP tool arguments. The existing business/account boundary supplies
-scope; no separate workspace identifier is invented. Keys enter native write-only
-UI and remain in encrypted trusted-host storage. Rotation/revocation fences sessions,
-queued work and in-flight results. No OAuth refresh semantics apply. Provider company
-identity is enforced by the provider and is not inferred from a C-Sweet business ID.
-This additive contract requires coordinated host rollout; SDK validation is not a grant.
+SDK 5.8.0 makes `ReviewedRemoteMcpValidator` publisher-neutral for protocol 2.6 and
+adds `ReviewedRemoteMcpManifest.Tools` plus `ClosedJsonSchema`. Hosts should build
+their dispatch policy from the installed package's reviewed manifest (pinned by
+package digest), not from provider constants:
+
+- `ReviewedRemoteMcpValidator.EndpointHost` yields the only DNS host the broker may
+  connect to.
+- `ClosedJsonSchema.Validate(inputSchema, arguments)` before dispatch, and
+  `ClosedJsonSchema.Validate(outputSchema, result, rejectControlCharacters: false)`
+  before release.
+- `ClosedJsonSchema.IsCompatibleRemoteInput` checks each mapped tool in the remote
+  `tools/list`. Unmapped remote tools may exist but are never callable.
+
+`ConnectorContractValidator` retains its OAuth-only security guards. The host binds
+the authenticated human owner, business, provider installation, approved consumer
+and current account generation; these are never MCP tool arguments. Keys enter
+native write-only UI and remain in encrypted trusted-host storage.
+Rotation/revocation fences sessions, queued work and in-flight results. Provider
+company identity is enforced by the provider and is not inferred from a C-Sweet
+business ID. Protocol 2.6 requires a host that implements this generic broker;
+older hosts reject it.
 
 ## Runtime transport log budget (5.5.4)
 
