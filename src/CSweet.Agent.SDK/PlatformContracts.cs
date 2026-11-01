@@ -191,10 +191,20 @@ public sealed record RejectedWorkforceCandidate(string CandidateId, string Name,
 /// <summary>The authoritative source categories used by the unified agent catalog.</summary>
 public enum AgentCatalogSource
 {
+    /// <summary>An agent package already installed in the organization being searched.</summary>
     Installed,
+    /// <summary>An agent folder in the host's local catalog directory (development hosts).</summary>
     LocalDirectory,
+    /// <summary>The host's curated first-party catalog.</summary>
     FirstPartyCatalog,
-    Marketplace
+    /// <summary>The C-Sweet Market.</summary>
+    Marketplace,
+    /// <summary>
+    /// An agent definition the host owner imported and approved on the Installed Agents page.
+    /// Every organization on that host may hire it; a hire reuses the approved package instead of
+    /// importing the repository again. Added in SDK 5.8.1.
+    /// </summary>
+    ApprovedDefinition
 }
 
 /// <summary>The installation state of an agent visible through the catalog.</summary>
