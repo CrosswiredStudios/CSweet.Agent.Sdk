@@ -103,7 +103,14 @@ public sealed record WorkstreamSummary(
     Guid? AccountableManagerOrganizationUserId,
     DateTimeOffset? TargetDate,
     decimal? BudgetAmount,
-    string? BudgetCurrency);
+    string? BudgetCurrency)
+{
+    public ImportedProjectContext? ImportedProject { get; init; }
+}
+
+/// <summary>Accepted owner-reviewed project context; pending profiles expose status only.</summary>
+public sealed record ImportedProjectContext(Guid RepositoryId, long ProjectRevision, string ProfileStatus,
+    string? Category, string? Purpose, JsonElement? AcceptedProfile);
 
 public sealed record BusinessPatternSearchRequest(
     string? BusinessType,
@@ -202,7 +209,7 @@ public enum AgentCatalogSource
     /// <summary>
     /// An agent definition the host owner imported and approved on the Installed Agents page.
     /// Every organization on that host may hire it; a hire reuses the approved package instead of
-    /// importing the repository again. Added in SDK 5.8.1.
+    /// importing the repository again. Added in SDK 5.9.0.
     /// </summary>
     ApprovedDefinition
 }
@@ -320,6 +327,7 @@ public sealed record UpsertHiringRecommendationRequest(
     string? RecommendedCandidateReference,
     string IdempotencyKey)
 {
+    public bool AssignAsProjectManager { get; init; }
     public int Priority { get; init; } = 50;
     public string? RoleKey { get; init; }
     public int Headcount { get; init; } = 1;
