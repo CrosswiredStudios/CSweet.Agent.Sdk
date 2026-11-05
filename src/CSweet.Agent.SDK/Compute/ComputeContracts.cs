@@ -72,7 +72,8 @@ public sealed record ComputeOperation(Guid Id, Guid EnvironmentId, long Generati
     string? FailureCode, ComputeWorkloadResult? Result);
 
 public sealed record ComputeWorkloadResult(ComputeCommandResult? Command = null, string? Url = null,
-    DateTimeOffset? UrlExpiresAt = null, string? ErrorCode = null, ComputeEvidenceArtifact? Artifact = null);
+    DateTimeOffset? UrlExpiresAt = null, string? ErrorCode = null, ComputeEvidenceArtifact? Artifact = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ComputeBuildArchiveReceipt? BuildArchive = null);
 
 /// <summary>One pinned browser archive transfer. Guest paths are derived by the provider.</summary>
 public sealed record ComputeEvidenceArchive(string SourceCommitSha, string BuildSha256, string Sha256,

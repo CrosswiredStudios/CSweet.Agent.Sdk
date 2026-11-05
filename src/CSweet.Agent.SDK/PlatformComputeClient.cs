@@ -4,7 +4,7 @@ namespace CSweet.Agent.SDK;
 
 /// <summary>Typed compute requests through the existing grant-governed platform broker.
 /// Methods submit once; callers use stable keys, current generations, and durable change events.</summary>
-public sealed class PlatformComputeClient
+public sealed partial class PlatformComputeClient
 {
     private readonly PlatformCapabilityClient _platform;
     internal PlatformComputeClient(PlatformCapabilityClient platform) => _platform = platform;

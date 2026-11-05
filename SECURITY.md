@@ -426,3 +426,7 @@ The retired closed 2.5 RealtyLeads profile is rejected; update such plugins to 2
 ## Pinned compute evidence archives (5.7.1)
 
 `PlatformComputeClient.ExportEvidenceAsync` submits one asynchronous `compute.execute.v1` operation for a source/build/script/hash/length-bound browser archive, capped at 4 MiB. Providers derive guest paths; callers supply no URLs, paths or credentials. Ordinary command output remains limited to 8 KiB. `ReadEvidenceAsync` uses bounded authorized `compute.read.v1` pages inside one callback, checks identity/length/offset and final SHA-256, and never reexecutes a browser test. Cancellation retains the operation; a later callback can repeat artifact reads. Status responses contain metadata only.
+
+### Static build transfer
+
+`PlatformComputeClient.StageBuildAsync` uses existing installation-scoped operating-state capabilities. Build parts are bound to the exact source, archive digest, length, offset and part digest. The SDK exposes no provider connection, input URL, host path or cross-installation selector. Core independently verifies staged bytes before compute admission and serves input only to the signed, current authorized dispatch. `UploadBuildAsync` changes no command replay policy and grants no network authority.

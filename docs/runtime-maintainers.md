@@ -479,3 +479,9 @@ Work claims reserve the configured bounded long-poll wait (1-25 seconds) plus th
 ## Pinned compute evidence archives (5.7.1)
 
 `PlatformComputeClient.ExportEvidenceAsync` submits one asynchronous `compute.execute.v1` operation for a source/build/script/hash/length-bound browser archive, capped at 4 MiB. Providers derive guest paths; callers supply no URLs, paths or credentials. Ordinary command output remains limited to 8 KiB. `ReadEvidenceAsync` uses bounded authorized `compute.read.v1` pages inside one callback, checks identity/length/offset and final SHA-256, and never reexecutes a browser test. Cancellation retains the operation; a later callback can repeat artifact reads. Status responses contain metadata only.
+
+## Build input transfer
+
+`PlatformComputeClient.BuildArchive` stages `ComputeBuildInputPart` rows with schema `compute.build-input-part.v1`, 64-KiB pages and a 16-MiB archive limit. The state key derives from source plus whole-build SHA-256 and offset. Repeated staging reads and compares exact bytes; a write conflict must be followed by the same identity check. One `compute.execute` contains `buildArchive` metadata and part digests, never raw archive bytes. `ComputeWorkloadResult.BuildArchiveReceipt` is optional for older peers.
+
+Core and provider must be upgraded together for the additive workload variant. Core validates ownership/full digest before admission; signed provider input reads recheck the current dispatch and grants. A resumed transfer is a fixed filesystem effect; this exception never extends to browser tests or arbitrary guest commands. `ComputeBuildUploadTests` covers staged-part reuse, lost replies, corrupt input and invalid bounds.
