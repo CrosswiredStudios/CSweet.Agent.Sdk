@@ -7,6 +7,46 @@ namespace CSweet.Agent.SDK.Tests;
 
 public sealed partial class AuthoringKitQualityTests
 {
+    [Theory]
+    [InlineData("releases/5.10.0.md", false)]
+    [InlineData("releases/999.0.0.md", false)]
+    [InlineData("releases/999.0.0.zip", true)]
+    public async Task ReleaseNotes_AreDiscoverableByGitWhileBuildArtifactsStayIgnored(string path, bool ignored)
+    {
+        var start = new ProcessStartInfo("git") {
+            WorkingDirectory=RepositoryRoot(), UseShellExecute=false,
+            RedirectStandardOutput=true, RedirectStandardError=true
+        };
+        foreach(var argument in new[]{"check-ignore","--no-index","--quiet","--",path}) start.ArgumentList.Add(argument);
+        using var process=Process.Start(start)!;
+        await process.WaitForExitAsync();
+        Assert.Equal(ignored ? 0 : 1,process.ExitCode);
+    }
+
+    [Fact]
+    public void CurrentPackage_HasVersionMatchedReleaseNotes()
+    {
+        var root = RepositoryRoot();
+        var project = System.Xml.Linq.XDocument.Load(Path.Combine(root, "src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj"));
+        var version = project.Descendants("Version").Single().Value;
+        var notes = Path.Combine(root, "releases", version + ".md");
+        Assert.True(File.Exists(notes), $"Matching versioned release notes are required: {notes}");
+        Assert.Equal("# " + version, File.ReadLines(notes).First());
+    }
+
+    [Fact]
+    public void PublishWorkflow_ChecksReleaseNotesBeforeRestoreOrPublishing()
+    {
+        var workflow = File.ReadAllText(Path.Combine(RepositoryRoot(), ".github/workflows/publish.yml"));
+        var check = workflow.IndexOf("Matching versioned release notes are required:", StringComparison.Ordinal);
+        var heading = workflow.IndexOf("Release-note heading must match package version", StringComparison.Ordinal);
+        var restore = workflow.IndexOf("dotnet restore", StringComparison.Ordinal);
+        var login = workflow.IndexOf("NuGet login", StringComparison.Ordinal);
+        var push = workflow.IndexOf("dotnet nuget push", StringComparison.Ordinal);
+        Assert.True(check >= 0 && heading > check && restore > heading && login > restore && push > login,
+            "Validate matching notes and heading before build, credentials or publication.");
+    }
+
     private static readonly string[] MaintainedDocuments =
     [
         "README.md",
