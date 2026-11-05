@@ -209,7 +209,7 @@ public enum AgentCatalogSource
     /// <summary>
     /// An agent definition the host owner imported and approved on the Installed Agents page.
     /// Every organization on that host may hire it; a hire reuses the approved package instead of
-    /// importing the repository again. Added in SDK 5.10.0.
+    /// importing the repository again. Added in SDK 5.10.1.
     /// </summary>
     ApprovedDefinition
 }

@@ -125,6 +125,16 @@ public static partial class DeliveryComputeTest
                     await Save();
                     return Wait("Dependency installation continues; its status check will resume. The installation is not restarted.");
                 }
+                else if (await CanResumeLegacyMissingTestAsync())
+                {
+                    // The old fixed recipe stopped before building because it assumed an
+                    // optional npm test script existed. Keep the failure and re-observe the
+                    // successful restore job so fresh validation remains adjacent to restore.
+                    state = state with { Step=state.Step+1, Generation=operation.Generation,
+                        Pending=null,PendingStage=null,OperationId=null,RestoreId=null };
+                    await Save();
+                    return await ExecuteAuthorizedAsync(assignment,plan,context,ct);
+                }
                 else
                 {
                 if (operation.Status != "Completed" || operation.Result is not
@@ -147,6 +157,17 @@ public static partial class DeliveryComputeTest
                 if(restoreRunning)return AgentWorkResult.Success(new WorkExecutionOutcomeV1(assignment.StageExecutionId,assignment.AttemptId,
                     WorkExecutionDispositions.Completed,"awaiting-compute","Installing dependencies; the durable job continues without an overall download deadline.",
                     JsonSerializer.SerializeToElement(new WorkDeliveryComputePending(candidate.Digest,[],DateTimeOffset.UtcNow.AddSeconds(30)),Json),[],[]));
+                }
+                async Task<bool> CanResumeLegacyMissingTestAsync()
+                {
+                    if (state is not { PendingStage:"validate",Mode:"node",Networked:true,RestoreStarted:true,RestoreId:not null } ||
+                        state.RestoreJob!=NetworkRestoreJobKey(key) || state.ArchiveHash is null || operation.Status!="Completed" ||
+                        operation.Result is not { ErrorCode:null,Command:{ExitCode:1,TimedOut:false,Truncated:false,ErrorCode:null} failed } ||
+                        failed.RequestId!=pending.Command.RequestId ||
+                        !failed.StandardErrorText.StartsWith("npm error Missing script: \"test\"",StringComparison.Ordinal))return false;
+                    var evidence=await Snapshot();
+                    return evidence.ArchiveSha256==state.ArchiveHash &&
+                        CanResumeLegacyMissingTest(state,pending,failed,evidence.Archive!,repository,candidate.Digest,plan.Id);
                 }
             }
             if (state.PublicationExpectedGeneration is { } publicationExpected)
@@ -292,7 +313,7 @@ docker build --network=none --pull=false -t {name}:test source
 docker rm -f {name} >/dev/null 2>&1 || true
 docker run -d --name {name} --network=bridge -p 127.0.0.1:8080:8080 --restart=no {name}:test
 """ : mode == "node" ? $"""
-if ! docker run --rm --network=none -v "$PWD/source:/app" -w /app csweet/node:22 sh -c 'npm test && npm run build' > validation.log 2>&1; then
+if ! docker run --rm --network=none -v "$PWD/source:/app" -w /app csweet/node:22 sh -c 'npm test --if-present && npm run build' > validation.log 2>&1; then
  tail -c 6000 validation.log >&2
  exit 1
 fi

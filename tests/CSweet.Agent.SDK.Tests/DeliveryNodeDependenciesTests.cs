@@ -40,7 +40,7 @@ public sealed class DeliveryNodeDependenciesTests
         Assert.Contains("npm ci --offline --cache /npm-cache",restore);Assert.Contains(dependencies.LockfileSha256,restore);
         Assert.DoesNotContain("csweet-candidate:",restore);
         var script=DeliveryComputeTest.ValidationScript(root,new(Guid.NewGuid(),"release","main",new string('a',40),new string('b',40),new string('c',40)),hash,"node",Guid.NewGuid());
-        Assert.Contains("npm test && npm run build",script);Assert.Contains("source/dist/index.html",script);
+        Assert.Contains("npm test --if-present && npm run build",script);Assert.Contains("source/dist/index.html",script);
         Assert.Contains("csweet-candidate:",script);Assert.DoesNotContain("--network=host",script);
     }
 }

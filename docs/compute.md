@@ -74,3 +74,9 @@ New Node readiness runs select an `outboundOnly` VM and execute normal `npm ci -
 The completed build receipt (`ComputeWorkloadResult.BuildArchive`) must match the expected source, archive SHA-256 and byte length before browser testing. The trusted provider internally resumes matching partial bytes and rejects conflicting input. This data-only transfer neither extracts the archive nor executes application code. Unknown browser/application commands remain ineligible for automatic replay.
 
 Request operating-state read/write and compute execute capabilities separately; current grants remain authoritative. The platform verifies the complete staged archive before admission. Provider input reads require the current node signature, operation and dispatch lease, generation, owning installation and execution grants. There are no public input URLs, arbitrary storage keys or caller-selected paths. Requires matching C-Sweet core and compute provider support; legacy agents remain compatible.
+
+## Optional Node test scripts (5.10.1)
+
+Node readiness runs `npm test --if-present` and the mandatory build, static artifact and exact-source HTTP checks. An absent test script is not a build failure. A declared test still runs and any failure stops readiness; independent QA remains responsible for the accepted criteria.
+
+The older mandatory-test recipe can recover only its verified, completed missing-script failure on unchanged source with no declared test. It retains the failed operation, re-observes the existing successful restore job, then requires new adjacent validation and publication receipts. Unknown, truncated or changed results and defined failing tests do not qualify.

@@ -70,6 +70,9 @@ public sealed class DeliveryComputeTestTests
     [InlineData("node-retired-environment","approved")]
     [InlineData("node-cleanup-in-progress","awaiting-compute")]
     [InlineData("node-repeated-retired","awaiting-compute")]
+    [InlineData("node-legacy-no-test","approved")]
+    [InlineData("node-legacy-defined-test","changes_requested")]
+    [InlineData("node-legacy-unknown","changes_requested")]
     public async Task Recovery_keeps_exact_requests_and_requires_real_command_and_link_receipts(string condition, string expected)
     {
         var project = Guid.NewGuid(); var employee = Guid.NewGuid(); var installation = Guid.NewGuid();
@@ -91,7 +94,7 @@ public sealed class DeliveryComputeTestTests
             { OrganizationUserId = employee, AgentInstallationId = installation };
         var node = condition.StartsWith("node-", StringComparison.Ordinal) || condition == "lost-restore";
         var networked = node;
-        var source = node ? NodeArchive() : Archive("index.html"); var hash = Convert.ToHexStringLower(SHA256.HashData(source));
+        var source = node ? NodeArchive(withTest:!condition.StartsWith("node-legacy-",StringComparison.Ordinal) || condition=="node-legacy-defined-test") : Archive("index.html"); var hash = Convert.ToHexStringLower(SHA256.HashData(source));
         AgentOperatingStateResponse? state = null;
         var environment = new ComputeEnvironment(Guid.NewGuid(),1,1,"running","ready","ephemeral",DateTimeOffset.UtcNow,DateTimeOffset.UtcNow.AddHours(1),null);
         var receipts = new Dictionary<Guid,ComputeOperation>();
@@ -192,8 +195,21 @@ public sealed class DeliveryComputeTestTests
                 if(condition=="lost-publication-response"&&!lost){lost=true;throw new OperationCanceledException("Publication succeeded; response lost");}
                 return Task.FromResult(op); });
         WorkExecutionOutcomeV1? outcome=null;
+        var legacyInjected=false;
         // Fresh callback contexts model runtime loss; only the durable state and provider receipts survive.
         for(var pass=0;pass<24;pass++) {
+            if(condition.StartsWith("node-legacy-",StringComparison.Ordinal) && !legacyInjected && state?.Payload.Deserialize<DeliveryComputeTest.State>(Json) is {PendingStage:"validate",Pending:{} oldPending,OperationId:{} oldId} oldState)
+            {
+                // Simulate the immutable receipt and durable state saved by the previous SDK.
+                legacyInjected=true;
+                var command=oldPending.Command with {Arguments=["-c",oldPending.Command.Arguments[1].Replace("npm test --if-present && npm run build","npm test && npm run build",StringComparison.Ordinal)]};
+                var pending=oldPending with {Command=command};
+                state=state with {Payload=JsonSerializer.SerializeToElement(oldState with {Pending=pending},Json)};
+                var legacyResult=new ComputeCommandResult(command.RequestId,condition=="node-legacy-unknown"?null:1,false,[],
+                    Encoding.UTF8.GetBytes("npm error Missing script: \"test\"\n"),ErrorCode:condition=="node-legacy-unknown"?"outcome-unknown":null);
+                receipts[oldId]=receipts[oldId] with {Result=new(Command:legacyResult)};
+                accepted[pending.IdempotencyKey]=receipts[oldId];requests[pending.IdempotencyKey]=pending;
+            }
             AgentWorkResult result;
             try {result=await DeliveryBuildReadiness.ExecuteAsync(assignment,runtime.CreateContext(assignment.OrganizationId.ToString(),installation.ToString()),default);}
             catch(OperationCanceledException) when(condition.StartsWith("lost-",StringComparison.Ordinal)){continue;}
@@ -208,7 +224,7 @@ public sealed class DeliveryComputeTestTests
             var proof=Assert.Single(outcome.Output.Deserialize<WorkDeliveryReviewResult>(Json)!.ComputeTests);
             Assert.Equal(repository.CandidateCommitSha,proof.CommitSha); Assert.Equal(hash,proof.ArchiveSha256);
             var restarted=condition=="archive-changes-once";
-            var extra=condition=="node-slow-job"?2:condition=="node-observe-unknown"?1:0;
+            var extra=condition=="node-legacy-no-test"?2:condition=="node-slow-job"?2:condition=="node-observe-unknown"?1:0;
             Assert.Equal(node?4+extra:restarted?3:2,requests.Count);
             Assert.Equal(node?6+extra:restarted?5:4,proof.Generation);Assert.Equal(proof.Generation-1,receipts[proof.ValidationOperationId].Generation);
             Assert.Equal(proof.Generation,receipts[proof.PublicationOperationId].Generation);Assert.Single(publicationRequests);
@@ -233,11 +249,11 @@ public sealed class DeliveryComputeTestTests
         if(condition is "node-restore-failed" or "node-unknown") Assert.Empty(publicationRequests);
     }
 
-    internal static byte[] NodeArchive(string? lockfile = null)
+    internal static byte[] NodeArchive(string? lockfile = null,bool withTest=true)
     {
         using var buffer = new MemoryStream();
         using (var zip = new ZipArchive(buffer, ZipArchiveMode.Create, true)) {
-            using(var writer=new StreamWriter(zip.CreateEntry("package.json").Open())) writer.Write("""{"scripts":{"test":"node test.mjs","build":"node build.mjs"}}""");
+            using(var writer=new StreamWriter(zip.CreateEntry("package.json").Open())) writer.Write(withTest?"""{"scripts":{"test":"node test.mjs","build":"node build.mjs"}}""":"""{"scripts":{"build":"node build.mjs"}}""");
             using(var writer=new StreamWriter(zip.CreateEntry("package-lock.json").Open())) writer.Write(lockfile ?? """{"lockfileVersion":3,"packages":{"":{}}}""");
         }
         return buffer.ToArray();

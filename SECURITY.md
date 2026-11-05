@@ -430,3 +430,7 @@ The retired closed 2.5 RealtyLeads profile is rejected; update such plugins to 2
 ### Static build transfer
 
 `PlatformComputeClient.StageBuildAsync` uses existing installation-scoped operating-state capabilities. Build parts are bound to the exact source, archive digest, length, offset and part digest. The SDK exposes no provider connection, input URL, host path or cross-installation selector. Core independently verifies staged bytes before compute admission and serves input only to the signed, current authorized dispatch. `UploadBuildAsync` changes no command replay policy and grants no network authority.
+
+### Legacy optional-test recovery
+
+Node readiness may re-enter only the exact older `npm test` recipe after a completed exit-1 missing-script result, a matching request identity, unchanged authoritative archive and an absent declared test. It preserves the failed receipt, observes the existing restore job and obtains fresh adjacent validation/publication evidence. This exception does not replay unknown application effects or ignore a declared failing test. All current compute grants and source/generation fences remain in force.
