@@ -198,6 +198,28 @@ public sealed class DeliveryCorrectionCoordinatorTests
         else Assert.Equal(f.Source.Id, f.Plans[0].Corrections[0].SourceItemId);
     }
 
+    [Fact]
+    public async Task Source_selection_retains_decision_evidence_beyond_old_prompt_clipping_limits()
+    {
+        var f = PrismCase();
+        const string scope = "The exact explosive brick sample must match its documented red colour.";
+        const string findingTail = "Explosive brick sample is purple instead of the documented red.";
+        f.Source = f.Source with { Planning = new([new string('x', 9000), scope],
+            [new string('y', 4000), "Explosive brick sample is red"]) };
+        var finding = f.Plans[0].Findings[0] with { Summary = new string('z', 4000) + findingTail };
+        f.Plans[0] = f.Plans[0] with { Findings = [finding] };
+        var answer = JsonSerializer.Serialize(new { disposition = "Select", reason = "The full accepted scope matches the exact finding.",
+            choices = new[] { new { findingId = finding.Id, sourceItemId = f.Source.Id,
+                scopeEvidence = scope, findingEvidence = findingTail } } });
+        using var client = new SelectionClient(answer);
+        await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project, f.Context(), () => client, default);
+        Assert.Contains(scope, client.Input);
+        Assert.Contains(findingTail, client.Input);
+        Assert.Contains("Explosive brick sample is red", client.Input);
+        Assert.Equal(1, f.Starts);
+        Assert.Equal(f.Source.Id, f.Plans[0].Corrections[0].SourceItemId);
+    }
+
     private static Fixture PrismCase()
     {
         var f = new Fixture { Ambiguous = true };
@@ -221,7 +243,7 @@ public sealed class DeliveryCorrectionCoordinatorTests
         {
             Calls++;
             Assert.Empty(options!.Tools!);
-            Assert.Equal(16384, options.MaxOutputTokens);
+            Assert.Null(options.MaxOutputTokens);
             Input = messages.Last().Text;
             onCall?.Invoke();
             return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, response)));

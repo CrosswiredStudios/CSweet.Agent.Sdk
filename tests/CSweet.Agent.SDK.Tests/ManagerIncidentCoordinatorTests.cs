@@ -75,7 +75,7 @@ public sealed class ManagerIncidentCoordinatorTests
         public object? GetService(Type serviceType, object? serviceKey = null) => null;
         public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default)
         {
-            Calls++; Assert.Equal(32768, options!.MaxOutputTokens);
+            Calls++; Assert.Null(options!.MaxOutputTokens);
             Assert.Empty(options.Tools!);
             return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, answer)));
         }

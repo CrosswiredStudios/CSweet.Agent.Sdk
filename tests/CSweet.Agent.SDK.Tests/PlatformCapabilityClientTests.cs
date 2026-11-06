@@ -6,7 +6,7 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class PlatformCapabilityClientTests
 {
     [Fact]
-    public async Task Chat_client_forwards_generation_bounds_to_the_platform()
+    public async Task Chat_client_leaves_generation_capacity_to_authenticated_platform_configuration()
     {
         JsonElement captured = default;
         var providerProfileId = Guid.NewGuid();
@@ -35,7 +35,7 @@ public sealed class PlatformCapabilityClientTests
         Assert.Equal("bounded response", response.Text);
         Assert.Equal(providerProfileId, captured.GetProperty("providerProfileId").GetGuid());
         Assert.Equal(0.2f, captured.GetProperty("temperature").GetSingle());
-        Assert.Equal(640, captured.GetProperty("maxOutputTokens").GetInt32());
+        Assert.Equal(JsonValueKind.Null, captured.GetProperty("maxOutputTokens").ValueKind);
     }
 
     [Fact]

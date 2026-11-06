@@ -27,8 +27,8 @@ public abstract partial class CSweetManagerAgentBase
 public static class ManagerIncidentCoordinator
 {
     public const string DecisionContextKey = "incidentResolutionDecisionId";
+    // Legacy API retained for compatibility; generation now follows caller cancellation.
     public static readonly TimeSpan ModelTimeout = TimeSpan.FromMinutes(5);
-    private const int ResponseTokenBudget = 32_768;
     public const string PersonalCommitmentPrefix = "incident-resolution:";
     public static bool IsIncidentCommitment(PersonalTodoItem item) => item.CorrelationId?.StartsWith(PersonalCommitmentPrefix, StringComparison.Ordinal) == true;
 
@@ -88,16 +88,15 @@ public static class ManagerIncidentCoordinator
     {
         if (review.Diagnostics.CurrentState is not { } state) return null;
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
-        deadline.CancelAfter(ModelTimeout);
         var documents = new List<object>();
-        foreach (var reference in state.Documents.Take(3))
+        foreach (var reference in state.Documents)
         {
             try
             {
                 var document = await context.Platform.Artifacts.GetAsync(reference.ArtifactId, deadline.Token);
                 var revision = document.Revisions.SingleOrDefault(x => x.Id == reference.RevisionId && x.ContentSha256 == reference.Digest);
                 if (document.WorkstreamId == review.Incident.WorkstreamId && revision is not null)
-                    documents.Add(new { document.Title, revision.Id, reference.Digest, revision.Status, Content = revision.Content[..Math.Min(6000, revision.Content.Length)] });
+                    documents.Add(new { document.Title, revision.Id, reference.Digest, revision.Status, Content = revision.Content });
             }
             catch (PlatformCapabilityException) { /* A reference never grants document access. */ }
         }
@@ -139,14 +138,14 @@ public static class ManagerIncidentCoordinator
                 direction. The UI adds Something Else; do not include it in options.
                 """),
             new ChatMessage(ChatRole.User, JsonSerializer.Serialize(new { responsibility, identity = context.Identity,
-                current = state.Facts.Take(12).Select(x => x with { Detail = x.Detail[..Math.Min(800, x.Detail.Length)] }), documents,
-                historical = review.Diagnostics.Evidence.DistinctBy(x => x.Detail).TakeLast(6).Select(x => x with { Detail = x.Detail[..Math.Min(400, x.Detail.Length)] }),
-                limitations = review.Diagnostics.Limitations.Take(4).Select(x => x[..Math.Min(300, x.Length)]),
-                moreEvidenceExists = state.Facts.Count > 12 || review.Diagnostics.Evidence.Count > 6 || review.Diagnostics.NextOffset.HasValue,
+                current = state.Facts, documents,
+                historical = review.Diagnostics.Evidence.DistinctBy(x => x.Detail),
+                limitations = review.Diagnostics.Limitations,
+                moreEvidenceExists = review.Diagnostics.NextOffset.HasValue,
                 incident = new { review.Incident.Id, review.Incident.WorkstreamId, review.Incident.Status,
-                    Reason = review.Incident.Reason[..Math.Min(600, review.Incident.Reason.Length)],
-                    MissingEvidence = review.Incident.MissingEvidence[..Math.Min(600, review.Incident.MissingEvidence.Length)] } }, CSweetAgentBase.SerializerOptions))
-        ], new ChatOptions { MaxOutputTokens = ResponseTokenBudget, Tools = [] }, deadline.Token);
+                    Reason = review.Incident.Reason,
+                    MissingEvidence = review.Incident.MissingEvidence } }, CSweetAgentBase.SerializerOptions))
+        ], new ChatOptions { Tools = [] }, deadline.Token);
         var report = ParseReport(response.Text, state.Hash);
         return report;
     }
@@ -185,7 +184,6 @@ public static class ManagerIncidentCoordinator
         IChatClient client, AgentRuntimeContext context, CancellationToken token)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
-        deadline.CancelAfter(ModelTimeout);
         var descriptors = await context.Platform.Tools.ListToolsAsync(deadline.Token);
         // Tool authority remains in the broker. Confine recovery to management operations with durable keys.
         var allowed = ResolutionCapabilities(descriptors, resolution.IsFollowUp);
@@ -211,7 +209,7 @@ public static class ManagerIncidentCoordinator
                 blocker and next step. Do not claim an action without a successful tool receipt.
                 """),
             new ChatMessage(ChatRole.User, JsonSerializer.Serialize(new { responsibility, resolution, identity = context.Identity }, CSweetAgentBase.SerializerOptions))
-        ], new ChatOptions { MaxOutputTokens = ResponseTokenBudget, Tools = tools.Select(x => x is AIFunction f ?
+        ], new ChatOptions { Tools = tools.Select(x => x is AIFunction f ?
             (AITool)new RecoveryFunction(f, resolution, context.Identity?.EmployeeId) : x).ToList() }, deadline.Token);
         if (string.IsNullOrWhiteSpace(response.Text)) throw new InvalidOperationException("No recovery outcome was returned.");
         return response.Text[..Math.Min(4000, response.Text.Length)];

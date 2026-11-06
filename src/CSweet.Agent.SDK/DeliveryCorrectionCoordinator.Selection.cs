@@ -14,23 +14,21 @@ public static partial class DeliveryCorrectionCoordinator
         WorkItem[] sources, Func<IChatClient> createClient, CancellationToken ct)
     {
         var findings = plan.Findings.Where(f => correction.FindingIds.Contains(f.Id)).OrderBy(f => f.Id).ToArray();
-        if (sources.Length > 8 || findings.Length is 0 or > 8 || findings.Length != correction.FindingIds.Count ||
+        if (findings.Length == 0 || findings.Length != correction.FindingIds.Count ||
             sources.Any(s => s.Planning is null))
-            throw new InvalidOperationException("Source selection needs bounded, complete accepted scope and findings; the manager must split or restore the planning inputs.");
-        static string Clip(string text, int limit) => text[..Math.Min(limit, text.Length)];
+            throw new InvalidOperationException("Source selection needs complete accepted scope and findings; the manager must split or restore the planning inputs.");
         // Include accepted task boundaries, not a portfolio, chat history or execution tools.
         var evidence = new
         {
             correction.Id, correction.CandidateDigest,
-            findings = findings.Select(f => new { f.Id, Summary = Clip(f.Summary, 3000) }),
+            findings = findings.Select(f => new { f.Id, Summary = f.Summary }),
             sources = sources.Select(s => new { s.Id, s.Title, s.Revision, s.PlanningRevision,
-                Requirements = Clip(string.Join("\n", s.Planning!.Requirements), 8000),
-                AcceptanceCriteria = Clip(string.Join("\n", s.Planning!.AcceptanceCriteria), 3000) })
+                Requirements = string.Join("\n", s.Planning!.Requirements),
+                AcceptanceCriteria = string.Join("\n", s.Planning!.AcceptanceCriteria) })
         };
         try
         {
             using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            deadline.CancelAfter(TimeSpan.FromMinutes(3));
             using var client = createClient();
             var response = await client.GetResponseAsync([
                 new ChatMessage(ChatRole.System, """
@@ -54,7 +52,7 @@ public static partial class DeliveryCorrectionCoordinator
                     If distinctive scope cannot be cited, use NeedsPlanning. Keep reason under 500 characters.
                     """),
                 new ChatMessage(ChatRole.User, JsonSerializer.Serialize(evidence, SelectionJson))
-            ], new ChatOptions { Tools = [], MaxOutputTokens = 16_384 }, deadline.Token);
+            ], new ChatOptions { Tools = [],  }, deadline.Token);
             var decision = JsonSerializer.Deserialize<SourceDecision>(response.Text, SelectionJson);
             if (decision is null || string.IsNullOrWhiteSpace(decision.Reason) || decision.Reason.Length > 500)
                 throw new JsonException("Missing or oversized source-selection rationale.");
@@ -72,7 +70,7 @@ public static partial class DeliveryCorrectionCoordinator
             {
                 var finding = findings.SingleOrDefault(f => f.Id == choice.FindingId);
                 var scope = evidence.sources.Single(s => s.Id == selected.Id);
-                if (finding is null || !Quoted(choice.FindingEvidence, Clip(finding.Summary, 3000)) ||
+                if (finding is null || !Quoted(choice.FindingEvidence, finding.Summary) ||
                     !(Quoted(choice.ScopeEvidence, scope.Requirements) || Quoted(choice.ScopeEvidence, scope.AcceptanceCriteria)) ||
                     evidence.sources.Any(s => s.Id != selected.Id &&
                         (s.Requirements.Contains(choice.ScopeEvidence, StringComparison.Ordinal) || s.AcceptanceCriteria.Contains(choice.ScopeEvidence, StringComparison.Ordinal))))

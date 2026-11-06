@@ -40,7 +40,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.12.0
+  --SdkVersion 5.12.1
 cd ResearchAgent
 dotnet test
 ```
@@ -177,7 +177,6 @@ Set model behavior explicitly for the operation:
 var options = new ChatOptions
 {
     Temperature = 0.2f,
-    MaxOutputTokens = 2_048,
     Reasoning = new ReasoningOptions
     {
         Effort = ReasoningEffort.Low,
@@ -189,7 +188,8 @@ var response = await chatClient.GetResponseAsync(messages, options, cancellation
 ```
 
 Those values are examples, not global defaults. Use lower temperature for extraction and typed
-decisions, and choose a larger creative budget only when the requested deliverable needs it. Request
+decisions. The platform uses the installation's configured model generation capacity on every call;
+task-specific `MaxOutputTokens` hints are not forwarded. Do not shorten available context for a task. Request
 reasoning output only when the agent genuinely consumes or displays provider-emitted reasoning.
 Provider token accounting varies; reasoning can consume the available output budget before final
 text. A detailed multi-section deliverable therefore needs both an adequate limit and a bounded

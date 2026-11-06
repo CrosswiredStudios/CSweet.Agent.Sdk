@@ -74,7 +74,7 @@ public static class ProjectDeliveryPlanning
         };
         for (var attempt = 0; attempt < 2; attempt++)
         {
-            var response = await client.GetResponseAsync(messages, new ChatOptions { MaxOutputTokens = 16000 }, ct);
+            var response = await client.GetResponseAsync(messages, new ChatOptions(), ct);
             try
             {
                 var text = response.Text.Trim();

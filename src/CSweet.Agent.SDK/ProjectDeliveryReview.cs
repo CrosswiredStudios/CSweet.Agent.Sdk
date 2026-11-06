@@ -51,7 +51,7 @@ public static class ProjectDeliveryReview
                     Rejection must have actionable findings. This response alone never merges or completes a ticket.
                     """),
                 new ChatMessage(ChatRole.User, JsonSerializer.Serialize(new { item.Planning, Candidate = candidate }, Json))
-            ], new ChatOptions { MaxOutputTokens = 8000 }, ct);
+            ], new ChatOptions(), ct);
             var decision = JsonSerializer.Deserialize<ProjectDeliveryReviewDecision>(response.Text, Json)
                 ?? throw new InvalidOperationException("Review returned no decision.");
             Validate(decision, candidate.CandidateCommitSha, item.Planning.AcceptanceCriteria);

@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 5.12.0
+     --SdkVersion 5.12.1
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed
@@ -96,8 +96,10 @@ rather than repeat a completed model call whenever the generated output is still
 durably checkpointed. Never use process memory or local disk as a cross-callback checkpoint.
 
 For model-backed work, set `ChatOptions` deliberately. Choose reasoning output, reasoning effort,
-temperature, and `MaxOutputTokens` for the task; do not rely on provider defaults. Some providers
-consume the output budget with reasoning before final text. Validate non-empty final content and any
+and temperature for the task. Generation capacity is owned by the authenticated installation: the
+platform explicitly sends its saved model capacity rather than provider defaults. The SDK does not
+forward per-task `MaxOutputTokens` hints; do not add hidden output caps or early context ceilings.
+Reasoning shares generation capacity with final text. Validate non-empty final content and any
 required structure before mutating platform state. Bound validation retries and keep them before the
 first external effect.
 

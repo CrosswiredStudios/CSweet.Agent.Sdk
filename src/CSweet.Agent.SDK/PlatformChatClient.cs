@@ -202,7 +202,7 @@ public sealed class PlatformChatClient : IChatClient
             options?.Reasoning?.Output,
             options?.Reasoning?.Effort,
             options?.Temperature,
-            options?.MaxOutputTokens,
+            null, // Model capacity is resolved from the authenticated installation, never the task.
             (options?.ResponseFormat as ChatResponseFormatJson)?.Schema,
             (options?.ResponseFormat as ChatResponseFormatJson)?.SchemaName);
         await foreach (var result in _tools.InvokeStreamingAsync(
