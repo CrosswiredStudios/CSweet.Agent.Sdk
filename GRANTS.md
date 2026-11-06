@@ -1,5 +1,7 @@
 # Generated capability reference
 
+`work.delivery.correction.coordinate.v1` binds manager-authorized corrective tasks and exact follow-up acceptance. It does not grant board creation, staffing, spending or scope changes; their existing grants remain required.
+
 ## Enterprise account declarations (SDK 5.5.1)
 
 Protocol 2.4 `accounts.permissions` groups existing exact connector operations for native

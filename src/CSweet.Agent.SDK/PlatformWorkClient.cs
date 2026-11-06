@@ -11,6 +11,9 @@ public sealed class PlatformWorkClient
 
     internal PlatformWorkClient(IPlatformToolInvoker tools) => _tools = tools;
 
+    public Task<WorkDeliveryPlanResponse> CoordinateDeliveryCorrectionAsync(CoordinateWorkDeliveryCorrectionRequest request, CancellationToken ct = default) =>
+        InvokeAsync<CoordinateWorkDeliveryCorrectionRequest, WorkDeliveryPlanResponse>(WorkDeliveryCapabilities.Correct, request, ct);
+
     public Task<IReadOnlyList<WorkDeliveryPlanResponse>> ReadDeliveryPlansAsync(ReadWorkDeliveryPlansRequest request, CancellationToken ct = default) =>
         InvokeAsync<ReadWorkDeliveryPlansRequest, IReadOnlyList<WorkDeliveryPlanResponse>>(WorkDeliveryCapabilities.Read, request, ct);
     public Task<WorkDeliveryPlanResponse> ConfigureDeliveryPlanAsync(ConfigureWorkDeliveryPlanRequest request, CancellationToken ct = default) =>

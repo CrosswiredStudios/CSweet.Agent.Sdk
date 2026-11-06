@@ -88,11 +88,8 @@ public static class ProjectIncidentReview
             catch (Exception error) when (error is not OperationCanceledException || !token.IsCancellationRequested)
             { ownerReport = ManagerIncidentCoordinator.FactualFallback(new(incident, diagnostics, $"incident-action:{incident.Id:N}")); }
         }
-        if (ownerReport?.RequiresOwnerInput == false)
-        {
-            // Recovery stays with the manager. The platform owns durable follow-up deadlines.
-            assessment = ManagerIncidentAssessment.Investigating(ownerReport.NextStep, DateTimeOffset.UtcNow.AddMinutes(5));
-        }
+        // Presentation does not replace the assessment, its receipt or its recovery deadline.
+        // In particular, a failed report's fallback must not turn assigned recovery into prose.
         await context.Platform.ProjectHealth.ReportAsync(report with
         {
             OwnerReport = ownerReport,

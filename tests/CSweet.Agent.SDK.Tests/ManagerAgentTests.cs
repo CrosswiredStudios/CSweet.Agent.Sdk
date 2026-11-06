@@ -8,7 +8,7 @@ public sealed class ManagerAgentTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task OwnerRequirementControlsEscalationInsteadOfDefaultManagerAssessment(bool ownerInput)
+    public async Task PresentationDoesNotReplaceTheExecutionAssessment(bool ownerInput)
     {
         var self = Guid.NewGuid();
         var incident = new ManagementIncident(Guid.NewGuid(), Guid.NewGuid(), self, self, "Open", "Interrupted reply", null,
@@ -29,9 +29,9 @@ public sealed class ManagerAgentTests
                 RequiresOwnerInput = ownerInput, OwnerInputReason = ownerInput ? "Confirm the external budget." : null,
                 Options = ownerInput ? [new("approve", "Approve", "Approve budget", "Authorize spending"),
                     new("defer", "Defer", "Defer work", "Defer spending")] : [], RecommendedOptionId = ownerInput ? "approve" : "" }));
-        Assert.Equal(ownerInput ? IncidentDispositions.Escalate : IncidentDispositions.Investigating, recorded!.Disposition);
+        Assert.Equal(IncidentDispositions.Escalate, recorded!.Disposition);
         Assert.Equal(ownerInput, recorded.OwnerReport!.RequiresOwnerInput);
-        if (!ownerInput) { Assert.NotNull(recorded.ReviewAt); Assert.Null(recorded.ActionReference); }
+        Assert.Null(recorded.ReviewAt); Assert.Null(recorded.ActionReference);
     }
 
     [Theory]

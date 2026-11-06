@@ -434,3 +434,8 @@ The retired closed 2.5 RealtyLeads profile is rejected; update such plugins to 2
 ### Legacy optional-test recovery
 
 Node readiness may re-enter only the exact older `npm test` recipe after a completed exit-1 missing-script result, a matching request identity, unchanged authoritative archive and an absent declared test. It preserves the failed receipt, observes the existing restore job and obtains fresh adjacent validation/publication evidence. This exception does not replay unknown application effects or ignore a declared failing test. All current compute grants and source/generation fences remain in force.
+
+
+## Durable corrective delivery
+
+`DeliveryCorrectionCoordinator` discovers bounded current manager-owned handoffs before optional incident reporting. It uses normal board, delivery and sprint capabilities with stable keys. `work.delivery.correction.coordinate.v1` only binds same-project, manager-owned corrective work and verified follow-up acceptance; it grants no source access, scope changes, spending, staffing or document approval. Current platform checks remain authoritative. Incident reporting is tool-free and cannot authorize execution or erase a retained handoff.

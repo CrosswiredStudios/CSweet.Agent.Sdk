@@ -107,3 +107,8 @@ idempotency keys that survive duplicate delivery and evidence changes. It cannot
 interrupted chat or change approvals, accepted documents or spending. The platform persists
 manager follow-up deadlines and independently verifies operational retry state. Install the
 matching platform before SDK 4.4.0 managers.
+
+
+## Durable corrective delivery
+
+`DeliveryCorrectionCoordinator` discovers bounded current manager-owned handoffs before optional incident reporting. It uses normal board, delivery and sprint capabilities with stable keys. `work.delivery.correction.coordinate.v1` only binds same-project, manager-owned corrective work and verified follow-up acceptance; it grants no source access, scope changes, spending, staffing or document approval. Current platform checks remain authoritative. Incident reporting is tool-free and cannot authorize execution or erase a retained handoff.

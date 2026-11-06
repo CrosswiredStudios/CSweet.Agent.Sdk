@@ -489,3 +489,8 @@ Core and provider must be upgraded together for the additive workload variant. C
 ## Missing optional Node test script
 
 `DeliveryComputeTest.LegacyRecipe` recognizes only the exact old validation script, unchanged archive, no package test script and completed untruncated missing-script result. `ExecuteAuthorizedAsync` checks environment/generation, restore identity and operation/request binding before using that predicate. Recovery clears only the old pending cursor and restore receipt reference, advances the command key, re-observes the retained restore job and requires fresh adjacent validation/publication. It never launches dependency installation again. `DeliveryComputeLegacyRecipeTests` and the full callback recovery scenarios cover positive recovery and refusals.
+
+
+## Durable corrective delivery
+
+`DeliveryCorrectionCoordinator` discovers bounded current manager-owned handoffs before optional incident reporting. It uses normal board, delivery and sprint capabilities with stable keys. `work.delivery.correction.coordinate.v1` only binds same-project, manager-owned corrective work and verified follow-up acceptance; it grants no source access, scope changes, spending, staffing or document approval. Current platform checks remain authoritative. Incident reporting is tool-free and cannot authorize execution or erase a retained handoff.

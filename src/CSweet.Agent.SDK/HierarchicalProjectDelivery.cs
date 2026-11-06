@@ -196,7 +196,8 @@ public static class HierarchicalProjectDelivery
             releaseStages.Add(Select("build-readiness", role, [], additionalCapabilities:
                 useComputeTest ? [DeliveryComputeTest.ExecutionCapability] : role == "game-build-release-engineer" ? [] : [DeliveryBuildReadiness.ExecutionCapability]));
         }
-        releaseStages = releaseStages.OrderBy(s => s.StageKey == "build-readiness" ? 0 : s.StageKey == "quality" ? 1 : 2).ToList();
+        // Technical compatibility/package evidence must exist before QA is asked to assess it.
+        releaseStages = releaseStages.OrderBy(s => s.StageKey == "build-readiness" ? 0 : s.StageKey == "technical-review" ? 1 : 2).ToList();
         releaseStages.Add(ManagerAssignment("manager-review"));
         scopes.Add(new(WorkExecutionScopes.Release, null, boardId, releaseStages));
         if (branches.Count > 0)

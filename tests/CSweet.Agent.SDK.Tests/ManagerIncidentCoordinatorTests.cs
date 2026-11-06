@@ -5,6 +5,84 @@ namespace CSweet.Agent.SDK.Tests;
 
 public sealed class ManagerIncidentCoordinatorTests
 {
+    [Fact]
+    public async Task Failed_reporting_cannot_prevent_or_replace_a_durable_recovery_assignment()
+    {
+        var manager=Guid.NewGuid();var incident=Incident(manager) with {CurrentRecipientId=manager};
+        var state=new IncidentCurrentState(new string('A',64),"Prism Break",[],[]);
+        var reports=new List<ReportManagementIncident>();
+        var runtime=new AgentTestRuntime()
+            .RegisterCapability<ReadManagementIncidents,ManagementIncidentPage>(ProjectHealthCapabilities.Incidents,
+                (_,_)=>Task.FromResult(new ManagementIncidentPage([incident],null)))
+            .RegisterCapability<ReadProjectDiagnostics,ProjectDiagnosticsPage>(ProjectHealthCapabilities.Diagnostics,
+                (_,_)=>Task.FromResult(new ProjectDiagnosticsPage([],null,[]){CurrentState=state}))
+            .RegisterCapability<ReportManagementIncident,ManagementIncident>(ProjectHealthCapabilities.Report,
+                (r,_)=>{reports.Add(r);return Task.FromResult(incident);});
+        var context=runtime.CreateContext(identity:new(manager.ToString(),"Producer",null,null,null,[],null,null,null));
+        var agent=new FailingReportManager();
+        var review=new AgentAttentionReviewContext(Guid.NewGuid(),DateTimeOffset.UtcNow,DateTimeOffset.UtcNow.AddMinutes(5),"delivery.changed");
+        await agent.HandleAttentionReviewAsync(review,context,default);
+        await agent.HandleAttentionReviewAsync(review,context,default);
+        Assert.Single(agent.Assignments);Assert.Equal(2,agent.FailedReports);
+        Assert.All(reports,r=>{Assert.Equal(IncidentDispositions.AwaitingRecovery,r.Disposition);
+            Assert.Equal("correction:retained",r.ActionReference);Assert.NotNull(r.OwnerReport);
+            Assert.DoesNotContain("I will investigate",r.OwnerReport!.NextStep);});
+    }
+
+    private sealed class FailingReportManager : CSweetManagerAgentBase
+    {
+        public override string AgentId=>"example.manager";
+        public override string Version=>"1.0.0";
+        protected override string ManagementResponsibility=>"delivery";
+        public HashSet<string> Assignments=[];public int FailedReports;
+        protected override Task HandleManagerRecoveryAsync(AgentRuntimeContext context,CancellationToken token)
+        {Assignments.Add("correction:retained");return Task.CompletedTask;}
+        protected override Task<ManagerIncidentAssessment> AssessIncidentAsync(ManagerIncidentContext incident,AgentRuntimeContext context,CancellationToken token)=>
+            Task.FromResult(ManagerIncidentAssessment.AwaitingRecovery("Engineering correction is assigned.",DateTimeOffset.UtcNow.AddMinutes(5),"correction:retained"));
+        public override Task<IncidentOwnerReport?> GenerateIncidentOwnerReportAsync(ManagerIncidentContext incident,AgentRuntimeContext context,CancellationToken token)
+        {Assert.Single(Assignments);FailedReports++;throw new InvalidOperationException("Report provider unavailable");}
+    }
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task Manager_reporting_and_recovery_allow_complete_reasoning_responses_without_relaxing_owner_authority(bool resolution)
+    {
+        var incident = Incident(Guid.NewGuid());
+        var state = new IncidentCurrentState(new string('A', 64), "Game", [], []);
+        var review = new ManagerIncidentContext(incident, new([], null, []) { CurrentState = state }, "key");
+        var expected = ManagerIncidentCoordinator.FactualFallback(review)!;
+        using var client = new BudgetClient(resolution ? "The existing work was inspected; no fix is confirmed."
+            : JsonSerializer.Serialize(expected, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+        var context = new AgentTestRuntime().CreateContext();
+        if (resolution)
+        {
+            var outcome = await ManagerIncidentCoordinator.ExecuteResolutionAsync(new(incident, Guid.NewGuid(), 1,
+                "Inspect the existing work", "inspect", null, false), "production oversight", client, context, default);
+            Assert.Contains("no fix is confirmed", outcome);
+        }
+        else
+        {
+            var report = await ManagerIncidentCoordinator.GenerateReportAsync(review, "production oversight", client, context, default);
+            Assert.False(report!.RequiresOwnerInput); Assert.Empty(report.Options);
+        }
+        Assert.Equal(1, client.Calls);
+    }
+
+    private sealed class BudgetClient(string answer) : IChatClient
+    {
+        public int Calls;
+        public void Dispose() { }
+        public object? GetService(Type serviceType, object? serviceKey = null) => null;
+        public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default)
+        {
+            Calls++; Assert.Equal(32768, options!.MaxOutputTokens);
+            Assert.Empty(options.Tools!);
+            return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, answer)));
+        }
+        public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages,
+            ChatOptions? options = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    }
+
     [Theory]
     [InlineData("Open", false)]
     [InlineData("Resolved", true)]

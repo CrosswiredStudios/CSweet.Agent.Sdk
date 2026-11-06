@@ -52,5 +52,7 @@ public sealed class IncrementDeliveryPlanningTests
         Assert.Equal(configured.EpicItemIds, new[] { epic.Id });
         Assert.Contains(configured.Assignments.Single(a => a.Scope == WorkExecutionScopes.Release).Stages, s => s.StageKey == "quality");
         Assert.Contains(configured.Assignments.Single(a => a.Scope == WorkExecutionScopes.Release).Stages, s => s.StageKey == "technical-review");
+        Assert.Equal(new[] {"build-readiness", "technical-review", "quality", "manager-review"},
+            configured.Assignments.Single(a => a.Scope == WorkExecutionScopes.Release).Stages.Select(s => s.StageKey));
     }
 }

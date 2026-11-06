@@ -51,6 +51,7 @@ public static class CapabilityNames
         public const string Control = WorkDeliveryCapabilities.Control;
         public const string Accept = WorkDeliveryCapabilities.Accept;
         public const string Recover = WorkDeliveryCapabilities.Recover;
+        public const string Correct = WorkDeliveryCapabilities.Correct;
         public const string Evidence = WorkDeliveryCapabilities.Evidence;
         public const string Review = WorkDeliveryCapabilities.Review;
     }

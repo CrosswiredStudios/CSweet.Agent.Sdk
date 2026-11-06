@@ -1,3 +1,5 @@
+SDK 5.11.0 adds a durable corrective-delivery coordinator and a manager recovery hook that runs before optional reporting. It reuses normal grant-controlled APIs to create scoped engineering work, a separate repair sprint and a fresh acceptance graph. Reporting is tool-free, bounded and independent of execution receipts. Original requirements, independent review and accepted history remain enforced; ambiguous ownership and missing authority retain an explicit manager-owned wait. Requires Work Management Contracts 5.3.0 and the matching platform migration.
+
 SDK 5.1.0 bounds derived workflow-ticket keys to the platform's 160-character limit. Short keys retain their existing identity; oversized keys use a stable 83-character SHA-256 identity so interrupted publication can replay without duplicate tickets.
 
 SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service with no overall installation deadline. Short compute commands launch or observe the job; runtime restarts reuse its stable identity and only a completed successful job receipt permits tests/build. A lost launch reply leads to observation rather than another install. The VM lease, explicit destruction and npm's own completion/failure remain authoritative.
@@ -80,7 +82,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.10.1 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.11.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -97,7 +99,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.10.1
+  --SdkVersion 5.11.0
 cd ResearchAgent
 dotnet test
 ```
@@ -105,7 +107,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.10.1
+dotnet add package CSweet.Agent.SDK --version 5.11.0
 ```
 
 ```csharp
@@ -236,3 +238,6 @@ Coding agents use `RepositorySourcePolicy.Instructions` to maintain `.gitignore`
 ## Imported project context and governed adoption
 
 `WorkstreamSummary.ImportedProject` exposes repository identity, current project revision, profile status and owner-accepted project context. Pending profiles are incomplete data, never staffing or execution authority. `UpsertHiringRecommendationRequest.AssignAsProjectManager` requests a dedicated project-bound manager through reviewed hiring. Governed `WorkstreamPlanProposalV2Request` can bind `ExistingProjectId` and `ExpectedProjectRevision` to adopt that imported identity through normal setup gates; omitted fields retain new-project behavior. Re-read authorized current state on durable wake hints and activation/reconnect.
+
+
+SDK 5.11.0 adds durable corrective-delivery coordination using Work Management Contracts 5.3.0. Manager execution recovery runs before presentation and uses independently persisted task/plan receipts.

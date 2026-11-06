@@ -9,6 +9,8 @@ public abstract partial class CSweetManagerAgentBase : CSweetAgentBase
     // Sealed entrypoints keep monitoring independent of the specialized workflow's intake state.
     public sealed override async Task HandleEventAsync(AgentEventEnvelope message, AgentRuntimeContext context, CancellationToken token)
     {
+        if (ProjectIncidentReview.Handles(message.EventType) || message.EventType == ProjectHealthEvents.OwnerReportRequested)
+            await HandleManagerRecoveryAsync(context, token);
         if (await ManagerIncidentCoordinator.DispatchAsync(this, message, context, token)) return;
         if (ProjectIncidentReview.Handles(message.EventType))
             await ProjectIncidentReview.HandleManagerAsync(message, context, AssessIncidentAsync, token, GenerateIncidentOwnerReportAsync);
@@ -18,6 +20,7 @@ public abstract partial class CSweetManagerAgentBase : CSweetAgentBase
 
     public sealed override async Task HandleAttentionReviewAsync(AgentAttentionReviewContext review, AgentRuntimeContext context, CancellationToken token)
     {
+        await HandleManagerRecoveryAsync(context, token);
         await ProjectIncidentReview.RecoverManagerAsync(context, AssessIncidentAsync, token, GenerateIncidentOwnerReportAsync);
         await HandleManagerAttentionReviewAsync(review, context, token);
     }
@@ -32,6 +35,9 @@ public abstract partial class CSweetManagerAgentBase : CSweetAgentBase
         base.HandleEventAsync(message, context, token);
 
     protected virtual Task HandleManagerAttentionReviewAsync(AgentAttentionReviewContext review, AgentRuntimeContext context, CancellationToken token) => Task.CompletedTask;
+
+    /// <summary>Advance durable execution receipts before optional incident presentation. Reporting cannot authorize or suppress this work.</summary>
+    protected virtual Task HandleManagerRecoveryAsync(AgentRuntimeContext context, CancellationToken token) => Task.CompletedTask;
 }
 
 public static class AgentBaseTypes
