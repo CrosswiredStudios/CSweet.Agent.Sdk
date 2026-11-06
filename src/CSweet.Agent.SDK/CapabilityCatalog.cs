@@ -8,6 +8,12 @@ namespace CSweet.Agent.SDK;
 /// </summary>
 public static class CapabilityNames
 {
+    public static class Resources
+    {
+        public const string Request = "platform.resource.request.v1";
+        public const string Read = "platform.resource.read.v1";
+        public const string Decide = "platform.resource.decide.v1";
+    }
     public static class ChiefLeadership
     {
         public const string Read = "platform.chief-leadership.read.v1";
@@ -618,6 +624,7 @@ public static class CapabilityCatalog
                 CapabilityNames.Web.Request,
                 CapabilityNames.Web.Render,
                 CapabilityNames.Web.Socket),
+            ["resources"] = Set(ResourceCapabilities.Request, ResourceCapabilities.Read, ResourceCapabilities.Decide),
             ["plugin"] = Set(CapabilityNames.Plugin.State)
         };
 

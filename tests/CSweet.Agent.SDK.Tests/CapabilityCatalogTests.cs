@@ -49,6 +49,7 @@ public sealed class CapabilityCatalogTests
                 "project-delivery",
                 "project-health",
                 "project-intake",
+                "resources",
                 "source-control",
                 "web",
                 "work-delivery",

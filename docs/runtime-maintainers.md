@@ -494,3 +494,12 @@ Core and provider must be upgraded together for the additive workload variant. C
 ## Durable corrective delivery
 
 `DeliveryCorrectionCoordinator` discovers bounded current manager-owned handoffs before optional incident reporting. It uses normal board, delivery and sprint capabilities with stable keys. `work.delivery.correction.coordinate.v1` only binds same-project, manager-owned corrective work and verified follow-up acceptance; it grants no source access, scope changes, spending, staffing or document approval. Current platform checks remain authoritative. Incident reporting is tool-free and cannot authorize execution or erase a retained handoff.
+
+## Durable resource fulfillment
+
+`PlatformResourceClient` requests and reads exact plans through declared capabilities.
+`CSweetManagerAgentBase.SupportsResourceApproval` opts reviewed manager manifests into
+current-state resource review on change and attention/reconnect recovery. Review is tool-free;
+resource fulfillment is host-owned. Approval is distinct from installation, certification and Ready.
+`ResourceRequestState.FulfillmentAttempt` selects a new retained verification attempt only after an
+authorized explicit retry; callback replay never changes the attempt.

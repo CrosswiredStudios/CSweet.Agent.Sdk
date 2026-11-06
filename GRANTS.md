@@ -547,3 +547,11 @@ Subscribe to `ProjectHealthEvents.OwnerReportRequested` (`com.csweet.management.
 Resolution dispatch runs before delegation classification and specialist intake in both `AgentRuntimeWorker` and `AgentTestRuntime`. Only broker-derived answer context triggers it; message text cannot. Recovery uses existing granted management operations, pins mutation keys to the decision and target, and delegates execution outside the manager's remit. Longer management work uses authenticated canonical commitments, handled by the shared coordinator before specialist claim policies/task handlers. A queued request, completed inbox task, or manager assertion does not prove project recovery. Required spending, scope and document approvals remain enforced by platform services.
 
 Deploy platform schema/broker support before package upgrades. Legacy grants keep factual reports; new grants must be reviewed rather than inferred from a manifest.
+
+## Resource fulfillment
+
+- `platform.resource.request.v1`: request an exact project capability and prepare its provisioning plan.
+- `platform.resource.read.v1`: read own requests or requests within current project/manager authority.
+- `platform.resource.decide.v1`: decide an exact request within the current reporting chain.
+
+Approval queues trusted fulfillment; it is not evidence of readiness.

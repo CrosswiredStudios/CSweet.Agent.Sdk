@@ -9,6 +9,8 @@ public abstract partial class CSweetManagerAgentBase : CSweetAgentBase
     // Sealed entrypoints keep monitoring independent of the specialized workflow's intake state.
     public sealed override async Task HandleEventAsync(AgentEventEnvelope message, AgentRuntimeContext context, CancellationToken token)
     {
+        if (SupportsResourceApproval && message.EventType == ResourceCapabilities.Changed)
+            await ReviewResourceRequestsAsync(context, token);
         if (ProjectIncidentReview.Handles(message.EventType) || message.EventType == ProjectHealthEvents.OwnerReportRequested)
             await HandleManagerRecoveryAsync(context, token);
         if (await ManagerIncidentCoordinator.DispatchAsync(this, message, context, token)) return;
@@ -20,6 +22,7 @@ public abstract partial class CSweetManagerAgentBase : CSweetAgentBase
 
     public sealed override async Task HandleAttentionReviewAsync(AgentAttentionReviewContext review, AgentRuntimeContext context, CancellationToken token)
     {
+        if (SupportsResourceApproval) await ReviewResourceRequestsAsync(context, token);
         await HandleManagerRecoveryAsync(context, token);
         await ProjectIncidentReview.RecoverManagerAsync(context, AssessIncidentAsync, token, GenerateIncidentOwnerReportAsync);
         await HandleManagerAttentionReviewAsync(review, context, token);

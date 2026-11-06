@@ -8,7 +8,7 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed partial class AuthoringKitQualityTests
 {
     [Theory]
-    [InlineData("releases/5.12.1.md", false)]
+    [InlineData("releases/5.13.0.md", false)]
     [InlineData("releases/999.0.0.md", false)]
     [InlineData("releases/999.0.0.zip", true)]
     public async Task ReleaseNotes_AreDiscoverableByGitWhileBuildArtifactsStayIgnored(string path, bool ignored)
@@ -92,7 +92,7 @@ public sealed partial class AuthoringKitQualityTests
     public void Version_IsSynchronizedAcrossAuthoringSurfaces()
     {
         var root = RepositoryRoot();
-        const string version = "5.12.1";
+        const string version = "5.13.0";
         var files = new[]
         {
             "src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj",
@@ -201,7 +201,7 @@ public sealed partial class AuthoringKitQualityTests
             "src",
             "CSweet.Agent.Template",
             "CSweet.Agent.Template.csproj"));
-        Assert.Contains("<PackageReference Include=\"CSweet.Agent.SDK\" Version=\"5.12.1\"", project);
+        Assert.Contains("<PackageReference Include=\"CSweet.Agent.SDK\" Version=\"5.13.0\"", project);
         Assert.DoesNotContain("<ProjectReference", project);
     }
 

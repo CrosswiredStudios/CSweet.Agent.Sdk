@@ -439,3 +439,8 @@ Node readiness may re-enter only the exact older `npm test` recipe after a compl
 ## Durable corrective delivery
 
 `DeliveryCorrectionCoordinator` discovers bounded current manager-owned handoffs before optional incident reporting. It uses normal board, delivery and sprint capabilities with stable keys. `work.delivery.correction.coordinate.v1` only binds same-project, manager-owned corrective work and verified follow-up acceptance; it grants no source access, scope changes, spending, staffing or document approval. Current platform checks remain authoritative. Incident reporting is tool-free and cannot authorize execution or erase a retained handoff.
+
+Resource fulfillment delegates only a reviewed project resource plan to a trusted host handler.
+The agent receives no host installer, shell, credential or package-record mutation authority.
+Current reporting authority, granted resource decision capability, artifact digests and actual
+verification remain independent checks. Changed events are wake hints, never execution grants.

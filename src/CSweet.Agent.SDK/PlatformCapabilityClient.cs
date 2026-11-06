@@ -34,12 +34,14 @@ public sealed class PlatformCapabilityClient
         Research = new PlatformResearchClient(this);
         ExecutionCheckpoints = new PlatformExecutionCheckpointClient(this);
         ChiefLeadership = new PlatformChiefLeadershipClient(this);
+        Resources = new PlatformResourceClient(this);
     }
 
     internal IPlatformToolInvoker Tools => _tools;
 
     public PlatformAgentLifecycleClient Lifecycle { get; }
     public PlatformChiefLeadershipClient ChiefLeadership { get; }
+    public PlatformResourceClient Resources { get; }
     public PlatformMemoryClient Memory { get; }
     public PlatformWorkClient Work { get; }
     public PlatformPersonalTodoClient PersonalTodo { get; }
