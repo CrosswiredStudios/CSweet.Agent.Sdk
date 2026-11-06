@@ -1,11 +1,22 @@
 using CSweet.WorkManagement.Contracts;
+using Microsoft.Extensions.AI;
 
 namespace CSweet.Agent.SDK;
 
 /// <summary>Receipt-driven corrective planning. No model report or conversation is an execution dependency.</summary>
-public static class DeliveryCorrectionCoordinator
+public static partial class DeliveryCorrectionCoordinator
 {
-    public static async Task ReconcileProjectAsync(Guid projectId, AgentRuntimeContext context, CancellationToken ct)
+    public static Task ReconcileProjectAsync(Guid projectId, AgentRuntimeContext context, CancellationToken ct) =>
+        ReconcileProjectCoreAsync(projectId, context, null, ct);
+
+    /// <summary>Continues multi-source planning with a tool-free, evidence-constrained manager decision.
+    /// The factory is invoked only when selection is needed; the coordinator disposes the returned client.</summary>
+    public static Task ReconcileProjectAsync(Guid projectId, AgentRuntimeContext context,
+        Func<IChatClient> createPlanningClient, CancellationToken ct) =>
+        ReconcileProjectCoreAsync(projectId, context, createPlanningClient, ct);
+
+    private static async Task ReconcileProjectCoreAsync(Guid projectId, AgentRuntimeContext context,
+        Func<IChatClient>? createPlanningClient, CancellationToken ct)
     {
         var plans = await context.Platform.Work.ReadDeliveryPlansAsync(new(projectId, Limit: 100), ct);
         if (!Guid.TryParse(context.Identity?.EmployeeId, out var manager)) return;
@@ -16,7 +27,7 @@ public static class DeliveryCorrectionCoordinator
             .Take(1).ToArray();
         foreach (var (plan, correction) in pending)
         {
-            try { await ReconcileAsync(plan, correction, plans, context, ct); }
+            try { await ReconcileAsync(plan, correction, plans, context, createPlanningClient, ct); }
             catch (PlatformCapabilityException error) when (error.Code is PlatformCapabilityErrorCode.Conflict or PlatformCapabilityErrorCode.Denied or PlatformCapabilityErrorCode.NotFound)
             {
                 await RetainWaitAsync(plan, correction, "Corrective planning needs current staffing, scope or grants: " + error.Message, context, ct);
@@ -27,7 +38,7 @@ public static class DeliveryCorrectionCoordinator
     }
 
     private static async Task ReconcileAsync(WorkDeliveryPlanResponse plan, WorkDeliveryCorrection correction,
-        IReadOnlyList<WorkDeliveryPlanResponse> plans, AgentRuntimeContext context, CancellationToken ct)
+        IReadOnlyList<WorkDeliveryPlanResponse> plans, AgentRuntimeContext context, Func<IChatClient>? createPlanningClient, CancellationToken ct)
     {
         var work = context.Platform.Work;
         if (correction.FollowUpPlanId is { } existing && plans.SingleOrDefault(p => p.Id == existing) is { } followUp)
@@ -57,9 +68,26 @@ public static class DeliveryCorrectionCoordinator
         var sources = board.Items.Where(i => sourceIds.Contains(i.Id) && i.Delivery is { DeliveryKind: "Code" } d &&
             d.DeliveryPlanId == plan.Id && rejected.Candidate.Repositories.Any(r => r.RepositoryId == d.RepositoryId) &&
             i.Status is "Done" or "Completed" && (correction.SourceItemId is null || i.Id == correction.SourceItemId)).ToArray();
-        if (sources.Length != 1)
+        if (sources.Length == 0 || sources.Length > 1 && createPlanningClient is null)
             throw new InvalidOperationException("The rejected candidate has multiple or unavailable implementation owners. Select the source task before corrective planning.");
-        var source = sources[0];
+        var (source, selectionReason) = sources.Length == 1 ? (sources[0], "Only one completed implementation input matches the rejected repository.") :
+            await SelectSourceAsync(plan, correction, sources, createPlanningClient!, ct);
+        if (correction.SourceItemId is null)
+        {
+            // Persist the planning decision before creating work. A lost response or cold restart
+            // reuses this source rather than making another model decision under the same task key.
+            var current = (await work.ReadDeliveryPlansAsync(new(plan.WorkstreamId, plan.Id), ct)).Single();
+            var freshBoard = await work.ReadBoardAsync(correction.BoardId, ct);
+            if (current.Revision != plan.Revision || sources.Any(input =>
+                freshBoard.Items.SingleOrDefault(i => i.Id == input.Id) is not { } fresh ||
+                fresh.Revision != input.Revision || fresh.PlanningRevision != input.PlanningRevision ||
+                fresh.Status is not ("Done" or "Completed")))
+                throw new InvalidOperationException("The corrective source or rejected plan changed during planning. Re-read current scope before selecting it.");
+            plan = await work.CoordinateDeliveryCorrectionAsync(new(plan.Id, correction.Id, correction.Revision,
+                $"delivery-correction:{correction.Id:N}:source:{correction.Revision}", SourceItemId: source.Id,
+                WaitingReason: "Implementation source selected: " + selectionReason + " Preparing scoped corrective work."), ct);
+            correction = plan.Corrections.Single(c => c.Id == correction.Id);
+        }
         var branch = plan.Branches.SingleOrDefault(b => b.Scope == WorkExecutionScopes.Story && b.ItemId == source.ParentItemId &&
             b.RepositoryId == source.Delivery!.RepositoryId && b.TargetBranch == rejected.Candidate.Repositories[0].SourceBranch)
             ?? throw new InvalidOperationException("This correction needs an explicit integration topology; no direct Story-to-release binding was found.");

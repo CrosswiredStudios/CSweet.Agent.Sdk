@@ -112,3 +112,22 @@ matching platform before SDK 4.4.0 managers.
 ## Durable corrective delivery
 
 `DeliveryCorrectionCoordinator` discovers bounded current manager-owned handoffs before optional incident reporting. It uses normal board, delivery and sprint capabilities with stable keys. `work.delivery.correction.coordinate.v1` only binds same-project, manager-owned corrective work and verified follow-up acceptance; it grants no source access, scope changes, spending, staffing or document approval. Current platform checks remain authoritative. Incident reporting is tool-free and cannot authorize execution or erase a retained handoff.
+
+SDK 5.12.0 adds an overload accepting a `Func<IChatClient>` before the cancellation
+token. Supply the manager's configured platform-governed client lazily; the
+coordinator creates/disposes it only when several completed implementation inputs
+need selection. The original three-argument overload remains compatible and keeps
+its conservative wait for multiple sources.
+
+Selection reads at most eight source scopes and eight retained findings, with
+bounded excerpts of accepted requirements/criteria. It makes one tool-free model
+call per reconciliation with a three-minute deadline and a 16,384-token output
+ceiling (subject to installation limits). A selection must cover every finding,
+name one declared source, and cite distinctive verbatim scope and finding evidence.
+Conflicting, cross-source, incomplete or unsupported decisions retain a specific
+planning wait; no fallback source is guessed. Current plan/task revisions are
+rechecked and the source is saved with `CoordinateDeliveryCorrectionAsync` before
+task creation. A later wake reads that receipt and skips model selection even
+after a lost response or cold restart. Scope/grant/staffing checks, corrective
+sprint preflight and independent acceptance remain authoritative. This planning
+step does not use the report client or report budget.
