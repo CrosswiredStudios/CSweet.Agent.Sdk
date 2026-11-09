@@ -497,6 +497,12 @@ Core and provider must be upgraded together for the additive workload variant. C
 
 ## Durable resource fulfillment
 
+Requests enter `Preparing` before package lookup. `ResourceRequestState.Plan` is null until
+the platform prepares an exact reviewable plan. Preparation failures retain `FailureCode`
+and `Condition`; they grant no approval or installation authority. Recover from current state
+after a resource wake, including blocked and recovered dependencies, rather than trusting
+an event's claimed status. Only `PendingApproval` with a non-null plan can enter manager review.
+
 `PlatformResourceClient` requests and reads exact plans through declared capabilities.
 `CSweetManagerAgentBase.SupportsResourceApproval` opts reviewed manager manifests into
 current-state resource review on change and attention/reconnect recovery. Review is tool-free;

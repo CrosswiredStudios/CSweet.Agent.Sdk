@@ -1,4 +1,4 @@
-SDK 5.13.0 adds typed project resource fulfillment and manager review, with exact plan approval, durable provisioning, verified readiness and reconnect recovery. The matching platform provides the initial published Node/TypeScript fulfillment handler.
+SDK 5.14.0 adds durable preparation and actionable failure codes to project resource fulfillment. A request can exist before its exact plan is available; only prepared plans enter manager approval. The matching platform provides background recovery and the published Node/TypeScript handler.
 
 SDK 5.1.0 bounds derived workflow-ticket keys to the platform's 160-character limit. Short keys retain their existing identity; oversized keys use a stable 83-character SHA-256 identity so interrupted publication can replay without duplicate tickets.
 
@@ -82,7 +82,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.13.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.14.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -99,7 +99,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.13.0
+  --SdkVersion 5.14.0
 cd ResearchAgent
 dotnet test
 ```
@@ -107,7 +107,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.13.0
+dotnet add package CSweet.Agent.SDK --version 5.14.0
 ```
 
 ```csharp
@@ -240,4 +240,4 @@ Coding agents use `RepositorySourcePolicy.Instructions` to maintain `.gitignore`
 `WorkstreamSummary.ImportedProject` exposes repository identity, current project revision, profile status and owner-accepted project context. Pending profiles are incomplete data, never staffing or execution authority. `UpsertHiringRecommendationRequest.AssignAsProjectManager` requests a dedicated project-bound manager through reviewed hiring. Governed `WorkstreamPlanProposalV2Request` can bind `ExistingProjectId` and `ExpectedProjectRevision` to adopt that imported identity through normal setup gates; omitted fields retain new-project behavior. Re-read authorized current state on durable wake hints and activation/reconnect.
 
 
-SDK 5.13.0 adds durable corrective-delivery coordination using Work Management Contracts 5.3.0. Manager execution recovery runs before presentation and uses independently persisted task/plan receipts.
+Managers coordinate durable corrective delivery using Work Management Contracts 5.3.0. Execution recovery runs before presentation and uses independently persisted task/plan receipts.

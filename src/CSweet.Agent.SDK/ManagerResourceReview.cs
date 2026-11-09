@@ -16,7 +16,7 @@ public abstract partial class CSweetManagerAgentBase
         var tools = await context.Platform.Tools.ListToolsAsync(token);
         if (!tools.Any(x => x.Capability == ResourceCapabilities.Read) || !tools.Any(x => x.Capability == ResourceCapabilities.Decide)) return;
         var pending = await context.Platform.Resources.ReadAsync(new(PendingApprovalOnly: true), token);
-        foreach (var request in pending.Where(r => r.Status == "PendingApproval"))
+        foreach (var request in pending.Where(r => r.Status == "PendingApproval" && r.Plan is not null))
         {
             using var client = CreateResourceReviewChatClient(context);
             var response = await client.GetResponseAsync([

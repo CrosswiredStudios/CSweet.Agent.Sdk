@@ -23,11 +23,12 @@ public sealed record ResourcePlan(string HandlerKey, string Summary, Guid Packag
     decimal Cost, string Currency);
 public sealed record ResourceRequestState(Guid Id, Guid WorkstreamId, Guid RequesterId, Guid ApproverId,
     Guid ApprovalId, string ResourceType, string ProfileKey, string Purpose, string Status, long Revision,
-    string PlanHash, ResourcePlan Plan, string? Condition, Guid? ProviderInstallationId, Guid? CertificationRunId,
+    string PlanHash, ResourcePlan? Plan, string? Condition, Guid? ProviderInstallationId, Guid? CertificationRunId,
     DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt)
 {
     public int FulfillmentAttempt { get; init; } = 1;
     public string? ResumeStatus { get; init; }
+    public string? FailureCode { get; init; }
 }
 
 /// <summary>Project capabilities fulfilled by trusted platform handlers after exact manager approval.</summary>

@@ -27,6 +27,23 @@ public sealed class ManagerResourceReviewTests
         await agent.HandleEventAsync(new(Guid.NewGuid(), Guid.NewGuid(), ResourceCapabilities.Changed, JsonSerializer.SerializeToElement(new { }), DateTimeOffset.UtcNow), runtime.CreateContext(), default);
         Assert.Single(decisions); Assert.Equal(1, agent.Calls);
     }
+    [Fact]
+    public async Task Preparation_and_dependency_failures_are_readable_but_never_reviewed_as_approvals()
+    {
+        var preparing = JsonSerializer.Deserialize<ResourceRequestState>("{}")! with { Id = Guid.NewGuid(), Status = "Preparing", Plan = null };
+        var failed = preparing with { Status = "WaitingDependency", FailureCode = "resource.provider_release_unavailable",
+            Condition = "Configure catalog read access.", ResumeStatus = "Preparing" };
+        var serialized = JsonSerializer.Serialize(failed);
+        var recovered = JsonSerializer.Deserialize<ResourceRequestState>(serialized)!;
+        Assert.Null(recovered.Plan); Assert.Equal(failed.FailureCode, recovered.FailureCode);
+        var runtime = new AgentTestRuntime()
+            .RegisterCapability<ResourceRead, IReadOnlyList<ResourceRequestState>>(ResourceCapabilities.Read, (_, _) => Task.FromResult<IReadOnlyList<ResourceRequestState>>([preparing, recovered]))
+            .RegisterCapability<ResourceDecision, ResourceRequestState>(ResourceCapabilities.Decide, (_, _) => throw new InvalidOperationException("Preparation cannot be approved."));
+        var agent = new Manager();
+        await agent.HandleAttentionReviewAsync(new(Guid.NewGuid(), DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMinutes(5), "Reconnect"), runtime.CreateContext(), default);
+        Assert.Equal(0, agent.Calls);
+    }
+
     private sealed class Manager : CSweetManagerAgentBase
     {
         public int Calls;

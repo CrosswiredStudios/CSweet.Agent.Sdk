@@ -444,3 +444,7 @@ Resource fulfillment delegates only a reviewed project resource plan to a truste
 The agent receives no host installer, shell, credential or package-record mutation authority.
 Current reporting authority, granted resource decision capability, artifact digests and actual
 verification remain independent checks. Changed events are wake hints, never execution grants.
+
+Preparation can fail before a plan exists. A nullable plan or retained dependency failure
+cannot enter approval or installation. Catalog credentials remain in trusted platform
+configuration and are never passed to requesting agents or model review.

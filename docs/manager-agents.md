@@ -113,7 +113,7 @@ matching platform before SDK 4.4.0 managers.
 
 `DeliveryCorrectionCoordinator` discovers bounded current manager-owned handoffs before optional incident reporting. It uses normal board, delivery and sprint capabilities with stable keys. `work.delivery.correction.coordinate.v1` only binds same-project, manager-owned corrective work and verified follow-up acceptance; it grants no source access, scope changes, spending, staffing or document approval. Current platform checks remain authoritative. Incident reporting is tool-free and cannot authorize execution or erase a retained handoff.
 
-SDK 5.13.0 adds an overload accepting a `Func<IChatClient>` before the cancellation
+SDK 5.14.0 adds an overload accepting a `Func<IChatClient>` before the cancellation
 token. Supply the manager's configured platform-governed client lazily; the
 coordinator creates/disposes it only when several completed implementation inputs
 need selection. The original three-argument overload remains compatible and keeps
