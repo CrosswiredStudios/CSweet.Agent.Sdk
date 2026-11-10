@@ -7,6 +7,33 @@ namespace CSweet.Agent.SDK;
 /// <summary>Manager-owned setup of a revision-pinned hierarchy, independent staffing and shared release branches.</summary>
 public static class HierarchicalProjectDelivery
 {
+    /// <summary>The platform's limit on a delivery plan name (WorkDeliveryService.ConfigureTicketsAsync).</summary>
+    internal const int MaxPlanNameLength = 160;
+
+    /// <summary>
+    /// Names an increment within the platform's limit. Agent-written epic titles can be long, and a
+    /// name over the limit is rejected on every retry. The plan's epics are identified by
+    /// EpicItemIds; the name is only for people, so it may be shortened.
+    /// </summary>
+    internal static string IncrementPlanName(IReadOnlyList<string> epicTitles)
+    {
+        const string prefix = "Increment: ";
+        var titles = epicTitles.Select(t => t.Trim()).Where(t => t.Length > 0).ToArray();
+        if (titles.Length == 0) return "Increment";
+        var full = prefix + string.Join(", ", titles);
+        if (full.Length <= MaxPlanNameLength) return full;
+        var suffix = titles.Length > 1 ? $" (+{titles.Length - 1} more)" : "";
+        var name = prefix + titles[0];
+        var budget = MaxPlanNameLength - suffix.Length;
+        if (name.Length > budget)
+        {
+            var cut = budget - 1;
+            if (char.IsHighSurrogate(name[cut - 1])) cut--;
+            name = name[..cut].TrimEnd() + "\u2026";
+        }
+        return name + suffix;
+    }
+
     internal static WorkAssignmentRequirements BuildReadinessRequirements(string role) => new(role, [], [],
         role == "game-build-release-engineer" ? [WorkManagementCapabilityNames.ExecutionRun] :
             [WorkManagementCapabilityNames.ExecutionRun, DeliveryBuildReadiness.ExecutionCapability]);
@@ -27,7 +54,8 @@ public static class HierarchicalProjectDelivery
         }
         catch (PlatformCapabilityException error) when (DeliveryConflictReason(error) is not null)
         {
-            throw new DeliveryStaffingException("Delivery planning needs attention: " + DeliveryConflictReason(error));
+            throw new DeliveryStaffingException("Delivery planning needs attention: " + DeliveryConflictReason(error))
+                { RejectedByPlatform = IsRequestRejection(error) };
         }
     }
 
@@ -45,9 +73,18 @@ public static class HierarchicalProjectDelivery
         }
         catch (PlatformCapabilityException error) when (DeliveryConflictReason(error) is not null)
         {
-            throw new DeliveryStaffingException("Increment delivery planning needs attention: " + DeliveryConflictReason(error));
+            throw new DeliveryStaffingException("Increment delivery planning needs attention: " + DeliveryConflictReason(error))
+                { RejectedByPlatform = IsRequestRejection(error) };
         }
     }
+
+    /// <summary>
+    /// A rejected plan configuration fails the same way on every retry. The platform marks only
+    /// revision races as retryable; platforms that predate that flag report every conflict as
+    /// non-retryable, so a race may be reported as a rejection there.
+    /// </summary>
+    internal static bool IsRequestRejection(PlatformCapabilityException error) =>
+        error.Capability == WorkDeliveryCapabilities.Configure && error.Retryable != true;
 
     internal static string? DeliveryConflictReason(PlatformCapabilityException error)
     {
@@ -233,7 +270,7 @@ public static class HierarchicalProjectDelivery
         var assignmentsChanged = draft is not null && scopes.Any(scope => !draft.Scopes.Any(x =>
             x.Scope == scope.Scope && x.ItemId == scope.ItemId && Same(x.Stages, scope.Stages)));
         var plan = draft is not null && !scopeChanged && !assignmentsChanged ? draft : await TicketWorkflowPlanning.ConfigureAsync(new(projectId,
-            draft?.Name ?? (selectedEpics is null ? "Initial release" : "Increment: " + string.Join(", ", epics.Select(x => x.Title))), managerId,
+            draft?.Name ?? (selectedEpics is null ? "Initial release" : IncrementPlanName(epics.Select(x => x.Title).ToArray())), managerId,
             epics.Select(x => x.Id).ToArray(), branches, scopes, $"delivery-plan:{projectId:N}:{releaseScopeKey}:{profileDigest}:{draft?.Revision ?? 0}:{roster.Revision}")
             {
                 PlanId = draft?.Id, ExpectedRevision = draft?.Revision ?? 0,

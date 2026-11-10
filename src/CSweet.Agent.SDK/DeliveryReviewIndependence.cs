@@ -8,4 +8,11 @@ public static class DeliveryReviewIndependence
 }
 
 /// <summary>An actionable staffing gap, rather than a failed execution attempt.</summary>
-public sealed class DeliveryStaffingException(string message) : InvalidOperationException(message);
+public sealed class DeliveryStaffingException(string message) : InvalidOperationException(message)
+{
+    /// <summary>
+    /// True when the platform rejected the delivery plan request itself. Repeating the same request
+    /// cannot succeed until its inputs or the agent change, so callers should escalate rather than retry.
+    /// </summary>
+    public bool RejectedByPlatform { get; init; }
+}
