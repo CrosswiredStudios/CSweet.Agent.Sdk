@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CSweet.WorkManagement.Contracts;
 
 namespace CSweet.Agent.SDK;
 
@@ -11,9 +12,80 @@ public sealed class AgentTestRuntime
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly Dictionary<string, TestCapability> _capabilities = new(StringComparer.Ordinal);
     private readonly List<JsonElement> _progress = [];
+    private readonly object _collaborationGate = new();
+    private readonly List<(Guid SessionId, string Capability)> _startedCollaborations = [];
+    private readonly HashSet<Guid> _trackedCollaborations = [];
 
     /// <summary>Gets progress values reported during callbacks in their original order.</summary>
     public IReadOnlyList<JsonElement> Progress => _progress;
+
+    /// <summary>
+    /// Gets the chat-started and board-started collaborations that no personal card owns yet. A card owns a
+    /// collaboration when it was added with that session in its work context. Work-item collaborations are
+    /// owned by their ticket and are never listed.
+    /// </summary>
+    public IReadOnlyList<Guid> UntrackedCollaborations
+    {
+        get
+        {
+            lock (_collaborationGate)
+                return _startedCollaborations.Where(x => !_trackedCollaborations.Contains(x.SessionId))
+                    .Select(x => x.SessionId).Distinct().ToList();
+        }
+    }
+
+    /// <summary>
+    /// Fails the test when the agent started a chat or board collaboration without an owning card. Call it
+    /// after the callbacks under test. See <see cref="TrackedCollaboration"/>.
+    /// </summary>
+    public void AssertCollaborationsTracked()
+    {
+        List<string> untracked;
+        lock (_collaborationGate)
+            untracked = _startedCollaborations.Where(x => !_trackedCollaborations.Contains(x.SessionId))
+                .Select(x => $"{x.SessionId:D} ({x.Capability})").Distinct(StringComparer.Ordinal).ToList();
+        if (untracked.Count > 0)
+            throw new InvalidOperationException(
+                "The agent started a collaboration with no owning card: " + string.Join(", ", untracked) +
+                ". Call TrackedCollaboration.QueueCardAsync after starting it, so the work is visible on a board " +
+                "and can be resumed through the card.");
+    }
+
+    private void ObserveCollaboration(string capability, JsonElement arguments, JsonElement result)
+    {
+        if (capability == CommunicationCapabilities.CoordinationStart ||
+            capability == CommunicationCapabilities.CoordinationStartBoard)
+        {
+            if (TryGuid(result, "id", out var sessionId))
+                lock (_collaborationGate) _startedCollaborations.Add((sessionId, capability));
+        }
+        else if (capability == PersonalTodoCapabilities.Add &&
+                 TryProperty(arguments, "workContext", out var workContext) &&
+                 TryGuid(workContext, "coordinationSessionId", out var trackedId))
+        {
+            lock (_collaborationGate) _trackedCollaborations.Add(trackedId);
+        }
+    }
+
+    private static bool TryProperty(JsonElement element, string name, out JsonElement value)
+    {
+        value = default;
+        if (element.ValueKind != JsonValueKind.Object) return false;
+        foreach (var property in element.EnumerateObject())
+        {
+            if (!string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase)) continue;
+            value = property.Value;
+            return true;
+        }
+        return false;
+    }
+
+    private static bool TryGuid(JsonElement element, string name, out Guid value)
+    {
+        value = Guid.Empty;
+        return TryProperty(element, name, out var property) && property.ValueKind == JsonValueKind.String &&
+               Guid.TryParse(property.GetString(), out value) && value != Guid.Empty;
+    }
 
     /// <summary>Registers one fake granted capability for an in-memory agent test.</summary>
     public AgentTestRuntime RegisterCapability<TRequest, TResponse>(
@@ -45,7 +117,7 @@ public sealed class AgentTestRuntime
         string installationId = "00000000-0000-0000-0000-000000000001",
         AgentIdentity? identity = null)
     {
-        var invoker = new TestInvoker(_capabilities);
+        var invoker = new TestInvoker(_capabilities, ObserveCollaboration);
         return new AgentRuntimeContext(
             businessId,
             installationId,
@@ -115,19 +187,25 @@ public sealed class AgentTestRuntime
         bool ModelVisible,
         Func<JsonElement, CancellationToken, Task<JsonElement>> Handler);
 
-    private sealed class TestInvoker(IReadOnlyDictionary<string, TestCapability> capabilities)
+    private sealed class TestInvoker(
+        IReadOnlyDictionary<string, TestCapability> capabilities,
+        Action<string, JsonElement, JsonElement> observe)
         : IPlatformToolInvoker
     {
-        public Task<JsonElement> InvokeAsync(
+        public async Task<JsonElement> InvokeAsync(
             string capability,
             JsonElement arguments,
-            CancellationToken cancellationToken = default) =>
-            capabilities.TryGetValue(capability, out var registered)
-                ? registered.Handler(arguments, cancellationToken)
-                : throw new PlatformCapabilityException(
+            CancellationToken cancellationToken = default)
+        {
+            if (!capabilities.TryGetValue(capability, out var registered))
+                throw new PlatformCapabilityException(
                     capability,
                     PlatformCapabilityErrorCode.Denied,
                     $"Capability '{capability}' is not registered in this test runtime.");
+            var result = await registered.Handler(arguments, cancellationToken);
+            observe(capability, arguments, result);
+            return result;
+        }
 
         public Task<IReadOnlyList<AgentToolDescriptor>> ListToolsAsync(
             CancellationToken cancellationToken = default) =>

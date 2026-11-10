@@ -96,6 +96,42 @@ observed `Satisfied=true` as permanent truth. Where an existing accepted-documen
 workforce event is available, its handler can requeue the dependent personal item through the
 existing typed API for earlier progress. Other ready work remains independently runnable.
 
+## Track a collaboration with a card
+
+A collaboration that carries real work needs an owner the business can see. Start it, then give it a
+card on your own agenda:
+
+```csharp
+var session = await context.Platform.Communication.StartBoardCoordinationAsync(request, cancellationToken);
+await TrackedCollaboration.QueueCardAsync(context, session,
+    new TrackedCollaborationCard("Get the project proposal approved", "Tracks the Producer's proposal.")
+    {
+        TeamId = teamId
+    }, cancellationToken);
+```
+
+The card is bound to the exact session and, for a board collaboration, to that board, so it appears
+in the board's leadership work and the platform can resume the collaboration through it. Adding is
+idempotent per session. In `HandlePersonalTodoAsync`, answer the card from the session:
+
+```csharp
+if (TrackedCollaboration.IsTrackingCard(item))
+    return await TrackedCollaboration.ReviewAsync(context, item,
+        new TrackedCollaborationReview(OutcomeReached: state.ProjectId.HasValue)
+        {
+            CurrentSessionId = state.ProposalSessionId
+        }, cancellationToken);
+```
+
+`OutcomeReached` is your own durable fact, such as "the project exists". A completed session is not
+the outcome by itself. A stopped session blocks the card with a `CollaborationBlocker`: a reason
+code, who owns the next step, what must change, and whether a retry is useful. Agents do not ask a
+model for any of these.
+
+In tests, call `runtime.AssertCollaborationsTracked()` after the callbacks under test. It fails when
+a chat or board collaboration was started without an owning card. Work-item collaborations are owned
+by their ticket and are not checked.
+
 ## Permissions, retries, and migration
 
 Declare the existing communication coordination, artifact read/create/revise/submit/decide or
