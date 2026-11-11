@@ -2,6 +2,28 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Security Policy
 
+## Runtime Git forwarder (unreleased, internal)
+
+The SDK contains an internal loopback forwarder (`AgentGitForwarder`) so the git program inside a runtime can
+reach the platform's assignment-scoped Git routes. No public authoring API uses it yet.
+
+- It binds `127.0.0.1` on an ephemeral port. It never listens on another address.
+- It accepts only `GET .../info/refs?service=git-upload-pack|git-receive-pack` and
+  `POST .../git-upload-pack|git-receive-pack` under `/git/workspaces/{workspace}/{assignment revision}`.
+  Everything else is `404` and is not relayed. The guest broker proxy and the platform apply the same shapes.
+- Every request must carry a per-process random secret in `X-CSweet-Git-Forwarder`, otherwise it is `403`. Git
+  receives the secret through its process environment. A page under test or another local client that only
+  knows the port cannot use the forwarder. The secret is not a platform credential and grants nothing outside
+  this process.
+- The session access token and `Mcp-Session-Id` are added inside `McpAgentRuntimeClient.ExchangeGitAsync`. They
+  never reach git, the remote URL, repository configuration, or logs. Caller-supplied `Authorization`, `Cookie`
+  and `Mcp-Session-Id` headers are dropped; only `Accept`, `Content-Type`, `Content-Encoding` and
+  `Git-Protocol` are relayed.
+- The forwarder grants no authority. The platform decides, per exchange, whether this runtime may read or push
+  the workspace named in the path, and its push rules decide what a push may contain.
+- Bodies are buffered and limited to 16 MiB minus 64 KiB in each direction. Larger exchanges fail closed.
+- Failures are logged by exception type only. Request headers and bodies are never logged.
+
 ## Enterprise plugin accounts (5.5.1 / protocol 2.4)
 
 Account-management declarations are untrusted data and confer no enterprise, business,

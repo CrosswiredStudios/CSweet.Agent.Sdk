@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 
 namespace CSweet.Agent.SDK;
 
-internal sealed class McpAgentRuntimeClient : IAgentRuntimeTransport
+internal sealed partial class McpAgentRuntimeClient : IAgentRuntimeTransport, IAgentGitTransport
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly TimeSpan DefaultControlRequestTimeout = TimeSpan.FromSeconds(30);

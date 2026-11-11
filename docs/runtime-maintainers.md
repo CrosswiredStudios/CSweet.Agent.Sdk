@@ -4,6 +4,27 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Runtime maintainer guide
 
+## Runtime Git forwarder (unreleased, internal)
+
+`AgentGitForwarder` is an `HttpListener` on `http://127.0.0.1:{ephemeral port}/`. It exists because the guest
+broker proxy is a Unix socket and git cannot be pointed at one by a URL. Nothing starts it yet; the public
+workspace API that will own its lifetime is the next change, and the package version is bumped with that change.
+
+Flow: git -> forwarder (secret header, fixed route shapes, bounded body) -> `IAgentGitTransport.ExchangeGitAsync`
+(`McpAgentRuntimeClient.Git.cs`: session renewal, bearer token, `Mcp-Session-Id`, request resolved against the
+`McpEndpoint` origin, capability request timeout) -> guest broker proxy (purpose `git.runtime`) -> platform.
+
+- `AgentGitRoutes` holds the route shapes, the body limit and the relayed request headers. Keep it identical to
+  `GuestLocalBrokerProxy.IsGitEndpoint` in CSweet.Office and the platform's AgentHost broker handler.
+- `RemoteUrl(workspaceId, assignmentRevision)` is the remote to give git. `GitEnvironment()` is the environment
+  for a git child process: `http.extraHeader` with the forwarder secret, an empty `http.proxy`, and
+  `GIT_TERMINAL_PROMPT=0`. It relies on `GIT_CONFIG_COUNT`, so git 2.31 or later.
+- Responses relay the platform status, `Content-Type` and body. A platform refusal therefore reaches git as
+  the platform wrote it. A transport failure is `502`.
+- Exchanges are buffered. Streaming for packs above the limit is not implemented on any hop.
+
+Tests: `AgentGitForwarderTests`, `McpAgentRuntimeClientGitTests`.
+
 ## Enterprise plugin account declarations (5.5.1)
 
 `ConnectorContractValidator` includes `PluginAccountContractValidator`. Mirror the `accounts`
