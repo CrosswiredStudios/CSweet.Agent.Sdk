@@ -24,6 +24,12 @@ state on `CloneAsync`; both call `git.workspace.sync.v1` with no archive, using 
 (with `GitWorkspaceSyncRequest.PushedCommitSha`) and `resume`. The checkpoint receipt digest is the pushed
 commit, so `WorkloadResourceRequest` is unchanged.
 
+5.20.0 routes the snapshot calls to Git. `UsesGit` decides: the workspace must name a branch and the transport
+must open a Git remote; an existing local directory decides the mode by whether it holds `.git`.
+`MaterializeAsync` calls `CloneAsync`; `UploadCheckpointAsync` calls `PushCheckpointAsync` with a fixed message and
+the author from `AgentGitRemoteAccess` (the session's employee identity, sanitized); `InspectAsync` and
+`PublishAsync` add the local `HEAD` as `PushedCommitSha` when a clone exists for the workspace.
+
 Flow: git -> forwarder (secret header, fixed route shapes, bounded body) -> `IAgentGitTransport.ExchangeGitAsync`
 (`McpAgentRuntimeClient.Git.cs`: session renewal, bearer token, `Mcp-Session-Id`, request resolved against the
 `McpEndpoint` origin, capability request timeout) -> guest broker proxy (purpose `git.runtime`) -> platform.

@@ -73,6 +73,38 @@ public sealed class PlatformGitWorkspaceRemoteTests
     }
 
     [Fact]
+    public async Task The_snapshot_calls_use_git_for_a_workspace_the_platform_gave_a_work_branch()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var git = fixture.Client();
+
+        var local = await git.MaterializeAsync(fixture.Workspace, 7);
+        Assert.True(Directory.Exists(Path.Combine(local.Path, ".git")));
+        Assert.Single(local.ResourceProfiles);
+
+        await File.WriteAllTextAsync(Path.Combine(local.Path, "b.txt"), "b");
+        await git.UploadAsync(local, 7);
+        var tip = await fixture.GitAsync(fixture.Remote, "rev-parse", $"refs/heads/{Branch}");
+        Assert.NotEqual(fixture.Workspace.BaseCommitSha, tip);
+        Assert.Equal("C-Sweet Agent <agent@agents.csweet.invalid>", await fixture.GitAsync(fixture.Remote, "log", "-1", "--format=%an <%ae>", Branch));
+
+        var receipt = await git.UploadCheckpointAsync(local, 7, default, "build", new string('c', 64));
+        Assert.Equal(tip, receipt.Digest);
+
+        var inspection = await git.InspectAsync(new(local.WorkspaceId, 7));
+        Assert.Equal("Modified", inspection.Status);
+        Assert.Equal(tip, Assert.Single(fixture.Platform.Inspections).PushedCommitSha);
+
+        var publication = await git.PublishAsync(new(local.WorkspaceId, 7, "Implement ticket", "Ticket", "Evidence", "event:publish",
+            [new GitValidationResult("npm test", true, 0)]));
+        Assert.Equal(tip, publication.CommitSha);
+        Assert.Equal(tip, Assert.Single(fixture.Platform.Publications).PushedCommitSha);
+
+        // No archive ever travels for this workspace.
+        Assert.All(fixture.Platform.Syncs, sync => Assert.Contains(sync.Direction, new[] { "resume", "checkpoint" }));
+    }
+
+    [Fact]
     public async Task Clone_keeps_an_existing_local_clone_and_its_uncommitted_edits()
     {
         await using var fixture = await Fixture.CreateAsync();
@@ -161,11 +193,28 @@ public sealed class PlatformGitWorkspaceRemoteTests
             remote is null ? null : new AgentGitRemoteAccess(remote, new Dictionary<string, string>());
 
         public List<GitWorkspaceSyncRequest> Syncs { get; } = [];
+        public List<InspectGitWorkspaceRequest> Inspections { get; } = [];
+        public List<PublishGitWorkspaceRequest> Publications { get; } = [];
 
         // Stands in for the platform's sync capability: memory hints and resume notes on "resume",
         // a receipt for the pushed commit on "checkpoint".
         public Task<JsonElement> InvokeAsync(string capability, JsonElement arguments, CancellationToken cancellationToken = default)
         {
+            if (capability == GitWorkspaceCapabilities.Inspect)
+            {
+                var inspect = arguments.Deserialize<InspectGitWorkspaceRequest>(Web)!;
+                Inspections.Add(inspect);
+                return Task.FromResult(JsonSerializer.SerializeToElement(
+                    new GitWorkspaceInspection(inspect.WorkspaceId, "Modified", true, ["b.txt"], []), Web));
+            }
+            if (capability == GitWorkspaceCapabilities.Publish)
+            {
+                var publish = arguments.Deserialize<PublishGitWorkspaceRequest>(Web)!;
+                Publications.Add(publish);
+                return Task.FromResult(JsonSerializer.SerializeToElement(new GitWorkspacePublication(
+                    Guid.NewGuid(), publish.WorkspaceId, Guid.NewGuid(), "InternalGit", GitDeliveryKinds.PullRequest, Branch,
+                    publish.PushedCommitSha!, new Uri("https://csweet.example/review/1"), "Published"), Web));
+            }
             Assert.Equal(PlatformGitWorkspaceClient.SyncCapability, capability);
             var request = arguments.Deserialize<GitWorkspaceSyncRequest>(Web)!;
             Syncs.Add(request);

@@ -18,9 +18,18 @@ internal sealed partial class McpAgentRuntimeClient
                 forwarder.Start();
                 _gitForwarder = forwarder;
             }
-            return new AgentGitRemoteAccess(
+            var access = new AgentGitRemoteAccess(
                 _gitForwarder.RemoteUrl(workspaceId, assignmentRevision),
                 _gitForwarder.GitEnvironment());
+            if (Session?.Identity is not { } identity) return access;
+            // Angle brackets and line breaks would break the commit header; drop them.
+            var name = new string(identity.DisplayName.Where(c => c is not ('<' or '>') && !char.IsControl(c)).ToArray()).Trim();
+            var employee = new string(identity.EmployeeId.Where(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or '.').ToArray());
+            return access with
+            {
+                AuthorName = name.Length is > 0 and <= 200 ? name : access.AuthorName,
+                AuthorEmail = employee.Length is > 0 and <= 100 ? $"{employee}@agents.csweet.invalid" : access.AuthorEmail
+            };
         }
     }
 

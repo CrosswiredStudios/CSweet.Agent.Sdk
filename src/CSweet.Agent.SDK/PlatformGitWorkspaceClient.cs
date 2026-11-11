@@ -36,17 +36,27 @@ public sealed partial class PlatformGitWorkspaceClient
         InvokeAsync<RefreshGitWorkspaceRequest, GitWorkspaceRefreshResult>(
             GitWorkspaceCapabilities.Refresh, request, cancellationToken);
 
-    public Task<GitWorkspaceInspection> InspectAsync(
+    /// <summary>Inspect the workspace's changes. For a workspace this runtime cloned with git, the platform
+    /// inspects the commit at the local branch head, which must already be pushed.</summary>
+    public async Task<GitWorkspaceInspection> InspectAsync(
         InspectGitWorkspaceRequest request,
         CancellationToken cancellationToken = default) =>
-        InvokeAsync<InspectGitWorkspaceRequest, GitWorkspaceInspection>(
-            GitWorkspaceCapabilities.Inspect, request, cancellationToken);
+        await InvokeAsync<InspectGitWorkspaceRequest, GitWorkspaceInspection>(
+            GitWorkspaceCapabilities.Inspect,
+            request.PushedCommitSha is null && await LocalCloneHeadAsync(request.WorkspaceId, cancellationToken) is { } head
+                ? request with { PushedCommitSha = head } : request,
+            cancellationToken);
 
-    public Task<GitWorkspacePublication> PublishAsync(
+    /// <summary>Publish the workspace. For a workspace this runtime cloned with git, the commit at the local
+    /// branch head is published unless the request names another; it must already be pushed.</summary>
+    public async Task<GitWorkspacePublication> PublishAsync(
         PublishGitWorkspaceRequest request,
         CancellationToken cancellationToken = default) =>
-        InvokeAsync<PublishGitWorkspaceRequest, GitWorkspacePublication>(
-            GitWorkspaceCapabilities.Publish, request, cancellationToken);
+        await InvokeAsync<PublishGitWorkspaceRequest, GitWorkspacePublication>(
+            GitWorkspaceCapabilities.Publish,
+            request.PushedCommitSha is null && await LocalCloneHeadAsync(request.WorkspaceId, cancellationToken) is { } head
+                ? request with { PushedCommitSha = head } : request,
+            cancellationToken);
 
     public Task<GitWorkspaceCleanupResult> CleanupAsync(
         CleanupGitWorkspaceRequest request,
@@ -137,6 +147,8 @@ public sealed record InspectGitWorkspaceRequest(
     public bool IncludeHistory { get; init; }
     public int HistoryOffset { get; init; }
     public int HistoryLimit { get; init; } = 20;
+    /// <summary>Inspect this pushed commit instead of the uploaded snapshot. Set by the SDK for a git clone.</summary>
+    public string? PushedCommitSha { get; init; }
 }
 
 public sealed record GitWorkspaceInspection(

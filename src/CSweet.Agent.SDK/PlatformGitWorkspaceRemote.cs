@@ -155,6 +155,24 @@ public sealed partial class PlatformGitWorkspaceClient
         return (workspace.BranchName, remote);
     }
 
+    // The mode of a workspace is fixed by what is on disk: a git clone uses Git, a downloaded snapshot
+    // does not. A workspace not yet on disk uses Git when the platform and the transport both allow it.
+    private bool UsesGit(GitWorkspaceResult workspace, long assignmentRevision, bool allowNew)
+    {
+        if (string.IsNullOrEmpty(workspace.BranchName) || _tools is not IAgentGitRemote remote) return false;
+        var path = LocalWorkspacePath(workspace.WorkspaceId);
+        var cloned = Directory.Exists(Path.Combine(path, ".git"));
+        if (!cloned && (!allowNew || Directory.Exists(path))) return false;
+        return remote.OpenGitRemote(workspace.WorkspaceId, assignmentRevision) is not null;
+    }
+
+    private static async Task<string?> LocalCloneHeadAsync(Guid workspaceId, CancellationToken ct)
+    {
+        if (workspaceId == Guid.Empty) return null;
+        var path = LocalWorkspacePath(workspaceId);
+        return Directory.Exists(Path.Combine(path, ".git")) ? await HeadAsync(path, ct) : null;
+    }
+
     private static string RequireLocalClone(GitWorkspaceResult workspace)
     {
         ArgumentNullException.ThrowIfNull(workspace);

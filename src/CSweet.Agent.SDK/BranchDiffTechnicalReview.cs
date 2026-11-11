@@ -49,9 +49,15 @@ internal static class BranchDiffTechnicalReview
         if (unwanted.Length > 0)
             return new(reference.CandidateCommitSha, reference.TargetCommitSha, false, "Remove generated/dependency additions before review.",
                 unwanted.Select(path => $"{path}: remove generated/dependency code from the snapshot, update .gitignore and build from pinned dependencies.").ToArray());
+        // A declared verification is checked in code, before any model call, so the author, this review and QA
+        // apply one rule instead of each reading constraint prose differently.
+        var verification = DeclaredVerification(planning as WorkItemPlanningSpecification, reference.ImplementationEvidence);
+        if (verification.MissingReceipt is { } missing)
+            return new(reference.CandidateCommitSha, reference.TargetCommitSha, false,
+                "Declared browser verification has no bound receipt for this candidate.", [missing]);
         var metadata = new { SourceCommitSha = reference.CandidateCommitSha, reference.TargetCommitSha, reference.PublicationId,
             reference.RepositoryId, reference.SourceBranch, reference.TargetBranch, reference.PatchDigest,
-            reference.ChangedFiles, Planning = planning, reference.ImplementationEvidence };
+            reference.ChangedFiles, Planning = planning, reference.ImplementationEvidence, DeclaredVerification = verification.Note };
         if (JsonSerializer.Serialize(metadata, Json).Length > TechnicalReviewJson.ResponseCharacters)
             throw new InvalidOperationException("Review requirements exceed 128000 characters; reduce redundant planning without losing criteria.");
         var reviews = new List<PageReview>();
@@ -119,6 +125,30 @@ internal static class BranchDiffTechnicalReview
         return new(reference.CandidateCommitSha, reference.TargetCommitSha, final.Approved, final.Summary, findings)
             { Resolutions = final.Resolutions, Criteria = final.Criteria, CoveredCharacters = total.Value, PageCount = reviews.Count };
     }
+    internal sealed record VerificationCheck(string? Note, string? MissingReceipt);
+
+    /// <summary>
+    /// Reads the ticket's declared verification. Undeclared (legacy) tickets keep the model's judgment unchanged.
+    /// A declared browser-smoke requirement needs a passing standard receipt in the author's validations.
+    /// </summary>
+    internal static VerificationCheck DeclaredVerification(WorkItemPlanningSpecification? planning, IReadOnlyList<GitValidationResult> evidence)
+    {
+        if (!WorkItemVerifications.IsDeclared(planning)) return new(null, null);
+        if (WorkItemVerifications.BrowserSmoke(planning) is not { } browser)
+            return new("Planning declares that this ticket needs no browser verification. Do not require Chromium launches, " +
+                "screenshots or browser receipts, whatever the constraint text says.", null);
+        var receipt = evidence.FirstOrDefault(v => WorkItemVerifications.IsBrowserSmokeReceipt(v.Command, v.Succeeded, v.ExitCode, browser));
+        var expected = $"{WorkItemVerificationKinds.BrowserSmokeReceiptCommand} <build directory>{(browser.RequireCanvas ? " --canvas" : "")}";
+        if (receipt is null)
+            return new(null, "Declared browser verification: planning requires a real Chromium check" +
+                (browser.RequireCanvas ? " with a visible canvas" : "") + $", but implementationEvidence has no passing `{expected}` receipt " +
+                "for this candidate. Run the browser check on the built output after the last source edit so its receipt is bound to the " +
+                "published validations. Do not commit screenshots or write extra verifiers for this.");
+        return new($"Planning declares browser verification{(browser.RequireCanvas ? " with a visible canvas" : "")}. It is satisfied by the " +
+            $"bound receipt `{receipt.Command}` (exit 0). Do not reject for missing browser evidence; judge the code.", null);
+    }
+
+    internal static void ValidatePage(PageContent page)
     internal static void ValidatePage(PageContent page)
     {
         // Revalidate retained pages with the same bounds used for fresh responses and their schema.

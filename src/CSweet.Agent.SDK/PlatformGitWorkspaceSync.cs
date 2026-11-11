@@ -46,6 +46,9 @@ public sealed partial class PlatformGitWorkspaceClient
     public async Task<GitWorkspaceResult> MaterializeAsync(GitWorkspaceResult workspace, long assignmentRevision, CancellationToken ct = default)
     {
         if (workspace.WorkspaceId == Guid.Empty || assignmentRevision < 1) throw new ArgumentException("A current workspace is required.");
+        // Git delivery when the platform names a work branch and this transport can carry Git. A workspace
+        // already downloaded as a snapshot stays a snapshot workspace for its lifetime in this runtime.
+        if (UsesGit(workspace, assignmentRevision, allowNew: true)) return await CloneAsync(workspace, assignmentRevision, ct);
         var result = await InvokeAsync<GitWorkspaceSyncRequest, GitWorkspaceSyncResult>(SyncCapability,
             new(workspace.WorkspaceId, assignmentRevision, "pull", $"workspace:{workspace.WorkspaceId:N}:pull:{assignmentRevision}"), ct);
         var path = LocalWorkspacePath(workspace.WorkspaceId);
@@ -87,6 +90,12 @@ public sealed partial class PlatformGitWorkspaceClient
         var path = LocalWorkspacePath(workspace.WorkspaceId);
         if (workspace.WorkspaceId == Guid.Empty || assignmentRevision < 1 || Path.GetFullPath(workspace.Path) != path)
             throw new ArgumentException("Only the SDK-materialized workspace can be uploaded.");
+        if (UsesGit(workspace, assignmentRevision, allowNew: false))
+        {
+            var author = (_tools as IAgentGitRemote)!.OpenGitRemote(workspace.WorkspaceId, assignmentRevision)!;
+            return await PushCheckpointAsync(workspace, assignmentRevision,
+                new("chore(wip): save work in progress", author.AuthorName, author.AuthorEmail), ct, commandClass, inputFingerprint, resumeSummary);
+        }
         EnsureNoLinks(path);
         var archive = await CreateSnapshotAsync(path, ct);
         var digest = Convert.ToHexStringLower(SHA256.HashData(archive));
