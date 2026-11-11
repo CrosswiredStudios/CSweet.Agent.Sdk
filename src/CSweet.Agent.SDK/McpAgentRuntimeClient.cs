@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 
 namespace CSweet.Agent.SDK;
 
-internal sealed partial class McpAgentRuntimeClient : IAgentRuntimeTransport, IAgentGitTransport
+internal sealed partial class McpAgentRuntimeClient : IAgentRuntimeTransport, IAgentGitTransport, IAgentGitRemote
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly TimeSpan DefaultControlRequestTimeout = TimeSpan.FromSeconds(30);
@@ -772,6 +772,6 @@ internal sealed partial class McpAgentRuntimeClient : IAgentRuntimeTransport, IA
         Session = null;
         _sessionGate.Dispose();
         _logger.LogDebug("Disposed the C-Sweet MCP runtime client.");
-        return ValueTask.CompletedTask;
+        return Interlocked.Exchange(ref _gitForwarder, null)?.DisposeAsync() ?? ValueTask.CompletedTask;
     }
 }

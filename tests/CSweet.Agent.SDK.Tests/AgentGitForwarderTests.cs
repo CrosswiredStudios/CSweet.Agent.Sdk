@@ -143,14 +143,15 @@ public sealed class AgentGitForwarderTests
         var remote = forwarder.RemoteUrl(WorkspaceId, 7);
 
         Assert.Equal($"http://127.0.0.1:{forwarder.Port}{Workspace}", remote);
-        Assert.Equal("2", environment["GIT_CONFIG_COUNT"]);
+        Assert.Equal("1", environment["GIT_CONFIG_COUNT"]);
         Assert.Equal("http.extraHeader", environment["GIT_CONFIG_KEY_0"]);
         Assert.StartsWith(AgentGitForwarder.SecretHeader + ": ", environment["GIT_CONFIG_VALUE_0"]);
         var secret = environment["GIT_CONFIG_VALUE_0"][(AgentGitForwarder.SecretHeader.Length + 2)..];
         Assert.Equal(64, secret.Length);
         Assert.DoesNotContain(secret, remote);
-        Assert.Equal("http.proxy", environment["GIT_CONFIG_KEY_1"]);
-        Assert.Equal(string.Empty, environment["GIT_CONFIG_VALUE_1"]);
+        Assert.Equal("127.0.0.1", environment["NO_PROXY"]);
+        Assert.Equal("127.0.0.1", environment["no_proxy"]);
+        Assert.DoesNotContain(environment.Values, string.IsNullOrEmpty);
         Assert.Equal("0", environment["GIT_TERMINAL_PROMPT"]);
     }
 

@@ -4,6 +4,26 @@ namespace CSweet.Agent.SDK;
 
 internal sealed partial class McpAgentRuntimeClient
 {
+    private readonly object _gitGate = new();
+    private AgentGitForwarder? _gitForwarder;
+
+    /// <summary>Starts the loopback forwarder on first use and returns what git needs to reach it.</summary>
+    public AgentGitRemoteAccess? OpenGitRemote(Guid workspaceId, long assignmentRevision)
+    {
+        lock (_gitGate)
+        {
+            if (_gitForwarder is null)
+            {
+                var forwarder = new AgentGitForwarder(this, _logger);
+                forwarder.Start();
+                _gitForwarder = forwarder;
+            }
+            return new AgentGitRemoteAccess(
+                _gitForwarder.RemoteUrl(workspaceId, assignmentRevision),
+                _gitForwarder.GitEnvironment());
+        }
+    }
+
     /// <summary>
     /// Sends one Git exchange to the platform under the current runtime session. The platform
     /// decides whether this runtime may read or push the workspace named in the path.

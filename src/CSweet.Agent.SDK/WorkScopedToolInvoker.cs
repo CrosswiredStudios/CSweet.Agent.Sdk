@@ -4,8 +4,10 @@ using System.Text.Json;
 namespace CSweet.Agent.SDK;
 
 // A session client created during activation must still honor an inherited closed work flow.
-internal sealed class FlowScopedToolInvoker(IPlatformToolInvoker inner) : IPlatformToolInvoker
+internal sealed class FlowScopedToolInvoker(IPlatformToolInvoker inner) : IPlatformToolInvoker, IAgentGitRemote
 {
+    public AgentGitRemoteAccess? OpenGitRemote(Guid workspaceId, long assignmentRevision) =>
+        (inner as IAgentGitRemote)?.OpenGitRemote(workspaceId, assignmentRevision);
     private IPlatformToolInvoker Current => InferenceExecutionScope.Current is { } owner
         ? new WorkScopedToolInvoker(inner, owner) : inner;
     public Task<JsonElement> InvokeAsync(string capability, JsonElement arguments, CancellationToken cancellationToken = default) =>
@@ -30,8 +32,14 @@ internal sealed class WorkScopedProgressReporter(IAgentProgressReporter inner, I
 }
 
 // Binding is private SDK state, not agent-selected authority or a disposal acknowledgement.
-internal sealed class WorkScopedToolInvoker(IPlatformToolInvoker inner, InferenceExecutionScope owner) : IPlatformToolInvoker
+internal sealed class WorkScopedToolInvoker(IPlatformToolInvoker inner, InferenceExecutionScope owner) : IPlatformToolInvoker, IAgentGitRemote
 {
+    public AgentGitRemoteAccess? OpenGitRemote(Guid workspaceId, long assignmentRevision)
+    {
+        owner.RequireActive("git.workspace.remote");
+        return (inner as IAgentGitRemote)?.OpenGitRemote(workspaceId, assignmentRevision);
+    }
+
     public async Task<JsonElement> InvokeAsync(string capability, JsonElement arguments, CancellationToken cancellationToken = default)
     {
         owner.RequireActive(capability);

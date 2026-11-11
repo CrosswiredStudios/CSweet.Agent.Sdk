@@ -60,16 +60,17 @@ internal sealed class AgentGitForwarder(IAgentGitTransport transport, ILogger lo
     }
 
     /// <summary>
-    /// Environment for a git child process. It supplies the forwarder secret, disables any
-    /// configured HTTP proxy for this remote, and stops git from prompting.
+    /// Environment for a git child process. It supplies the forwarder secret, keeps the loopback
+    /// remote off any environment HTTP proxy, and stops git from prompting.
     /// </summary>
     internal IReadOnlyDictionary<string, string> GitEnvironment() => new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        ["GIT_CONFIG_COUNT"] = "2",
+        ["GIT_CONFIG_COUNT"] = "1",
         ["GIT_CONFIG_KEY_0"] = "http.extraHeader",
         ["GIT_CONFIG_VALUE_0"] = $"{SecretHeader}: {_secret}",
-        ["GIT_CONFIG_KEY_1"] = "http.proxy",
-        ["GIT_CONFIG_VALUE_1"] = string.Empty,
+        // Both spellings: libcurl reads the lower-case name, other tools the upper-case one.
+        ["NO_PROXY"] = "127.0.0.1",
+        ["no_proxy"] = "127.0.0.1",
         ["GIT_TERMINAL_PROMPT"] = "0"
     };
 

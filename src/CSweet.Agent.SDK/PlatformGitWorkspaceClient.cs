@@ -109,6 +109,9 @@ public sealed record GitWorkspaceResult(
 {
     public IReadOnlyList<WorkloadResourceHint> ResourceProfiles { get; init; } = [];
     public WorkspaceResumeSummary? ResumeSummary { get; init; }
+    /// <summary>The assignment's work branch, chosen by the platform. <see langword="null"/> from a platform
+    /// that does not support Git access for runtimes.</summary>
+    public string? BranchName { get; init; }
 }
 
 public sealed record RefreshGitWorkspaceRequest(

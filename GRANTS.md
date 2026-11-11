@@ -447,6 +447,8 @@ The typed compute client uses compute.provision/read/list/start/stop/restart/des
 
 `git.workspace.sync.v1` transfers an authorized workspace snapshot through Core. `context.Platform.Git.MaterializeAsync` creates a runtime-local writable copy and returns its local path; the platform path from Prepare is an opaque workspace location, not a shared filesystem mount. `UploadAsync` sends edited files back before inspection/publication. Existing edits are preserved on repeated materialization; after runtime loss, the latest uploaded snapshot is restored.
 
+SDK 5.17.0 adds Git access for the same assigned workspace: `context.Platform.Git.CloneAsync`, `FetchAsync`, `CommitAsync`, and `PushAsync`. They need no additional capability declaration. The platform authorizes each Git exchange for the assignment: reading needs the authority that `MaterializeAsync` needs, and pushing needs the authority that `PublishAsync` needs, so a role that cannot publish can clone and fetch but not push. The calls throw `NotSupportedException` on a platform that does not serve Git to runtimes; fall back to `MaterializeAsync` and `UploadAsync`.
+
 Transfer requires the sync declaration plus existing preparation/publication authority for the exact assignment. No repository coordinates or credentials are accepted. Limits are 512 KiB compressed per snapshot, 16 MiB content and 4,096 files. Git metadata, redirected paths and traversal are rejected; local `.csweet` control files are excluded from uploads. An uploaded snapshot does not itself publish a commit.
 
 ## Task delivery and merge preferences (3.51.0)

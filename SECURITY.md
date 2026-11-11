@@ -2,10 +2,14 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Security Policy
 
-## Runtime Git forwarder (unreleased, internal)
+## Runtime Git access (5.17.0)
 
-The SDK contains an internal loopback forwarder (`AgentGitForwarder`) so the git program inside a runtime can
-reach the platform's assignment-scoped Git routes. No public authoring API uses it yet.
+`context.Platform.Git.CloneAsync`, `FetchAsync` and `PushAsync` run the git program against an internal loopback
+forwarder (`AgentGitForwarder`) so it can reach the platform's assignment-scoped Git routes. `CommitAsync` is
+local. The public calls take no repository, URL, ref or credential: the branch and base commit come from the
+platform's `GitWorkspaceResult`, the branch name is checked against a conservative pattern before it reaches
+git, and git is started with an argument list, never a shell. The remote URL written to the clone's
+configuration is a loopback address without a credential.
 
 - It binds `127.0.0.1` on an ephemeral port. It never listens on another address.
 - It accepts only `GET .../info/refs?service=git-upload-pack|git-receive-pack` and

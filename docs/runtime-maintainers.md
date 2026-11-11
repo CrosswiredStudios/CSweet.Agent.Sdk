@@ -4,11 +4,20 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Runtime maintainer guide
 
-## Runtime Git forwarder (unreleased, internal)
+## Runtime Git access (5.17.0)
 
 `AgentGitForwarder` is an `HttpListener` on `http://127.0.0.1:{ephemeral port}/`. It exists because the guest
-broker proxy is a Unix socket and git cannot be pointed at one by a URL. Nothing starts it yet; the public
-workspace API that will own its lifetime is the next change, and the package version is bumped with that change.
+broker proxy is a Unix socket and git cannot be pointed at one by a URL. `McpAgentRuntimeClient.OpenGitRemote`
+starts one forwarder per runtime client on first use and disposes it with the client. The scoped tool invokers
+pass `IAgentGitRemote` through, and the work-scoped one refuses it once its work flow has closed.
+
+`PlatformGitWorkspaceRemote.cs` holds the public calls. `CloneAsync` runs `git init`, `remote add`, `fetch`, then
+checks out `origin/{branch}` when the platform already has the work branch and the base commit otherwise. It
+writes `.csweet/`, `node_modules/` and `.venv/` to `.git/info/exclude` and uses the same
+`.csweet/runtime-workspace.txt` identity receipt as `MaterializeAsync`. Each network call resets the remote URL
+first, because the forwarder port changes when the agent process restarts. `GitProcess` runs git without a
+shell, with stdin closed and output capped at 64 KiB per stream. The forwarder secret is passed only to the
+commands that reach the remote.
 
 Flow: git -> forwarder (secret header, fixed route shapes, bounded body) -> `IAgentGitTransport.ExchangeGitAsync`
 (`McpAgentRuntimeClient.Git.cs`: session renewal, bearer token, `Mcp-Session-Id`, request resolved against the
@@ -17,7 +26,7 @@ Flow: git -> forwarder (secret header, fixed route shapes, bounded body) -> `IAg
 - `AgentGitRoutes` holds the route shapes, the body limit and the relayed request headers. Keep it identical to
   `GuestLocalBrokerProxy.IsGitEndpoint` in CSweet.Office and the platform's AgentHost broker handler.
 - `RemoteUrl(workspaceId, assignmentRevision)` is the remote to give git. `GitEnvironment()` is the environment
-  for a git child process: `http.extraHeader` with the forwarder secret, an empty `http.proxy`, and
+  for a git child process: `http.extraHeader` with the forwarder secret, `NO_PROXY` for the loopback address, and
   `GIT_TERMINAL_PROMPT=0`. It relies on `GIT_CONFIG_COUNT`, so git 2.31 or later.
 - Responses relay the platform status, `Content-Type` and body. A platform refusal therefore reaches git as
   the platform wrote it. A transport failure is `502`.
