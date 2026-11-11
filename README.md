@@ -1,3 +1,5 @@
+SDK 5.21.0 adds `AgentModelJson.ReadAsync`: ask a model for one JSON object, derive what code can compute, and send any remaining problem back to the same conversation with the exact reason instead of failing the turn. See [release notes](releases/5.21.0.md) and [Model JSON replies](#model-json-replies-5210).
+
 SDK 5.20.0 makes the existing workspace calls deliver with git when the platform names a work branch: `MaterializeAsync` clones, `UploadAsync` and `UploadCheckpointAsync` commit and push, `InspectAsync` and `PublishAsync` name the pushed commit. No agent code change; snapshots remain the behavior everywhere else. See [release notes](releases/5.20.0.md).
 
 SDK 5.19.0 adds `context.Platform.Git.PushCheckpointAsync`, which saves a workspace as a pushed commit before a runtime is replaced, and makes `CloneAsync` return the memory hints and resume notes a snapshot download returns. Additive; needs a platform that records pushed checkpoints. See [release notes](releases/5.19.0.md).
@@ -94,7 +96,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.20.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.21.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -111,7 +113,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.20.0
+  --SdkVersion 5.21.0
 cd ResearchAgent
 dotnet test
 ```
@@ -119,7 +121,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.20.0
+dotnet add package CSweet.Agent.SDK --version 5.21.0
 ```
 
 ```csharp
@@ -164,6 +166,26 @@ or `Blocked`).
 An agent never receives provider credentials, database access, a caller-selected target
 installation, raw runtime tokens, transport clients, or queue/lease details. Manifests request
 authority; installation grants and live provider bindings remain authoritative.
+
+## Model JSON replies (5.21.0)
+
+Use `AgentModelJson.ReadAsync<T>` whenever an agent asks a model for a structured decision or review. Keep the model responsible for judgment and code responsible for bookkeeping:
+
+- Ask only for what the model must decide. Compute everything that follows from it (statuses, totals, lists copied from other fields, a verdict implied by blocking findings) in `Normalize`.
+- In `Normalize`, throw `AgentModelJsonException` only for contradictions code cannot settle, with a message that names the field and what to do. The message goes to the model verbatim.
+- Set `Schema` (hand-written for strict providers, or `AgentModelJson.SchemaFor<T>()`) so the provider constrains the shape.
+- A rejected reply is sent back with the model's previous answer and the problem, up to `CorrectionLimit` times (default 2). The model repairs its answer rather than producing a new one, so retries converge.
+- On exhaustion the exception carries `Problem` and `Attempts`; report the problem where the owner can see it.
+
+```csharp
+var review = await AgentModelJson.ReadAsync(client, [new(ChatRole.System, prompt), new(ChatRole.User, evidence)],
+    new AgentModelJsonRequest<Review>("creative review")
+    {
+        Schema = ReviewSchema,
+        Options = new ChatOptions { MaxOutputTokens = 6000 },
+        Normalize = review => DeriveStatusesAndDisposition(review) // throws AgentModelJsonException for real contradictions
+    }, cancellationToken);
+```
 
 ## SDK development
 
