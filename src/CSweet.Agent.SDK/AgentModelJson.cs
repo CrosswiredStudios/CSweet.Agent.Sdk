@@ -129,10 +129,19 @@ public static class AgentModelJson
         catch (JsonException first)
         {
             var start = reply.IndexOf('{');
+            if (start < 0) throw new AgentModelJsonException("the reply contained no JSON object");
+            // A provider may append reasoning markup after a complete object: read the first complete value.
+            try
+            {
+                var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(reply[start..]));
+                using var document = JsonDocument.ParseValue(ref reader);
+                if (document.RootElement.ValueKind == JsonValueKind.Object)
+                    return document.RootElement.Deserialize<T>(options) ?? throw new AgentModelJsonException("the reply JSON was null");
+            }
+            catch (JsonException) { }
+            // Otherwise take the outermost braces, for an object surrounded by prose.
             var end = reply.LastIndexOf('}');
-            if (start < 0 || end <= start) throw new AgentModelJsonException("the reply contained no JSON object");
-            if (start == 0 && end == reply.Length - 1)
-                throw new AgentModelJsonException($"the reply is not valid JSON for the requested shape ({first.Message})");
+            if (end <= start) throw new AgentModelJsonException($"the reply is not valid JSON for the requested shape ({first.Message})");
             try
             {
                 return JsonSerializer.Deserialize<T>(reply[start..(end + 1)], options)

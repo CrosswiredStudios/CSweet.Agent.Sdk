@@ -20,6 +20,7 @@ public sealed class AgentModelJsonTests
     [InlineData("{\"decision\":\"yes\",\"reasons\":[\"a\"]}")]
     [InlineData("```json\n{\"decision\":\"yes\",\"reasons\":[\"a\"]}\n```")]
     [InlineData("Here it is: {\"decision\":\"yes\",\"reasons\":[\"a\"]} Thanks.")]
+    [InlineData("{\"decision\":\"yes\",\"reasons\":[\"a\"]}\n<think>{\"draft\": true}</think>")]
     public void Parse_reads_bare_fenced_or_wrapped_objects(string text) =>
         Assert.Equal("yes", AgentModelJson.Parse<Verdict>(text).Decision);
 
