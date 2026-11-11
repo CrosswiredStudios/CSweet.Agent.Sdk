@@ -170,7 +170,13 @@ public sealed record PublishGitWorkspaceRequest(
     string ProposedChangeTitle,
     string ProposedChangeBody,
     string IdempotencyKey,
-    IReadOnlyList<GitValidationResult>? Validations = null);
+    IReadOnlyList<GitValidationResult>? Validations = null)
+{
+    /// <summary>The commit returned by <see cref="PlatformGitWorkspaceClient.PushAsync"/>. When set, the platform
+    /// publishes the pushed work branch as it is, only if its tip is exactly this commit, and creates no commit;
+    /// <see cref="CommitMessage"/> is then unused. When <see langword="null"/>, the uploaded snapshot is published.</summary>
+    public string? PushedCommitSha { get; init; }
+}
 
 public static class GitDeliveryKinds
 {

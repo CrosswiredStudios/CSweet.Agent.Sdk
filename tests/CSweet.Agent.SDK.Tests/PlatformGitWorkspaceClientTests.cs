@@ -96,6 +96,32 @@ public sealed class PlatformGitWorkspaceClientTests
         Assert.Equal(0, validation.ExitCode);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("0123456789abcdef0123456789abcdef01234567")]
+    public async Task PublishAsync_SendsThePushedCommitOnlyWhenTheAgentNamesOne(string? pushed)
+    {
+        PublishGitWorkspaceRequest? captured = null;
+        var runtime = new AgentTestRuntime()
+            .RegisterCapability<PublishGitWorkspaceRequest, GitWorkspacePublication>(
+                GitWorkspaceCapabilities.Publish,
+                (request, _) =>
+                {
+                    captured = request;
+                    return Task.FromResult(new GitWorkspacePublication(
+                        Guid.NewGuid(), request.WorkspaceId, Guid.NewGuid(), "InternalGit", GitDeliveryKinds.PullRequest,
+                        "csweet/ticket", request.PushedCommitSha ?? new string('b', 40),
+                        new Uri("https://csweet.example/review/1"), "Published"));
+                });
+
+        var result = await runtime.CreateContext().Platform.Git.PublishAsync(
+            new PublishGitWorkspaceRequest(Guid.NewGuid(), 7, "Implement ticket", "Ticket", "Evidence", "event:publish",
+                [new GitValidationResult("dotnet test", true, 0)]) { PushedCommitSha = pushed });
+
+        Assert.Equal(pushed, captured!.PushedCommitSha);
+        Assert.Equal(pushed ?? new string('b', 40), result.CommitSha);
+    }
+
     [Fact]
     public void GitWorkspaceCapabilities_AreKnownAndVersioned()
     {
