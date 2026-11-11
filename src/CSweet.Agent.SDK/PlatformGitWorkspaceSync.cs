@@ -10,6 +10,8 @@ public sealed record GitWorkspaceSyncRequest(Guid WorkspaceId, long AssignmentRe
     public string? CommandClass { get; init; }
     public string? InputFingerprint { get; init; }
     public WorkspaceResumeSummary? ResumeSummary { get; init; }
+    /// <summary>For the <c>checkpoint</c> direction: the commit pushed to the work branch.</summary>
+    public string? PushedCommitSha { get; init; }
 }
 public sealed record GitWorkspaceSyncResult(byte[]? Archive = null)
 {

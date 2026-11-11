@@ -41,7 +41,7 @@ public sealed partial class PlatformGitWorkspaceClient
                 throw new InvalidOperationException("The local workspace identity does not match the retained assignment.");
             // The forwarder port changes when the agent process restarts.
             await RequireGitAsync(path, ["remote", "set-url", "origin", remote.RemoteUrl], null, "configure the workspace remote", ct);
-            return workspace with { Path = path };
+            return await WithResumeStateAsync(workspace with { Path = path }, assignmentRevision, ct);
         }
         Directory.CreateDirectory(LocalWorkspaceRoot);
         var staging = Path.Combine(LocalWorkspaceRoot, ".clone-" + Guid.NewGuid().ToString("N"));
@@ -66,7 +66,34 @@ public sealed partial class PlatformGitWorkspaceClient
         {
             if (Directory.Exists(staging)) DeleteDirectory(staging);
         }
-        return workspace with { Path = path };
+        return await WithResumeStateAsync(workspace with { Path = path }, assignmentRevision, ct);
+    }
+
+    // What a snapshot download returns besides the source: memory hints for this repository and the
+    // notes the previous runtime left with its last checkpoint.
+    private async Task<GitWorkspaceResult> WithResumeStateAsync(GitWorkspaceResult workspace, long assignmentRevision, CancellationToken ct)
+    {
+        var state = await InvokeAsync<GitWorkspaceSyncRequest, GitWorkspaceSyncResult>(SyncCapability,
+            new(workspace.WorkspaceId, assignmentRevision, "resume", $"workspace:{workspace.WorkspaceId:N}:resume:{assignmentRevision}"), ct);
+        return workspace with { ResourceProfiles = state.ResourceProfiles, ResumeSummary = state.ResumeSummary };
+    }
+
+    /// <summary>
+    /// Save the workspace before this runtime is replaced: commit every change, push the work branch, and
+    /// have the platform record the pushed commit as the source checkpoint. The returned receipt is what a
+    /// <see cref="WorkloadResourceRequest"/> needs. The platform records the checkpoint only after confirming
+    /// that the work branch is at the pushed commit. The commit stays on the work branch.
+    /// </summary>
+    public async Task<WorkspaceCheckpointReceipt> PushCheckpointAsync(GitWorkspaceResult workspace, long assignmentRevision,
+        GitWorkspaceCommitRequest commit, CancellationToken ct = default,
+        string? commandClass = null, string? inputFingerprint = null, WorkspaceResumeSummary? resumeSummary = null)
+    {
+        await CommitAsync(workspace, commit, ct);
+        var pushed = await PushAsync(workspace, assignmentRevision, ct);
+        var result = await InvokeAsync<GitWorkspaceSyncRequest, GitWorkspaceSyncResult>(SyncCapability,
+            new GitWorkspaceSyncRequest(workspace.WorkspaceId, assignmentRevision, "checkpoint", $"workspace:{workspace.WorkspaceId:N}:{pushed}")
+                { PushedCommitSha = pushed, CommandClass = commandClass, InputFingerprint = inputFingerprint, ResumeSummary = resumeSummary }, ct);
+        return result.Checkpoint ?? new(workspace.WorkspaceId, assignmentRevision, pushed);
     }
 
     /// <summary>Fetch the repository's current branches into the local clone without changing the working tree.</summary>

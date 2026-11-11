@@ -45,6 +45,34 @@ public sealed class PlatformGitWorkspaceRemoteTests
     }
 
     [Fact]
+    public async Task Clone_returns_resume_state_and_a_checkpoint_commits_pushes_and_is_recorded_by_the_platform()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var git = fixture.Client();
+
+        var local = await git.CloneAsync(fixture.Workspace, 7);
+
+        Assert.Equal(4096, Assert.Single(local.ResourceProfiles).MemoryMb);
+        Assert.Equal(new string('e', 64), local.ResumeSummary!.SourceFingerprint);
+        Assert.Equal("resume", Assert.Single(fixture.Platform.Syncs).Direction);
+
+        await File.WriteAllTextAsync(Path.Combine(local.Path, "wip.txt"), "half done");
+        var summary = new WorkspaceResumeSummary(new string('d', 64), [new("npm test", false, 1)]);
+        var receipt = await git.PushCheckpointAsync(local, 7, Commit, default, "build", new string('c', 64), summary);
+
+        var tip = await fixture.GitAsync(fixture.Remote, "rev-parse", $"refs/heads/{Branch}");
+        Assert.Equal(new WorkspaceCheckpointReceipt(fixture.Workspace.WorkspaceId, 7, tip), receipt);
+        Assert.Contains("wip.txt", await fixture.GitAsync(fixture.Remote, "ls-tree", "-r", "--name-only", Branch));
+        var recorded = fixture.Platform.Syncs[^1];
+        Assert.Equal(("checkpoint", tip, "build", new string('c', 64)),
+            (recorded.Direction, recorded.PushedCommitSha, recorded.CommandClass, recorded.InputFingerprint));
+        Assert.Equal(summary.SourceFingerprint, recorded.ResumeSummary!.SourceFingerprint);
+
+        // Nothing changed since: the checkpoint still names the pushed tip and makes no new commit.
+        Assert.Equal(tip, (await git.PushCheckpointAsync(local, 7, Commit)).Digest);
+    }
+
+    [Fact]
     public async Task Clone_keeps_an_existing_local_clone_and_its_uncommitted_edits()
     {
         await using var fixture = await Fixture.CreateAsync();
@@ -132,8 +160,23 @@ public sealed class PlatformGitWorkspaceRemoteTests
         public AgentGitRemoteAccess? OpenGitRemote(Guid workspaceId, long assignmentRevision) =>
             remote is null ? null : new AgentGitRemoteAccess(remote, new Dictionary<string, string>());
 
-        public Task<JsonElement> InvokeAsync(string capability, JsonElement arguments, CancellationToken cancellationToken = default) =>
-            throw new InvalidOperationException("Git access must not call a platform capability.");
+        public List<GitWorkspaceSyncRequest> Syncs { get; } = [];
+
+        // Stands in for the platform's sync capability: memory hints and resume notes on "resume",
+        // a receipt for the pushed commit on "checkpoint".
+        public Task<JsonElement> InvokeAsync(string capability, JsonElement arguments, CancellationToken cancellationToken = default)
+        {
+            Assert.Equal(PlatformGitWorkspaceClient.SyncCapability, capability);
+            var request = arguments.Deserialize<GitWorkspaceSyncRequest>(Web)!;
+            Syncs.Add(request);
+            Assert.Null(request.Archive);
+            var result = request.Direction == "resume"
+                ? new GitWorkspaceSyncResult { ResourceProfiles = [new("build", new string('f', 64), 4096)], ResumeSummary = new(new string('e', 64), []) }
+                : new GitWorkspaceSyncResult { Checkpoint = new(request.WorkspaceId, request.AssignmentRevision, request.PushedCommitSha!) };
+            return Task.FromResult(JsonSerializer.SerializeToElement(result, Web));
+        }
+
+        private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
         public async IAsyncEnumerable<JsonElement> InvokeStreamingAsync(string capability, JsonElement arguments,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -152,7 +195,8 @@ public sealed class PlatformGitWorkspaceRemoteTests
         public string Remote { get; } = remote;
         public GitWorkspaceResult Workspace { get; } = workspace;
 
-        public PlatformGitWorkspaceClient Client(string? otherRemote = null) => new(new Invoker(otherRemote ?? Remote));
+        public Invoker Platform { get; } = new(remote);
+        public PlatformGitWorkspaceClient Client(string? otherRemote = null) => new(otherRemote is null ? Platform : new Invoker(otherRemote));
 
         public static async Task<Fixture> CreateAsync()
         {

@@ -19,6 +19,11 @@ first, because the forwarder port changes when the agent process restarts. `GitP
 shell, with stdin closed and output capped at 64 KiB per stream. The forwarder secret is passed only to the
 commands that reach the remote.
 
+5.18.0 added `PublishGitWorkspaceRequest.PushedCommitSha`. 5.19.0 added `PushCheckpointAsync` and the resume
+state on `CloneAsync`; both call `git.workspace.sync.v1` with no archive, using the directions `checkpoint`
+(with `GitWorkspaceSyncRequest.PushedCommitSha`) and `resume`. The checkpoint receipt digest is the pushed
+commit, so `WorkloadResourceRequest` is unchanged.
+
 Flow: git -> forwarder (secret header, fixed route shapes, bounded body) -> `IAgentGitTransport.ExchangeGitAsync`
 (`McpAgentRuntimeClient.Git.cs`: session renewal, bearer token, `Mcp-Session-Id`, request resolved against the
 `McpEndpoint` origin, capability request timeout) -> guest broker proxy (purpose `git.runtime`) -> platform.

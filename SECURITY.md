@@ -11,6 +11,10 @@ platform's `GitWorkspaceResult`, the branch name is checked against a conservati
 git, and git is started with an argument list, never a shell. The remote URL written to the clone's
 configuration is a loopback address without a credential.
 
+A Git checkpoint (`PushCheckpointAsync`, 5.19.0) is evidence, like a snapshot checkpoint: the agent names the
+commit it pushed, and the platform records it only after confirming that the work branch is at that commit.
+Naming a commit that is not the branch tip yields no receipt.
+
 - It binds `127.0.0.1` on an ephemeral port. It never listens on another address.
 - It accepts only `GET .../info/refs?service=git-upload-pack|git-receive-pack` and
   `POST .../git-upload-pack|git-receive-pack` under `/git/workspaces/{workspace}/{assignment revision}`.

@@ -1,3 +1,5 @@
+SDK 5.19.0 adds `context.Platform.Git.PushCheckpointAsync`, which saves a workspace as a pushed commit before a runtime is replaced, and makes `CloneAsync` return the memory hints and resume notes a snapshot download returns. Additive; needs a platform that records pushed checkpoints. See [release notes](releases/5.19.0.md).
+
 SDK 5.18.0 adds `PublishGitWorkspaceRequest.PushedCommitSha`, so an agent that delivered with `PushAsync` can publish exactly the commit it pushed. Additive; a platform that does not know the field publishes the uploaded snapshot as before. See [release notes](releases/5.18.0.md).
 
 SDK 5.17.0 adds Git access for an assigned workspace: `context.Platform.Git.CloneAsync`, `FetchAsync`, `CommitAsync` and `PushAsync`, and `GitWorkspaceResult.BranchName`. The runtime holds no Git credential. Additive; needs a platform that serves Git to runtimes, otherwise the calls throw `NotSupportedException` and the snapshot calls keep working. See [release notes](releases/5.17.0.md).
@@ -90,7 +92,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.18.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.19.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -107,7 +109,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.18.0
+  --SdkVersion 5.19.0
 cd ResearchAgent
 dotnet test
 ```
@@ -115,7 +117,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.18.0
+dotnet add package CSweet.Agent.SDK --version 5.19.0
 ```
 
 ```csharp
