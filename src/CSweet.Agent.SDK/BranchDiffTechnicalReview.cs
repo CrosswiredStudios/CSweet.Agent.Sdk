@@ -149,7 +149,6 @@ internal static class BranchDiffTechnicalReview
     }
 
     internal static void ValidatePage(PageContent page)
-    internal static void ValidatePage(PageContent page)
     {
         // Revalidate retained pages with the same bounds used for fresh responses and their schema.
         TechnicalReviewJson.ValidateDocument(JsonSerializer.SerializeToElement(page, Json));
