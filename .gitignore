@@ -400,7 +400,8 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
-# Authored release notes are source, not build outputs.
+# Authored release notes are source, not build outputs. Every releases/<version>.md is tracked;
+# publish.yml requires one for the package version being released.
 !/releases/
 /releases/*
 !/releases/*.md
