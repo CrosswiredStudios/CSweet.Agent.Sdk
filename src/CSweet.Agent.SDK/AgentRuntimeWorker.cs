@@ -671,8 +671,14 @@ internal sealed class AgentRuntimeWorker<TAgent>(
             await _gate.WaitAsync(cancellationToken);
             try
             {
-                await runtime.ReportProgressAsync(lease, ++_sequence,
+                // Consume a number only once the platform accepts it. A failed report is resent with the
+                // same number; the platform treats a number it already recorded as a duplicate. Before
+                // 5.22.1 a failed report used up its number, so older platforms rejected every later
+                // report as a gap (QFN Games, 2026-11-11).
+                var next = _sequence + 1;
+                await runtime.ReportProgressAsync(lease, next,
                     System.Text.Json.JsonSerializer.SerializeToElement(value), cancellationToken);
+                _sequence = next;
             }
             finally { _gate.Release(); }
         }

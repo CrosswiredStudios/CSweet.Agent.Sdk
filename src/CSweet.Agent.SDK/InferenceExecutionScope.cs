@@ -46,7 +46,22 @@ internal sealed class InferenceExecutionScope(AgentWorkLease lease, Cancellation
         else deadline.CancelAfter(remaining <= TimeSpan.FromMilliseconds(uint.MaxValue - 1d)
             ? remaining : Timeout.InfiniteTimeSpan);
     }
-    public Task ReportStatusAsync(string state, CancellationToken token) => progress.ReportAsync(new
+    /// <summary>
+    /// Reports the model call's queue state as work progress. This is display telemetry: a failed
+    /// report never fails the model call. A revoked lease or ended attempt still stops the call,
+    /// because the next inference read is rejected.
+    /// </summary>
+    public async Task ReportStatusAsync(string state, CancellationToken token)
+    {
+        try { await ReportStatusCoreAsync(state, token); }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch (Exception) when (!token.IsCancellationRequested)
+        {
+            // QFN Games, 2026-11-11: a rejected status report failed the model call and blocked a ticket.
+        }
+    }
+
+    private Task ReportStatusCoreAsync(string state, CancellationToken token) => progress.ReportAsync(new
     {
         Delta = state switch
         {

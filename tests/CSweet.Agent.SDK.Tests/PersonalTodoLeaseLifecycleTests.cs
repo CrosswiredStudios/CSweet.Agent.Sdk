@@ -11,9 +11,10 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class PersonalTodoLeaseLifecycleTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task StartupWaitsForDurableDeliveryThenRunsPersonalWorkWithProgressAndInferenceScope(bool replacement)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task StartupWaitsForDurableDeliveryThenRunsPersonalWorkWithProgressAndInferenceScope(bool replacement, bool firstProgressFails)
     {
         var path = Path.GetTempFileName();
         await File.WriteAllTextAsync(path, """
@@ -30,7 +31,7 @@ public sealed class PersonalTodoLeaseLifecycleTests
         // Use the published constant so this test exercises the real startup subscription.
         var manifest = await File.ReadAllTextAsync(path);
         await File.WriteAllTextAsync(path, manifest.Replace("work.personal-todo.claim.v1", PersonalTodoCapabilities.Claim));
-        await using var transport = new Transport(replacement);
+        await using var transport = new Transport(replacement, firstProgressFails);
         var agent = new TestAgent();
         using var worker = new AgentRuntimeWorker<TestAgent>(agent, transport,
             new AgentPlatformAccessor(), Options.Create(new AgentRuntimeOptions { ManifestPath = path }),
@@ -46,6 +47,8 @@ public sealed class PersonalTodoLeaseLifecycleTests
             Assert.Equal(1, transport.CompletedItems);
             Assert.Equal(1, transport.InferenceCalls);
             Assert.Equal(new long[] { 1, 2 }, transport.ProgressSequences);
+            // A report the platform did not accept does not use up its number (QFN Games, 2026-11-11).
+            Assert.Equal(firstProgressFails ? new long[] { 1, 1, 2 } : new long[] { 1, 2 }, transport.AttemptedSequences);
             var failure = await Assert.ThrowsAsync<PlatformCapabilityException>(() => agent.RetainedContext!.Platform.ReadBusinessProfileAsync());
             Assert.Equal("agent.context_ended", failure.FailureCode);
             Assert.False(failure.Retryable);
@@ -69,7 +72,9 @@ public sealed class PersonalTodoLeaseLifecycleTests
             PersonalTodoItem item, AgentRuntimeContext context, CancellationToken cancellationToken)
         {
             RetainedContext = context;
-            await context.ReportProgressAsync(new { stage = "coding" }, cancellationToken);
+            // A failed report is retried once, as an agent that keeps its telemetry would.
+            try { await context.ReportProgressAsync(new { stage = "coding" }, cancellationToken); }
+            catch (HttpRequestException) { await context.ReportProgressAsync(new { stage = "coding" }, cancellationToken); }
             using var client = context.CreateChatClient(new(Guid.NewGuid(), "test-model"));
             var response = await client.GetResponseAsync("Build the application", cancellationToken: cancellationToken);
             Assert.Equal("Implemented", response.Text);
@@ -78,8 +83,9 @@ public sealed class PersonalTodoLeaseLifecycleTests
         }
     }
 
-    private sealed class Transport(bool replacement) : IAgentRuntimeTransport
+    private sealed class Transport(bool replacement, bool firstProgressFails = false) : IAgentRuntimeTransport
     {
+        public List<long> AttemptedSequences { get; } = [];
         public TaskCompletionSource WaitingForDelivery { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource DeliveryAvailable { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Finished { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -133,7 +139,14 @@ public sealed class PersonalTodoLeaseLifecycleTests
             yield return JsonSerializer.SerializeToElement(new { text = "Implemented" });
         }
         public Task ReportProgressAsync(AgentWorkLease lease, long sequence, JsonElement value, CancellationToken ct)
-        { Assert.Equal(workId, lease.WorkId); ProgressSequences.Add(sequence); return Task.CompletedTask; }
+        {
+            Assert.Equal(workId, lease.WorkId);
+            AttemptedSequences.Add(sequence);
+            if (firstProgressFails && AttemptedSequences.Count == 1)
+                throw new HttpRequestException("The MCP service rejected the request: Internal Server Error");
+            ProgressSequences.Add(sequence);
+            return Task.CompletedTask;
+        }
         public Task RenewWorkAsync(AgentWorkLease lease, CancellationToken ct) => Task.CompletedTask;
         public Task CompleteAsync(AgentWorkLease lease, AgentWorkResult result, CancellationToken ct)
         { Finished.TrySetResult(); return Task.CompletedTask; }
