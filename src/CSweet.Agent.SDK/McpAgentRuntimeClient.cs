@@ -227,6 +227,12 @@ internal sealed partial class McpAgentRuntimeClient : IAgentRuntimeTransport, IA
                 failureCode: failure.Code,
                 retryable: failure.Retryable);
         }
+        if (ReadContractViolation(result) is { } violation)
+            // The platform saved the result but says it breaks the tool's declared output schema.
+            // Continue with it: the typed read below escalates without a retry when it is unreadable.
+            _logger.LogWarning(
+                "The platform completed {Capability} and returned its saved result with a contract violation: {Violation}",
+                capability, violation);
         if (result.TryGetProperty("structuredContent", out var structured) &&
             structured.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
             return structured.Clone();
@@ -751,6 +757,15 @@ internal sealed partial class McpAgentRuntimeClient : IAgentRuntimeTransport, IA
             _ => PlatformCapabilityErrorCode.Unavailable
         };
     }
+
+    private static string? ReadContractViolation(JsonElement result) =>
+        result.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object &&
+        meta.TryGetProperty("csweet", out var csweet) && csweet.ValueKind == JsonValueKind.Object &&
+        csweet.TryGetProperty("contractViolation", out var violation) && violation.ValueKind == JsonValueKind.Object
+            ? violation.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.String
+                ? message.GetString()
+                : PlatformCapabilityResult.ContractViolationCode
+            : null;
 
     private static (string? Code, bool? Retryable) ReadFailureMetadata(JsonElement result)
     {

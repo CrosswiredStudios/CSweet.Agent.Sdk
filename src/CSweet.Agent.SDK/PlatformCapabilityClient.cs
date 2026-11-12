@@ -374,17 +374,8 @@ public sealed class PlatformCapabilityClient
         var arguments = JsonSerializer.SerializeToElement(payload, JsonOptions);
         AgentOperatingStateValidation.ValidateInput(capability, arguments);
         var result = await _tools.InvokeAsync(capability, arguments, cancellationToken);
-        try
-        {
-            return result.Deserialize<TResponse>(JsonOptions)
-                ?? throw new PlatformCapabilityException(capability, PlatformCapabilityErrorCode.ValidationFailed,
-                    "The platform capability returned an empty response.");
-        }
-        catch (JsonException exception)
-        {
-            throw new PlatformCapabilityException(capability, PlatformCapabilityErrorCode.ValidationFailed,
-                "The platform capability returned invalid JSON.", exception);
-        }
+        return PlatformCapabilityResult.Read<TResponse>(capability, result, JsonOptions,
+            "The platform capability returned an empty response.");
     }
 
     public async Task<IReadOnlyList<AITool>> GetModelToolsAsync(

@@ -56,11 +56,8 @@ public sealed partial class PlatformSourceControlClient
             capability,
             JsonSerializer.SerializeToElement(request, JsonOptions),
             cancellationToken);
-        return result.Deserialize<TResponse>(JsonOptions)
-            ?? throw new PlatformCapabilityException(
-                capability,
-                PlatformCapabilityErrorCode.ValidationFailed,
-                "The source-control capability returned an empty response.");
+        return PlatformCapabilityResult.Read<TResponse>(capability, result, JsonOptions,
+            "The source-control capability returned an empty response.");
     }
 }
 

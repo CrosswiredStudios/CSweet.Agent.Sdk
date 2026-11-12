@@ -121,9 +121,7 @@ public sealed class PlatformPersonalTodoClient
     {
         var result = await _tools.InvokeAsync(capability,
             JsonSerializer.SerializeToElement(payload, JsonOptions), cancellationToken);
-        return result.Deserialize<TResponse>(JsonOptions)
-            ?? throw new PlatformCapabilityException(capability,
-                PlatformCapabilityErrorCode.ValidationFailed,
-                "The personal to-do capability returned an empty response.");
+        return PlatformCapabilityResult.Read<TResponse>(capability, result, JsonOptions,
+            "The personal to-do capability returned an empty response.");
     }
 }

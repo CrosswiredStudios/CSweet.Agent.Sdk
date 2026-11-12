@@ -217,7 +217,7 @@ public sealed class PlatformInfrastructureClient
         string capability, TRequest request, CancellationToken token)
     {
         var result = await _tools.InvokeAsync(capability, JsonSerializer.SerializeToElement(request, JsonOptions), token);
-        return result.Deserialize<TResponse>(JsonOptions) ?? throw new PlatformCapabilityException(
-            capability, PlatformCapabilityErrorCode.ValidationFailed, "The infrastructure capability returned an empty response.");
+        return PlatformCapabilityResult.Read<TResponse>(capability, result, JsonOptions,
+            "The infrastructure capability returned an empty response.");
     }
 }

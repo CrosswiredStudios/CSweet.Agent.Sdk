@@ -82,22 +82,8 @@ public sealed partial class PlatformGitWorkspaceClient
             capability,
             JsonSerializer.SerializeToElement(request, JsonOptions),
             cancellationToken);
-        try
-        {
-            return result.Deserialize<TResponse>(JsonOptions)
-                ?? throw new PlatformCapabilityException(
-                    capability,
-                    PlatformCapabilityErrorCode.ValidationFailed,
-                    "The Git workspace capability returned an empty response.");
-        }
-        catch (JsonException exception)
-        {
-            throw new PlatformCapabilityException(
-                capability,
-                PlatformCapabilityErrorCode.ValidationFailed,
-                "The Git workspace capability returned invalid JSON.",
-                exception);
-        }
+        return PlatformCapabilityResult.Read<TResponse>(capability, result, JsonOptions,
+            "The Git workspace capability returned an empty response.");
     }
 }
 

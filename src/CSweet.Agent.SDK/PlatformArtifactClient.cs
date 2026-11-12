@@ -51,8 +51,8 @@ public sealed class PlatformArtifactClient
     private async Task<TResponse> InvokeAsync<TRequest, TResponse>(string capability, TRequest payload, CancellationToken token)
     {
         var result = await _tools.InvokeAsync(capability, JsonSerializer.SerializeToElement(payload, JsonOptions), token);
-        return result.Deserialize<TResponse>(JsonOptions) ?? throw new PlatformCapabilityException(capability,
-            PlatformCapabilityErrorCode.ValidationFailed, "The artifact capability returned an empty response.");
+        return PlatformCapabilityResult.Read<TResponse>(capability, result, JsonOptions,
+            "The artifact capability returned an empty response.");
     }
 }
 
