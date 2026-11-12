@@ -47,7 +47,7 @@ public sealed class AggregateSourceReviewTests
         var reports = await Run(second);
         Assert.Equal(3, reports.Count);
         Assert.Equal(2, second.Calls);
-        Assert.Contains("Real implementation defect", reports[0].Findings);
+        Assert.Contains("Real implementation defect", reports[0].Defects);
         Assert.Equal(3, ledger.Count);
 
         Task<IReadOnlyList<AggregateSourceReview.Report>> Run(Client client) => AggregateSourceReview.ExecuteAsync(
@@ -74,7 +74,7 @@ public sealed class AggregateSourceReviewTests
     {
         AggregateSourceReview.Part[] parts = [new("game.js", "hash", 3, 0, "abc")];
         string[] coverage = fault switch { "missing" => [], "duplicate" => ["game.js:0", "game.js:0"], _ => ["other.js:0"] };
-        Assert.Throws<InvalidOperationException>(() => AggregateSourceReview.Validate(new("Inspected", [], coverage), parts));
+        Assert.Throws<InvalidOperationException>(() => AggregateSourceReview.Validate(new("Inspected", [], [], coverage), parts));
     }
 
     private static AgentTestRuntime Runtime(Dictionary<string, AgentOperatingStateResponse> ledger) => new AgentTestRuntime()
@@ -91,7 +91,8 @@ public sealed class AggregateSourceReviewTests
     {
         Assert.True(messages.Sum(m => m.Text.Length) < 65000);
         using var input = JsonDocument.Parse(messages[1].Text);
-        return JsonSerializer.Serialize(new AggregateSourceReview.Report("Concrete source evidence", findings,
+        Assert.Equal(["game.js"], input.RootElement.GetProperty("candidateFiles").EnumerateArray().Select(x => x.GetString()));
+        return JsonSerializer.Serialize(new AggregateSourceReview.Report("Concrete source evidence", ["Exports a game loop"], findings,
             input.RootElement.GetProperty("parts").EnumerateArray().Select(p => p.GetProperty("key").GetString()!).ToArray()), Json);
     }
 

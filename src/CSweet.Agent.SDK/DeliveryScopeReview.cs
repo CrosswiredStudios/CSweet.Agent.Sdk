@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using CSweet.WorkManagement.Contracts;
 using Microsoft.Extensions.AI;
 
@@ -56,12 +57,20 @@ public static class DeliveryScopeReview
                 "exact aggregate candidate", value => Validate(value, assignment.Candidate.Digest, scope.Planning.AcceptanceCriteria), ct,
                 reviewKind: "aggregate review", maxOutputTokens: 128000);
         await Authorize(ct);
-        if(inspections is not null) {
-            var findings=result.Findings.Concat(inspections.SelectMany(r=>r.Findings)).Distinct(StringComparer.Ordinal).ToArray();
-            result=result with {Approved=result.Approved&&findings.Length==0,Findings=findings};
-            Validate(result,assignment.Candidate.Digest,scope.Planning.AcceptanceCriteria);
+        // A bounded inspection sees part of the candidate; its defects are ruled on against the whole
+        // candidate rather than appended as findings. Genuine ones block, dismissals keep their reason.
+        IReadOnlyList<InspectionDefectAdjudication.Ruling> rulings = [];
+        if (inspections is not null && InspectionDefectAdjudication.Defects(inspections) is { Count: > 0 } defects)
+        {
+            rulings = await InspectionDefectAdjudication.ExecuteAsync(client, assignment.Candidate.Digest,
+                scope.Planning.AcceptanceCriteria, result, defects, reference, ct);
+            await Authorize(ct);
+            var findings = result.Findings.Concat(rulings.Where(r => r.Blocking).Select(r => r.Defect)).Distinct(StringComparer.Ordinal).ToArray();
+            result = result with { Approved = result.Approved && findings.Length == 0, Findings = findings };
         }
-        return Outcome(assignment, result);
+        if (!result.Approved) result = result with { Summary = RejectionSummary(result) };
+        Validate(result, assignment.Candidate.Digest, scope.Planning.AcceptanceCriteria);
+        return Outcome(assignment, result, rulings);
 
         async Task Authorize(CancellationToken token)
         {
@@ -156,8 +165,34 @@ public static class DeliveryScopeReview
         else if (!result.Approved && result.Findings.Count == 0) errors.Add("findings: rejection requires actionable findings; never invent or suppress defects to fix the schema.");
         if (errors.Count > 0) throw new InvalidOperationException("Aggregate review validation: " + string.Join(" ", errors));
     }
-    public static AgentWorkResult Outcome(WorkExecutionAssignment assignment, WorkDeliveryReviewResult result) => AgentWorkResult.Success(
-        new WorkExecutionOutcomeV1(assignment.StageExecutionId, assignment.AttemptId, WorkExecutionDispositions.Completed,
-            result.Approved ? "approved" : "changes_requested", result.Summary, JsonSerializer.SerializeToElement(result, Json),
+    public static AgentWorkResult Outcome(WorkExecutionAssignment assignment, WorkDeliveryReviewResult result) => Outcome(assignment, result, []);
+
+    internal static AgentWorkResult Outcome(WorkExecutionAssignment assignment, WorkDeliveryReviewResult result,
+        IReadOnlyList<InspectionDefectAdjudication.Ruling> rulings)
+    {
+        var output = JsonSerializer.SerializeToNode(result, Json)!.AsObject();
+        if (rulings.Count > 0) output[InspectionDefectAdjudication.OutputProperty] = JsonSerializer.SerializeToNode(rulings, Json);
+        return AgentWorkResult.Success(new WorkExecutionOutcomeV1(assignment.StageExecutionId, assignment.AttemptId, WorkExecutionDispositions.Completed,
+            result.Approved ? "approved" : "changes_requested", result.Summary, JsonSerializer.SerializeToElement(output, Json),
             [new("delivery-candidate", "Reviewed complete candidate", result.CandidateDigest)], result.Findings));
+    }
+
+    internal const string RejectionPrefix = "Changes requested (";
+    internal const int RejectionSummaryCharacters = 4000;
+
+    /// <summary>
+    /// The platform shows a rejected stage's summary as its block reason. A reviewer's or consistency check's
+    /// narrative can read as approval while findings from elsewhere reject, so a rejection leads with what blocks.
+    /// </summary>
+    internal static string RejectionSummary(WorkDeliveryReviewResult result)
+    {
+        if (result.Summary.StartsWith(RejectionPrefix, StringComparison.Ordinal) || result.Findings.Count == 0) return result.Summary;
+        var count = result.Findings.Count == 1 ? "1 blocking finding" : $"{result.Findings.Count} blocking findings";
+        var text = $"{RejectionPrefix}{count}): {result.Findings[0].Trim()}" +
+            (result.Findings.Count > 1 ? $" (+{result.Findings.Count - 1} more)" : "") + $" Reviewer summary: {result.Summary.Trim()}";
+        if (text.Length <= RejectionSummaryCharacters) return text;
+        var cut = RejectionSummaryCharacters - 1;
+        if (char.IsHighSurrogate(text[cut - 1])) cut--;
+        return text[..cut] + "…";
+    }
 }

@@ -1,4 +1,4 @@
-SDK 5.23.0 stops a sprint from stalling when its increment has nothing runnable to test, decides a delivery correction once instead of re-asking the model, and keeps an assignment working when Git delivery is switched on but the runtime cannot use it yet (it falls back to the snapshot). See [release notes](releases/5.23.0.md).
+SDK 5.23.1 stops a large candidate's technical or manager acceptance from being rejected by notes from its partial source inspection: every inspection defect is now ruled on against the whole candidate, and a rejection's summary leads with what blocks. See [release notes](releases/5.23.1.md).
 
 SDK 5.22.1 never lets progress block work: a failed progress report no longer uses up its sequence number, and a failed model-call status report no longer fails the model call. SDK 5.22.0 makes a saved platform result that cannot be read as the expected type a non-retryable `platform.contract_violation` instead of a generic invalid-JSON failure, and continues with a result the platform flags but that still reads. SDK 5.21.1 reads JSON followed by trailing reasoning text. SDK 5.21.0 adds `AgentModelJson.ReadAsync`: ask a model for one JSON object, derive what code can compute, and send any remaining problem back to the same conversation with the exact reason instead of failing the turn. See [5.22.1](releases/5.22.1.md), [5.22.0](releases/5.22.0.md), [5.21.1](releases/5.21.1.md), [5.21.0](releases/5.21.0.md) and [Model JSON replies](#model-json-replies-5210).
 
@@ -98,7 +98,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.23.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.23.1 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -115,7 +115,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.23.0
+  --SdkVersion 5.23.1
 cd ResearchAgent
 dotnet test
 ```
@@ -123,7 +123,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.23.0
+dotnet add package CSweet.Agent.SDK --version 5.23.1
 ```
 
 ```csharp

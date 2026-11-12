@@ -95,8 +95,7 @@ public sealed class AggregateReviewCorrectionTests
 
     private static string Encode(WorkDeliveryReviewResult report) => JsonSerializer.Serialize(report, Json);
 
-    [Fact]
-    public async Task LargeCandidateUsesBoundedInspectionWithoutRepeatingDocumentsOrRetryHistoryAndCannotEraseSourceFindings()
+    private static Fixture LargeCandidate()
     {
         var f = new Fixture();
         var document = "UNIQUE_DOCUMENT_BODY " + new string('d', 40000);
@@ -128,6 +127,40 @@ public sealed class AggregateReviewCorrectionTests
         string[] criteria = [f.Criterion, "Procedural source", "Final QA remains mandatory"];
         f.Scope = f.Scope with { Planning = f.Scope.Planning with { AcceptanceCriteria = criteria } };
         f.Plan = f.Plan with { Executions = [f.Execution], Scopes = [f.Scope] };
+        return f;
+    }
+
+    // Large candidates are inspected in bounded parts first. Inspection calls carry "parts", rulings carry
+    // "inspectionDefects", the consistency check carries "assessments"; anything else is a criteria chunk.
+    private static Client LargeCandidateClient(Fixture f, Func<int, string[]> defects, Func<int, JsonElement, string> rule,
+        Action<int>? inspected = null, bool approve = true) => new((call, messages) => {
+        using var parsed = JsonDocument.Parse(messages[1].Text);
+        var input = parsed.RootElement.Clone();
+        if (input.TryGetProperty("parts", out var parts))
+        {
+            var index = call;
+            inspected?.Invoke(index);
+            Assert.Contains(input.GetProperty("candidateFiles").EnumerateArray(), x => x.GetString()!.EndsWith("/src/game.js", StringComparison.Ordinal));
+            return JsonSerializer.Serialize(new AggregateSourceReview.Report("Bounded source evidence", ["Evidence note: exports are present"],
+                defects(index), parts.EnumerateArray().Select(p => p.GetProperty("key").GetString()!).ToArray()), Json);
+        }
+        if (input.TryGetProperty("inspectionDefects", out var items)) return rule(call, items);
+        if (input.TryGetProperty("assessments", out _))
+            return "{\"summary\":\"No additional blocking consistency findings\",\"findings\":[]}";
+        return Encode(new(f.Candidate.Digest, approve, "Criteria assessed",
+            input.GetProperty("acceptanceCriteria").EnumerateArray().Select(c => new WorkDeliveryCriterionResult(c.GetString()!, approve, "Exact evidence")).ToArray(),
+            approve ? [] : ["Assessed criterion defect"]));
+    });
+
+    private static string Rulings(JsonElement items, Func<string, (bool Blocking, string Reason)> decide, int skip = 0) =>
+        JsonSerializer.Serialize(new { decisions = items.EnumerateArray().Skip(skip).Select(i => {
+            var (blocking, reason) = decide(i.GetProperty("defect").GetString()!);
+            return new { id = i.GetProperty("id").GetString(), blocking, reason }; }) }, Json);
+
+    [Fact]
+    public async Task LargeCandidateUsesBoundedInspectionWithoutRepeatingDocumentsOrRetryHistoryAndCannotEraseSourceFindings()
+    {
+        var f = LargeCandidate();
         var documentCopies = 0; var inspections = 0;
         using var client = new Client((call, messages) => {
             var text = messages[1].Text;
@@ -139,7 +172,7 @@ public sealed class AggregateReviewCorrectionTests
             if (input.TryGetProperty("parts", out var parts))
             {
                 inspections++;
-                return JsonSerializer.Serialize(new AggregateSourceReview.Report("Bounded source evidence",
+                return JsonSerializer.Serialize(new AggregateSourceReview.Report("Bounded source evidence", ["Evidence note"],
                     inspections == 1 ? ["Retain the actual source defect"] : [],
                     parts.EnumerateArray().Select(p => p.GetProperty("key").GetString()!).ToArray()), Json);
             }
@@ -148,6 +181,8 @@ public sealed class AggregateReviewCorrectionTests
             Assert.Equal(JsonValueKind.Null, reference.GetProperty("source").ValueKind);
             Assert.False(reference.GetProperty("evidence").GetProperty("documents")[0].TryGetProperty("content", out _));
             Assert.Contains("independent QA receipt", text);
+            if (input.TryGetProperty("inspectionDefects", out var items))
+                return Rulings(items, _ => (true, "Genuine fault confirmed against the whole candidate"));
             if (input.TryGetProperty("assessments", out _))
                 return "{\"summary\":\"Whole candidate assessed\",\"findings\":[]}";
             return Encode(new(f.Candidate.Digest, true, "Criteria assessed",
@@ -157,8 +192,80 @@ public sealed class AggregateReviewCorrectionTests
         Assert.True(inspections > 1); Assert.Equal(1, documentCopies);
         Assert.Equal("changes_requested", result.OutcomeCode);
         Assert.Contains("Retain the actual source defect", result.Output.Deserialize<WorkDeliveryReviewResult>(Json)!.Findings);
-        Assert.Equal(inspections + 3, client.Calls);
+        Assert.StartsWith("Changes requested (1 blocking finding): Retain the actual source defect", result.Summary);
+        Assert.True(result.Output.GetProperty("sourceInspectionRulings")[0].GetProperty("blocking").GetBoolean());
+        Assert.Equal(inspections + 4, client.Calls);
     }
+    [Fact]
+    public async Task Source_inspection_notes_never_reject_and_a_dismissed_defect_is_retained_with_its_reason()
+    {
+        // 2026-11-12 QFN Games: every assessment approved, yet 21 partial-view inspection notes forced changes_requested.
+        var f = LargeCandidate(); var inspections = 0;
+        using var client = LargeCandidateClient(f, call => call == 1 ? ["package.json references scripts/verify.mjs but that file is missing"] : [],
+            (_, items) => Rulings(items, _ => (false, "scripts/verify.mjs is in the candidate file list and was inspected in another part")),
+            _ => inspections++);
+        var result = await f.Run(client);
+        Assert.Equal("approved", result.OutcomeCode);
+        var report = result.Output.Deserialize<WorkDeliveryReviewResult>(Json)!;
+        Assert.True(report.Approved); Assert.Empty(report.Findings);
+        var ruling = Assert.Single(result.Output.GetProperty("sourceInspectionRulings").EnumerateArray());
+        Assert.False(ruling.GetProperty("blocking").GetBoolean());
+        Assert.Contains("another part", ruling.GetProperty("reason").GetString());
+        Assert.Contains("missing", ruling.GetProperty("defect").GetString());
+        Assert.Equal(inspections + 4, client.Calls);
+    }
+
+    [Fact]
+    public async Task Inspections_with_only_notes_need_no_ruling()
+    {
+        var f = LargeCandidate(); var inspections = 0;
+        using var client = LargeCandidateClient(f, _ => [], (_, _) => throw new InvalidOperationException("No ruling was expected."), _ => inspections++);
+        var result = await f.Run(client);
+        Assert.Equal("approved", result.OutcomeCode);
+        Assert.False(result.Output.TryGetProperty("sourceInspectionRulings", out _));
+        Assert.True(inspections > 1); Assert.Equal(inspections + 3, client.Calls);
+    }
+
+    [Fact]
+    public async Task Every_inspection_defect_must_be_ruled_on_and_a_genuine_one_still_rejects()
+    {
+        var f = LargeCandidate(); var rulingCalls = 0;
+        using var client = LargeCandidateClient(f, call => call == 1 ? ["Collision bounds ignore the paddle width", "Observation: uses ES modules"] : [],
+            (_, items) => ++rulingCalls == 1
+                ? Rulings(items, _ => (false, "Not a fault"), skip: 1)
+                : Rulings(items, d => d.StartsWith("Collision") ? (true, "Genuine fault: criterion requires paddle collisions") : (false, "An observation, not a fault")));
+        var result = await f.Run(client);
+        Assert.Equal(2, rulingCalls);
+        Assert.Equal("changes_requested", result.OutcomeCode);
+        var report = result.Output.Deserialize<WorkDeliveryReviewResult>(Json)!;
+        Assert.Equal(["Collision bounds ignore the paddle width"], report.Findings);
+        Assert.StartsWith("Changes requested (1 blocking finding): Collision bounds ignore the paddle width", report.Summary);
+        Assert.Equal(2, result.Output.GetProperty("sourceInspectionRulings").GetArrayLength());
+    }
+
+    [Fact]
+    public void Ruling_validation_names_missing_unknown_and_repeated_ids()
+    {
+        var error = Assert.Throws<InvalidOperationException>(() => InspectionDefectAdjudication.Validate(new([
+            new("D1", true, "Fault"), new("D1", false, "Again"), new("D9", false, "Unknown")]), ["D1", "D2"]));
+        Assert.Contains("Missing: D2", error.Message); Assert.Contains("Unknown: D9", error.Message); Assert.Contains("Repeated: D1", error.Message);
+        Assert.Throws<InvalidOperationException>(() => InspectionDefectAdjudication.Validate(new([new("D1", false, " ")]), ["D1"]));
+    }
+
+    [Fact]
+    public void A_rejection_summary_leads_with_what_blocks()
+    {
+        var digest = new string('a', 64);
+        WorkDeliveryReviewResult result = new(digest, false, "No additional blocking consistency findings.",
+            [new("Criterion", true, "Evidence")], ["First blocking defect", "Second blocking defect"]);
+        var summary = DeliveryScopeReview.RejectionSummary(result);
+        Assert.Equal("Changes requested (2 blocking findings): First blocking defect (+1 more) Reviewer summary: No additional blocking consistency findings.", summary);
+        Assert.Equal(summary, DeliveryScopeReview.RejectionSummary(result with { Summary = summary }));
+        var longSummary = DeliveryScopeReview.RejectionSummary(result with { Findings = [new string('x', 5000)] });
+        Assert.Equal(DeliveryScopeReview.RejectionSummaryCharacters, longSummary.Length);
+        Assert.EndsWith("…", longSummary);
+    }
+
     private sealed class Fixture
     {
         internal readonly string Criterion = "Keep the exact criterion; downstream manager approval follows this review.";
