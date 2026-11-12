@@ -45,7 +45,87 @@ public sealed class DeliveryCorrectionCoordinatorTests
         await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project,f.Context(),default);
         Assert.Empty(f.Created);Assert.Equal(0,f.Starts);
         var c=Assert.Single(f.Plans[0].Corrections);Assert.Equal(f.Manager,c.OwnerOrganizationUserId);
-        Assert.Contains("Select the source task",c.WaitingReason);
+        // With no planning model the owner chooses which task's owner fixes it.
+        Assert.Contains("Waiting for the owner to choose",c.WaitingReason);
+        var decision=Assert.Single(f.Decisions);
+        Assert.Equal(DeliveryCorrectionCoordinator.SourceDecisionType,decision.TypeKey);
+        Assert.Equal(new[]{"source:"+f.Source.Id.ToString("N"),"source:"+f.OtherSource!.Id.ToString("N"),DeliveryCorrectionCoordinator.KeepWaitingOption},
+            decision.Options.Select(o=>o.Id));
+    }
+
+    // QFN Games, 2026-11-12: the model answered NeedsPlanning; its rationale differed every call, so each wait write looked
+    // new, woke the manager and asked the model again about every 45 seconds.
+    [Fact]
+    public async Task Needs_planning_asks_the_model_once_and_the_owner_once_however_often_the_manager_wakes()
+    {
+        var f = PrismCase();
+        using var client = new SelectionClient(NeedsPlanning());
+        for (var wake = 0; wake < 4; wake++)
+            await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project, f.Context(), () => client, default);
+        Assert.Equal(1, client.Calls);
+        Assert.Single(f.Decisions);
+        Assert.Equal(1, f.WaitWrites);
+        Assert.Empty(f.Created);
+        Assert.Contains("Waiting for the owner to choose", f.Plans[0].Corrections[0].WaitingReason);
+    }
+
+    [Fact]
+    public async Task Owner_choice_assigns_the_correction_and_creates_corrective_work_without_another_model_call()
+    {
+        var f = PrismCase();
+        using var client = new SelectionClient(NeedsPlanning());
+        await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project, f.Context(), () => client, default);
+        f.Decisions[0] = f.Decisions[0] with { Status = DecisionStatuses.Decided, SelectedOptionId = "source:" + f.Source.Id.ToString("N") };
+        await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project, f.Context(), () => client, default);
+        Assert.Equal(1, client.Calls);
+        Assert.Equal(f.Source.Id, f.Plans[0].Corrections[0].SourceItemId);
+        Assert.Equal(3, f.Created.Count);
+        Assert.Equal(1, f.Starts);
+    }
+
+    [Fact]
+    public async Task Owner_keeping_the_increment_waiting_creates_nothing_and_stops_asking()
+    {
+        var f = PrismCase();
+        using var client = new SelectionClient(NeedsPlanning());
+        await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project, f.Context(), () => client, default);
+        f.Decisions[0] = f.Decisions[0] with { Status = DecisionStatuses.Decided, SelectedOptionId = DeliveryCorrectionCoordinator.KeepWaitingOption };
+        await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project, f.Context(), () => client, default);
+        await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project, f.Context(), () => client, default);
+        Assert.Equal(1, client.Calls);
+        Assert.Single(f.Decisions);
+        Assert.Empty(f.Created);
+        Assert.Contains("keep this increment waiting", f.Plans[0].Corrections[0].WaitingReason);
+        Assert.Equal(2, f.WaitWrites);
+    }
+
+    [Fact]
+    public async Task Without_decision_access_the_stable_marker_still_stops_repeat_model_calls()
+    {
+        var f = PrismCase();
+        f.DenyDecisions = true;
+        using var client = new SelectionClient(NeedsPlanning());
+        for (var wake = 0; wake < 3; wake++)
+            await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project, f.Context(), () => client, default);
+        Assert.Equal(1, client.Calls);
+        Assert.Equal(1, f.WaitWrites);
+        Assert.Contains("[selection ", f.Plans[0].Corrections[0].WaitingReason);
+    }
+
+    // QFN Games, 2026-11-12: build readiness asked a dependency-pin increment for a runnable test package.
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task A_no_runnable_package_finding_reruns_acceptance_only_when_every_task_declared_no_browser_output(bool declaredNone, bool recovers)
+    {
+        var f = PrismCase();
+        f.NoRunnablePackageCase(declaredNone);
+        using var client = new SelectionClient(NeedsPlanning());
+        await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project, f.Context(), () => client, default);
+        Assert.Equal(recovers ? 1 : 0, f.Recoveries.Count);
+        Assert.Equal(recovers ? 0 : 1, client.Calls);
+        Assert.Empty(f.Created);
+        if (recovers) Assert.Equal(f.Plans[0].Executions[0].Id, f.Recoveries[0].ExecutionId);
     }
 
     [Fact]
@@ -220,6 +300,9 @@ public sealed class DeliveryCorrectionCoordinatorTests
         Assert.Equal(f.Source.Id, f.Plans[0].Corrections[0].SourceItemId);
     }
 
+    private static string NeedsPlanning() => JsonSerializer.Serialize(new { disposition = "NeedsPlanning", choices = Array.Empty<object>(),
+        reason = "The finding is outside every supplied source: " + Guid.NewGuid() });
+
     private static Fixture PrismCase()
     {
         var f = new Fixture { Ambiguous = true };
@@ -264,6 +347,10 @@ public sealed class DeliveryCorrectionCoordinatorTests
         public bool LoseCreateResponse,DenyStart,Ambiguous;
         public bool LoseSelectionResponse, DenySelection;
         public List<string> Effects = [];
+        public List<DecisionRecord> Decisions = [];
+        public List<RecoverWorkDeliveryRequest> Recoveries = [];
+        public bool DenyDecisions;
+        public int WaitWrites;
         private readonly Guid otherSource=Guid.NewGuid();
         private readonly AgentTestRuntime runtime;
         private static readonly JsonSerializerOptions Json=new(JsonSerializerDefaults.Web);
@@ -311,6 +398,7 @@ public sealed class DeliveryCorrectionCoordinatorTests
                     if (DenySelection && r.SourceItemId.HasValue) throw new PlatformCapabilityException(WorkDeliveryCapabilities.Correct, PlatformCapabilityErrorCode.Denied, "Current manager grant revoked");
                     var current=Plans[0].Corrections[0];Assert.Equal(current.Revision,r.ExpectedRevision);
                     if (r.SourceItemId.HasValue) Effects.Add(r.FollowUpPlanId.HasValue ? "bind" : "select");
+                    if (!r.SourceItemId.HasValue && !r.FollowUpPlanId.HasValue && r.WaitingReason is not null) WaitWrites++;
                     Plans[0]=Plans[0] with {Revision=Plans[0].Revision+1,Status=r.FollowUpPlanId.HasValue?"Paused":Plans[0].Status,Corrections=[current with {
                         Revision=current.Revision+1,SourceItemId=r.SourceItemId??current.SourceItemId,FollowUpPlanId=r.FollowUpPlanId??current.FollowUpPlanId,
                         RemediationTaskIds=r.RemediationTaskIds??current.RemediationTaskIds,WaitingReason=r.WaitingReason,Status=r.FollowUpPlanId.HasValue?"Assigned":"NeedsPlanning"}]};
@@ -322,7 +410,25 @@ public sealed class DeliveryCorrectionCoordinatorTests
                 .RegisterCapability<CreateWorkSprintRequest,WorkSprint>(WorkSprintCapabilities.Create,(r,_)=>Task.FromResult(Sprint??=new(Guid.NewGuid(),Board,r.Name,r.Goal!,"Planned",null,null,null,null,null,1,0,0,0,1)))
                 .RegisterCapability<SetWorkItemSprintRequest,WorkItem>(WorkSprintCapabilities.ManageScope,(r,_)=>{var key=Created.Single(i=>i.Value.Id==r.ItemId).Key;return Task.FromResult(Created[key]=Created[key] with {SprintId=r.SprintId});})
                 .RegisterCapability<StartWorkSprintExecutionRequest,WorkSprintPreflightResult>(WorkOrchestrationCapabilities.Preflight,(r,_)=>Task.FromResult(new WorkSprintPreflightResult(!DenyStart,Board,r.SprintId,null,DenyStart?[new("staffing","Engineer unavailable")]:[])))
+                .RegisterCapability<ReadDecisionRequest,IReadOnlyList<DecisionRecord>>(PlatformCapabilities.DecisionRead,(_,_)=>DenyDecisions
+                    ? throw new PlatformCapabilityException(PlatformCapabilities.DecisionRead,PlatformCapabilityErrorCode.Denied,"No decision grant")
+                    : Task.FromResult<IReadOnlyList<DecisionRecord>>(Decisions.ToArray()))
+                .RegisterCapability<DecisionRequest,DecisionRecord>(PlatformCapabilities.DecisionRequest,(r,_)=>{
+                    var decision=new DecisionRecord(Guid.NewGuid(),r.WorkstreamId,r.TypeKey,r.Summary,r.AuthorityRuleKey,r.Options,r.RecommendedOptionId,
+                        null,DecisionStatuses.Pending,null,r.Evidence,null,null,r.DueAt,1,DateTimeOffset.UtcNow,DateTimeOffset.UtcNow,r.TypeData);
+                    Decisions.Add(decision);return Task.FromResult(decision);})
+                .RegisterCapability<RecoverWorkDeliveryRequest,WorkDeliveryPlanResponse>(WorkDeliveryCapabilities.Recover,(r,_)=>{
+                    Recoveries.Add(r);return Task.FromResult(Plans[0]);})
                 .RegisterCapability<StartWorkSprintExecutionRequest,WorkSprintExecutionResponse>(WorkOrchestrationCapabilities.Start,(r,_)=>{Starts++;Sprint=Sprint! with {Status="Active"};return Task.FromResult(JsonSerializer.Deserialize<WorkSprintExecutionResponse>("{}",Json)!);});
+        }
+        public void NoRunnablePackageCase(bool declaredNone)
+        {
+            var plan=Plans[0];
+            var story=plan.Scopes.Single(x=>x.Scope=="Story");
+            var release=plan.Scopes.Single(x=>x.Scope=="Release") with { ChildIds=[story.TicketWorkflow!.TicketId] };
+            Plans[0]=plan with { Scopes=[story,release], Findings=[plan.Findings[0] with { Summary=DeliveryComputeTest.NoRunnablePackage }] };
+            Source=Source with { Planning=Source.Planning! with { Verifications=declaredNone?[]:null } };
+            OtherSource=OtherSource! with { Planning=OtherSource.Planning! with { Verifications=declaredNone?[]:null } };
         }
         public AgentRuntimeContext Context()=>runtime.CreateContext(identity:new(Manager.ToString(),"Producer",null,null,null,[],null,null,null));
         public string ChooseScene() => JsonSerializer.Serialize(new { disposition="Select", reason="The scene sample defect belongs to scaffold implementation; dependency-only work excludes scene code.",

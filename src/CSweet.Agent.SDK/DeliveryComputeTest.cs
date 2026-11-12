@@ -66,7 +66,15 @@ public static partial class DeliveryComputeTest
             {
                 if (state.EnvironmentId is null)
                 {
-                    var source = await Snapshot(); var selected = SelectMode(source.Archive!, options);
+                    var source = await Snapshot(); var selected = TrySelectMode(source.Archive!, options);
+                    if (selected is null)
+                    {
+                        // Nothing runnable is in the candidate. That is a defect only when the increment declared
+                        // runnable browser output; a dependency pin or document increment has no app to start.
+                        if (!await RunnableOutputInScopeAsync(plan, assignment.Scope, assignment.ItemId, context, ct))
+                            return NoRunnableOutputOutcome(assignment, plan, candidate);
+                        throw new InvalidOperationException(NoRunnablePackage);
+                    }
                     state = state with { Networked = selected == "node", Mode = selected };
                 }
                 else state = state with { Networked = false }; // Retain already-submitted legacy request terms.
@@ -274,7 +282,54 @@ public static partial class DeliveryComputeTest
             : "Project test compute needs approved compute or local-link access. Open Compute and grant the test instance local link access; no public network access is requested."); }
     }
 
-    public static string SelectMode(byte[] archive, ComputeDefaults options)
+    /// <summary>The remediation finding for a candidate with no runnable entry point.</summary>
+    public const string NoRunnablePackage = "The candidate needs a root Dockerfile compatible with available cached images, or a dependency-free static index.html. Ask the Developer to supply a runnable test package.";
+
+    /// <summary>Selects how to run the candidate; throws when it has no runnable entry point.</summary>
+    public static string SelectMode(byte[] archive, ComputeDefaults options) =>
+        TrySelectMode(archive, options) ?? throw new InvalidOperationException(NoRunnablePackage);
+
+    /// <summary>
+    /// True when a Code task in the increment declares runnable browser output (browser smoke), or predates
+    /// verification declarations. False only when every Code task explicitly declares no browser evidence,
+    /// for example a dependency pin or a technical document. QFN Games, 2026-11-12: build readiness demanded a
+    /// runnable app from such an increment, and the next sprint never started.
+    /// </summary>
+    public static async Task<bool> RunnableOutputInScopeAsync(WorkDeliveryPlanResponse plan, string scope, Guid? itemId,
+        AgentRuntimeContext context, CancellationToken ct)
+    {
+        var root = plan.Scopes.SingleOrDefault(x => x.Scope == scope && x.ItemId == itemId);
+        if (root is null) return true;
+        var tasks = new HashSet<Guid>(); var seen = new HashSet<Guid>();
+        void Collect(WorkDeliveryScopeSnapshot current)
+        {
+            foreach (var id in current.ChildIds)
+            {
+                if (!seen.Add(id)) continue;
+                var child = plan.Scopes.FirstOrDefault(x => x.TicketWorkflow?.TicketId == id);
+                if (child is null) tasks.Add(id); else Collect(child);
+            }
+        }
+        Collect(root);
+        var board = await context.Platform.Work.ReadBoardAsync(root.BoardId, ct);
+        var code = board.Items.Where(i => tasks.Contains(i.Id) &&
+            (i.Delivery?.DeliveryKind ?? i.Planning?.DeliveryKind) == "Code").ToArray();
+        return code.Length == 0 || code.Any(i => !WorkItemVerifications.IsDeclared(i.Planning) || WorkItemVerifications.BrowserSmoke(i.Planning) is not null);
+    }
+
+    private static AgentWorkResult NoRunnableOutputOutcome(WorkExecutionAssignment assignment, WorkDeliveryPlanResponse plan,
+        WorkDeliveryCandidate candidate)
+    {
+        const string summary = "No test application to start: every Code task in this increment declares no browser evidence, " +
+            "and the candidate has no runnable entry point. Build readiness has nothing to run; technical review and QA assess the acceptance criteria.";
+        var scope = plan.Scopes.Single(x => x.Scope == assignment.Scope && x.ItemId == assignment.ItemId);
+        return DeliveryScopeReview.Outcome(assignment, new(candidate.Digest, true, summary,
+            scope.Planning.AcceptanceCriteria.Select(c => new WorkDeliveryCriterionResult(c, true,
+                "Not a build-readiness check for this increment: " + summary)).ToArray(), []));
+    }
+
+    /// <summary>Selects how to run the candidate, or null when it has no runnable entry point.</summary>
+    public static string? TrySelectMode(byte[] archive, ComputeDefaults options)
     {
         using var zip = new ZipArchive(new MemoryStream(archive), ZipArchiveMode.Read);
         if (zip.Entries.Count > 4096 || zip.Entries.Sum(x => x.Length) > 16777216)
@@ -296,7 +351,7 @@ public static partial class DeliveryComputeTest
             return "docker";
         if (zip.GetEntry("index.html") is not null && zip.GetEntry("package.json") is null)
             return "static";
-        throw new InvalidOperationException("The candidate needs a root Dockerfile compatible with available cached images, or a dependency-free static index.html. Ask the Developer to supply a runnable test package.");
+        return null;
     }
     public static string Marker(string commit, string archiveHash) => $"csweet-candidate:{commit}:{archiveHash}:http-ok";
     public static string ValidationScript(string root, WorkDeliveryRepositoryCandidate repository,

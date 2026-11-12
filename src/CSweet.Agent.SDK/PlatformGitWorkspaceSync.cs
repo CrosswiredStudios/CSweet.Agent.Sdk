@@ -48,7 +48,17 @@ public sealed partial class PlatformGitWorkspaceClient
         if (workspace.WorkspaceId == Guid.Empty || assignmentRevision < 1) throw new ArgumentException("A current workspace is required.");
         // Git delivery when the platform names a work branch and this transport can carry Git. A workspace
         // already downloaded as a snapshot stays a snapshot workspace for its lifetime in this runtime.
-        if (UsesGit(workspace, assignmentRevision, allowNew: true)) return await CloneAsync(workspace, assignmentRevision, ct);
+        if (UsesGit(workspace, assignmentRevision, allowNew: true))
+        {
+            try { return await CloneAsync(workspace, assignmentRevision, ct); }
+            catch (GitWorkspaceCommandException failure) when (!Directory.Exists(LocalWorkspacePath(workspace.WorkspaceId)))
+            {
+                // git is missing from the image, or the route to the platform does not carry Git yet. Nothing is
+                // on disk, so this assignment can still be served by a snapshot. One line, so the cause is findable.
+                var detail = failure.Detail.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+                Console.Error.WriteLine($"csweet.git.fallback workspace={workspace.WorkspaceId:D} {failure.Message} {(detail.Length > 300 ? detail[..300] : detail)}");
+            }
+        }
         var result = await InvokeAsync<GitWorkspaceSyncRequest, GitWorkspaceSyncResult>(SyncCapability,
             new(workspace.WorkspaceId, assignmentRevision, "pull", $"workspace:{workspace.WorkspaceId:N}:pull:{assignmentRevision}"), ct);
         var path = LocalWorkspacePath(workspace.WorkspaceId);

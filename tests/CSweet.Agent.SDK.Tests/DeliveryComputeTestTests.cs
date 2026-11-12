@@ -34,6 +34,43 @@ public sealed class DeliveryComputeTestTests
     public void Rejects_unsafe_candidate_archives(string path) =>
         Assert.Throws<InvalidDataException>(() => DeliveryComputeTest.SelectMode(Archive(path), Options(Guid.NewGuid())));
     [Fact]
+    public void A_candidate_without_a_runnable_entry_point_has_no_mode()
+    {
+        Assert.Null(DeliveryComputeTest.TrySelectMode(Archive("docs/phaser-technical-path.md"), Options(Guid.NewGuid())));
+        Assert.Equal(DeliveryComputeTest.NoRunnablePackage, Assert.Throws<InvalidOperationException>(() =>
+            DeliveryComputeTest.SelectMode(Archive("docs/phaser-technical-path.md"), Options(Guid.NewGuid()))).Message);
+    }
+
+    // QFN Games, 2026-11-12: a dependency-pin increment whose tasks all declared no browser evidence was asked for a
+    // runnable test package, and the next sprint never started.
+    [Theory]
+    [InlineData("none", false)]
+    [InlineData("browser", true)]
+    [InlineData("undeclared", true)]
+    [InlineData("no-code", true)]
+    public async Task Runnable_output_is_required_only_when_a_code_task_declares_or_may_need_it(string declaration, bool required)
+    {
+        var web = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var board = Guid.NewGuid(); var ticket = Guid.NewGuid(); var pin = Guid.NewGuid(); var doc = Guid.NewGuid();
+        IReadOnlyList<WorkItemVerificationRequirement>? Verifications(bool first) => declaration switch
+        {
+            "none" => [], "browser" => first ? [] : [new(WorkItemVerificationKinds.BrowserSmoke)], _ => null
+        };
+        WorkItem Item(Guid id, bool first) => JsonSerializer.Deserialize<WorkItem>("{}", web)! with
+        {
+            Id = id, Planning = new(["Pin"], ["Pinned"]) { Verifications = Verifications(first) },
+            Delivery = declaration == "no-code" ? null : new(Guid.NewGuid(), ["Pin"], ["Pinned"]) { DeliveryKind = "Code" }
+        };
+        var planning = new WorkItemPlanningSpecification(["Accept"], ["Accepted"]);
+        var story = new WorkDeliveryScopeSnapshot("Story", Guid.NewGuid(), board, 1, [pin, doc], planning, []) { TicketWorkflow = new(ticket, []) };
+        var release = new WorkDeliveryScopeSnapshot("Release", null, board, 1, [ticket], planning, []);
+        var plan = JsonSerializer.Deserialize<WorkDeliveryPlanResponse>("{}", web)! with { Scopes = [story, release] };
+        var runtime = new AgentTestRuntime().RegisterCapability<JsonElement, JsonElement>(WorkItemCapabilities.Read, (_, _) => Task.FromResult(
+            JsonSerializer.SerializeToElement(JsonSerializer.Deserialize<WorkBoardDetail>("{}", web)! with { Items = [Item(pin, true), Item(doc, false)] }, web)));
+        Assert.Equal(required, await DeliveryComputeTest.RunnableOutputInScopeAsync(plan, "Release", null, runtime.CreateContext(), default));
+    }
+
+    [Fact]
     public void Does_not_invent_docker_or_dependency_availability()
     {
         Assert.Throws<InvalidOperationException>(() => DeliveryComputeTest.SelectMode(Archive("Dockerfile"),

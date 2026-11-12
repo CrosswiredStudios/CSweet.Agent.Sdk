@@ -19,6 +19,57 @@ public sealed class WorkspaceSyncTests : IDisposable
     }
 
     [Fact]
+    public async Task Materialization_falls_back_to_a_snapshot_when_git_cannot_reach_the_platform()
+    {
+        var workspace = new GitWorkspaceResult(Guid.NewGuid(), Guid.NewGuid(), "/workspace/remote-only", Guid.NewGuid(), "InternalGit", "PullRequest", new string('a', 40), "Ready", false)
+            { BranchName = "csweet/task/0123456789abcdef0123456789abcdef/r1" };
+        var platform = new UnreachableGitPlatform(Zip("app.js", "from snapshot"));
+        var git = new PlatformGitWorkspaceClient(platform);
+        var path = PlatformGitWorkspaceClient.LocalWorkspacePath(workspace.WorkspaceId);
+        try
+        {
+            var local = await git.MaterializeAsync(workspace, 1);
+
+            Assert.Equal("from snapshot", await File.ReadAllTextAsync(Path.Combine(local.Path, "app.js")));
+            Assert.False(Directory.Exists(Path.Combine(local.Path, ".git")));
+            // It stays a snapshot workspace: a save uploads an archive, and inspection names no commit.
+            await git.UploadAsync(local, 1);
+            Assert.Equal(new[] { "pull", "push" }, platform.Syncs.Select(sync => sync.Direction));
+            Assert.NotNull(platform.Syncs[^1].Archive);
+        }
+        finally { if (Directory.Exists(path)) Directory.Delete(path, recursive: true); }
+    }
+
+    // Names a Git remote that does not exist, as a runtime without a Git route to the platform would see it.
+    private sealed class UnreachableGitPlatform(byte[] snapshot) : IPlatformToolInvoker, IAgentGitRemote
+    {
+        private static readonly System.Text.Json.JsonSerializerOptions Web = new(System.Text.Json.JsonSerializerDefaults.Web);
+        public List<GitWorkspaceSyncRequest> Syncs { get; } = [];
+
+        public AgentGitRemoteAccess? OpenGitRemote(Guid workspaceId, long assignmentRevision) =>
+            new(Path.Combine(Path.GetTempPath(), "csweet-no-such-remote-" + workspaceId.ToString("N") + ".git"), new Dictionary<string, string>());
+
+        public Task<System.Text.Json.JsonElement> InvokeAsync(string capability, System.Text.Json.JsonElement arguments, CancellationToken cancellationToken = default)
+        {
+            Assert.Equal(GitWorkspaceCapabilities.Sync, capability);
+            var request = System.Text.Json.JsonSerializer.Deserialize<GitWorkspaceSyncRequest>(arguments, Web)!;
+            Syncs.Add(request);
+            return Task.FromResult(System.Text.Json.JsonSerializer.SerializeToElement(
+                request.Direction == "pull" ? new GitWorkspaceSyncResult(snapshot) : new GitWorkspaceSyncResult(), Web));
+        }
+
+        public async IAsyncEnumerable<System.Text.Json.JsonElement> InvokeStreamingAsync(string capability, System.Text.Json.JsonElement arguments,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.CompletedTask;
+            yield break;
+        }
+
+        public Task<IReadOnlyList<AgentToolDescriptor>> ListToolsAsync(CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Workspace transfer must not list tools.");
+    }
+
+    [Fact]
     public async Task Materialization_preserves_edits_and_uploaded_source_recovers_after_restart()
     {
         var workspace = new GitWorkspaceResult(Guid.NewGuid(), Guid.NewGuid(), "/workspace/remote-only", Guid.NewGuid(), "InternalGit", "PullRequest", new string('a', 40), "Ready", false);

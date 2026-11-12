@@ -60,6 +60,7 @@ public static partial class DeliveryCorrectionCoordinator
         }
         if (plan.Findings.Where(f => correction.FindingIds.Contains(f.Id)).Any(f => f.Status != "Open")) return;
         var rejected = plan.Executions.Single(e => e.Id == correction.ExecutionId);
+        if (await RecoverNoRunnableOutputAsync(plan, correction, rejected, context, ct)) return;
         var acceptance = plan.Scopes.Single(s => s.Scope == rejected.Scope && s.ItemId == rejected.ItemId);
         if (rejected.Scope != WorkExecutionScopes.Release || rejected.Candidate?.Repositories.Count != 1)
             throw new InvalidOperationException("Select the implementation owner and follow-up topology explicitly for this multi-source correction.");
@@ -68,10 +69,10 @@ public static partial class DeliveryCorrectionCoordinator
         var sources = board.Items.Where(i => sourceIds.Contains(i.Id) && i.Delivery is { DeliveryKind: "Code" } d &&
             d.DeliveryPlanId == plan.Id && rejected.Candidate.Repositories.Any(r => r.RepositoryId == d.RepositoryId) &&
             i.Status is "Done" or "Completed" && (correction.SourceItemId is null || i.Id == correction.SourceItemId)).ToArray();
-        if (sources.Length == 0 || sources.Length > 1 && createPlanningClient is null)
-            throw new InvalidOperationException("The rejected candidate has multiple or unavailable implementation owners. Select the source task before corrective planning.");
+        if (sources.Length == 0)
+            throw new InvalidOperationException("The rejected candidate has no available implementation owner. Restore or plan the source task before corrective planning.");
         var (source, selectionReason) = sources.Length == 1 ? (sources[0], "Only one completed implementation input matches the rejected repository.") :
-            await SelectSourceAsync(plan, correction, sources, createPlanningClient!, ct);
+            await SelectOrAskOwnerAsync(plan, correction, sources, createPlanningClient, context, ct);
         if (correction.SourceItemId is null)
         {
             // Persist the planning decision before creating work. A lost response or cold restart
