@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <PackageId>CSweet.Agent.SDK</PackageId>
-    <Version>5.24.0</Version>
+    <Version>5.25.0</Version>
     <PackageVersion Condition="'$(CSweetAgentSdkPackageVersion)' != ''">$(CSweetAgentSdkPackageVersion)</PackageVersion>
     <Authors>C-Sweet</Authors>
     <Company>C-Sweet</Company>
@@ -23,8 +23,11 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CSweet.WorkManagement.Contracts" Version="5.4.0" Condition="'$(UseLocalCSweetWorkManagementContracts)' != 'true'" />
+    <PackageReference Include="CSweet.WorkManagement.Contracts" Version="5.6.0" Condition="'$(UseLocalCSweetWorkManagementContracts)' != 'true'" />
     <ProjectReference Include="$(CSweetWorkManagementContractsRepositoryRoot)\src\CSweet.WorkManagement.Contracts\CSweet.WorkManagement.Contracts.csproj" Condition="'$(UseLocalCSweetWorkManagementContracts)' == 'true'" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="BrowserScenarios\*.js" LogicalName="CSweet.Agent.SDK.BrowserScenarios.%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="CSweet.Agent.SDK.Tests" />

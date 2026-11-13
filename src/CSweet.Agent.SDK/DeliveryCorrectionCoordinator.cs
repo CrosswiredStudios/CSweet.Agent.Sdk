@@ -105,7 +105,7 @@ public static partial class DeliveryCorrectionCoordinator
         if (prepareSteps.Any(s => s.Handler != "completion"))
             throw new InvalidOperationException("Correction source preparation requires an explicitly mechanical original workflow.");
         var created = await work.CreateItemAsync(new(correction.BoardId, ("Correct: " + source.Title)[..Math.Min(500, source.Title.Length + 9)],
-            "Correct the retained rejected candidate within its existing requirements. Preserve previous accepted work and add regression coverage for the finding.",
+            CorrectionDescription(findings.Select(f => (f.Id, f.Summary))),
             source.Kind, "High", null, source.ParentItemId, null, key + ":task")
         { TypeKey = source.TypeKey, Planning = planning, AccountableOrganizationUserId = author.OrganizationUserId }, ct);
         var task = await work.ReadItemAsync(new(correction.BoardId, created.Id), ct);
@@ -146,6 +146,23 @@ public static partial class DeliveryCorrectionCoordinator
             await work.ControlDeliveryPlanAsync(new(follow.Id,follow.Revision,"activate",key + ":activate"),ct);
         // A separate repair sprint preserves the original completed sprint. An unrelated active sprint is an explicit wait.
         await EnsureSprintAsync(correction, task.Id, context, ct);
+    }
+
+    /// <summary>
+    /// The corrective ticket's description names every inherited finding and says the whole candidate is re-verified, so
+    /// the author does not mistake the scope for the one finding that triggered it (Super Awesome Games ticket 38, 2026-11-13).
+    /// </summary>
+    internal static string CorrectionDescription(IEnumerable<(Guid Id, string Summary)> findings)
+    {
+        var text = new System.Text.StringBuilder("Correct the retained rejected candidate within its existing requirements.\n\nFindings to correct:\n");
+        foreach (var (id, summary) in findings)
+            text.Append("- ").Append(id.ToString("D")).Append(": ").Append(summary.Length > 600 ? summary[..597] + "..." : summary).Append('\n');
+        text.Append("\nThe corrected candidate is re-verified in full, not only for these findings: technical review and independent QA check " +
+            "every original acceptance criterion again, so a defect found anywhere in the task still blocks it. Before publishing, " +
+            "re-check the whole task against its criteria, including observed behavior and any observation record. Preserve previous " +
+            "accepted work and add regression coverage for each finding.");
+        var value = text.ToString();
+        return value.Length <= 4000 ? value : value[..3997] + "...";
     }
 
     private static async Task EnsureSprintAsync(WorkDeliveryCorrection correction, Guid taskId, AgentRuntimeContext context, CancellationToken ct)

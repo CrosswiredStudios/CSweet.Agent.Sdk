@@ -72,6 +72,38 @@ public sealed class DeclaredVerificationReviewTests
     }
 
     [Fact]
+    public void Declared_interaction_needs_the_shared_scenario_receipt_as_well_as_the_smoke_receipt()
+    {
+        var interaction = new WorkItemVerificationRequirement(WorkItemVerificationKinds.BrowserInteraction) { CriterionIndexes = [0] };
+        var smoke = new GitValidationResult("node .csweet/browser-smoke.cjs dist --canvas", true, 0);
+
+        var missing = BranchDiffTechnicalReview.DeclaredVerification(Planning([Canvas, interaction]), [smoke]);
+        Assert.Contains("node .csweet/browser-scenarios.cjs <build directory>", missing.MissingReceipt);
+
+        var failed = BranchDiffTechnicalReview.DeclaredVerification(Planning([Canvas, interaction]),
+            [smoke, new("node .csweet/browser-scenarios.cjs dist", false, 1)]);
+        Assert.NotNull(failed.MissingReceipt);
+
+        var bound = BranchDiffTechnicalReview.DeclaredVerification(Planning([Canvas, interaction]),
+            [smoke, new("node .csweet/browser-scenarios.cjs dist --record notes/observation.md", true, 0)]);
+        Assert.Null(bound.MissingReceipt);
+        Assert.Contains("satisfied by the bound receipt `node .csweet/browser-smoke.cjs dist --canvas`", bound.Note);
+        Assert.Contains("measures its criterion from emitted events", bound.Note);
+        Assert.Contains("notes/observation.md", bound.Note);
+    }
+
+    [Fact]
+    public void A_corrective_ticket_names_every_finding_and_says_the_whole_task_is_reverified()
+    {
+        var first = Guid.NewGuid();
+        var text = DeliveryCorrectionCoordinator.CorrectionDescription([(first, "Needs a root Dockerfile"), (Guid.NewGuid(), new string('x', 900))]);
+        Assert.Contains(first.ToString("D") + ": Needs a root Dockerfile", text);
+        Assert.Contains("re-verified in full", text);
+        Assert.Contains("every original acceptance criterion", text);
+        Assert.True(text.Length <= 4000);
+    }
+
+    [Fact]
     public void A_failed_or_non_canvas_receipt_does_not_satisfy_a_canvas_requirement()
     {
         Assert.NotNull(BranchDiffTechnicalReview.DeclaredVerification(Planning([Canvas]),

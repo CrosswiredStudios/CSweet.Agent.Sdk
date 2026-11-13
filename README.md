@@ -1,3 +1,5 @@
+SDK 5.25.0 adds the shared browser scenario contract: the author, the technical reviewer and QA observe interactive behavior with one runner on the same build, the runner (not the page) judges each check from emitted events, and observation records get a generated measured section. Technical review requires the scenario receipt when planning declares browser interaction. See [release notes](releases/5.25.0.md) and [docs/browser-scenarios.md](docs/browser-scenarios.md).
+
 SDK 5.24.0 removes the 4 MiB cap on compute evidence archives: `ExportEvidenceAsync` accepts any length, and the new `ReadEvidenceToAsync` streams a large archive into a caller stream with final SHA-256 verification. Needs a C-Sweet Core and compute provider that stage evidence in parts. See [release notes](releases/5.24.0.md).
 
 SDK 5.23.1 stops a large candidate's technical or manager acceptance from being rejected by notes from its partial source inspection: every inspection defect is now ruled on against the whole candidate, and a rejection's summary leads with what blocks. See [release notes](releases/5.23.1.md).
@@ -100,7 +102,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.24.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.25.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -117,7 +119,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.24.0
+  --SdkVersion 5.25.0
 cd ResearchAgent
 dotnet test
 ```
@@ -125,7 +127,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.24.0
+dotnet add package CSweet.Agent.SDK --version 5.25.0
 ```
 
 ```csharp
