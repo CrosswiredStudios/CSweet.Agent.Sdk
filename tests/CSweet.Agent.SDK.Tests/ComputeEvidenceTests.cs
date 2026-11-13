@@ -7,7 +7,7 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class ComputeEvidenceTests
 {
     [Theory]
-    [InlineData(956767)] [InlineData(4194304)]
+    [InlineData(956767)] [InlineData(4194304)] [InlineData(9*1048576+77)]
     public async Task One_export_and_bounded_reads_download_the_exact_archive(int size)
     {
         var bytes=new byte[size];RandomNumberGenerator.Fill(bytes);var hash=Convert.ToHexStringLower(SHA256.HashData(bytes));
@@ -23,7 +23,8 @@ public sealed class ComputeEvidenceTests
         });
         var client=runtime.CreateContext().Platform.Compute;
         var observed=await client.ExportEvidenceAsync(request);Assert.Equal(bytes,await client.ReadEvidenceAsync(observed));
-        Assert.Equal(1,exports);Assert.InRange(reads,1,64);
+        Assert.Equal(1,exports);Assert.InRange(reads,1,(size+65535)/65536);
+        using var streamed=new MemoryStream();await client.ReadEvidenceToAsync(observed,streamed);Assert.Equal(bytes,streamed.ToArray());
     }
     [Theory]
     [InlineData("offset")] [InlineData("identity")] [InlineData("truncated")] [InlineData("digest")]
@@ -39,6 +40,6 @@ public sealed class ComputeEvidenceTests
     {
         var client=new AgentTestRuntime().CreateContext().Platform.Compute;
         await Assert.ThrowsAsync<ArgumentException>(()=>client.ExportEvidenceAsync(new(Guid.NewGuid(),1,"key",new(new('a',40),"../outside",new('c',64),1))));
-        await Assert.ThrowsAsync<ArgumentException>(()=>client.ExportEvidenceAsync(new(Guid.NewGuid(),1,"key",new(new('a',40),new('b',64),new('c',64),4194305))));
+        await Assert.ThrowsAsync<ArgumentException>(()=>client.ExportEvidenceAsync(new(Guid.NewGuid(),1,"key",new(new('a',40),new('b',64),new('c',64),0))));
     }
 }

@@ -92,22 +92,31 @@ public sealed partial class PlatformComputeClient
         var archive = request.Archive ?? throw new ArgumentException("An archive identity is required.");
         if (archive.SourceCommitSha is not { Length: 40 or 64 } || archive.SourceCommitSha.Any(c => !Uri.IsHexDigit(c) || char.IsUpper(c)) ||
             !EvidenceHash(archive.BuildSha256) || !EvidenceHash(archive.Sha256) || archive.ScriptSha256 is not null && !EvidenceHash(archive.ScriptSha256) ||
-            archive.Length is < 1 or > 4 * 1024 * 1024) throw new ArgumentException("Invalid pinned evidence identity or length.");
+            archive.Length < 1) throw new ArgumentException("Invalid pinned evidence identity or length.");
         return _platform.InvokeAsync<object, ComputeOperation>(ComputeCapabilities.Execute,
             new { request.EnvironmentId, request.ExpectedGeneration, request.IdempotencyKey, workload = new { evidenceArchive = archive } }, token);
     }
 
     /// <summary>Downloads a completed retained archive in one callback, with bounded internal reads and final hash verification.
-    /// Cancellation leaves the immutable artifact available; a later callback can restart this read without replaying tests.</summary>
+    /// Cancellation leaves the immutable artifact available; a later callback can restart this read without replaying tests.
+    /// Archives have no size cap; for large ones prefer <see cref="ReadEvidenceToAsync"/>, which never holds the whole archive.</summary>
     public async Task<byte[]> ReadEvidenceAsync(ComputeOperation operation, CancellationToken token = default)
     {
-        ArgumentNullException.ThrowIfNull(operation);
-        Id(operation.Id);
-        var artifact = operation.Result?.Artifact;
-        if (operation.Status != "Completed" || operation.Result?.ErrorCode is not null || artifact is null ||
-            !EvidenceHash(artifact.Sha256) || artifact.Length is < 1 or > 4 * 1024 * 1024)
-            throw new InvalidOperationException("A completed retained evidence artifact is required.");
-        using var bytes = new MemoryStream(artifact.Length);
+        var length = RequireArtifact(operation).Length;
+        using var bytes = new MemoryStream(length);
+        await ReadEvidenceToAsync(operation, bytes, token);
+        return bytes.ToArray();
+    }
+
+    /// <summary>
+    /// Streams a completed retained archive into <paramref name="destination"/> page by page. The SHA-256 is verified
+    /// only after the last page, so a caller that must not act on unverified bytes writes to a temporary file and uses
+    /// it after this returns. Throws without a complete, verified archive.
+    /// </summary>
+    public async Task ReadEvidenceToAsync(ComputeOperation operation, Stream destination, CancellationToken token = default)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        var artifact = RequireArtifact(operation);
         using var hash = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
         for (var offset = 0; offset < artifact.Length;)
         {
@@ -117,11 +126,21 @@ public sealed partial class PlatformComputeClient
             if (page.ArtifactId != operation.Id || page.Sha256 != artifact.Sha256 || page.Length != artifact.Length ||
                 page.Offset != offset || page.Content is not { } content || content.Length != expected)
                 throw new InvalidDataException("Evidence artifact read changed or was truncated.");
-            hash.AppendData(content); await bytes.WriteAsync(content, token); offset += content.Length;
+            hash.AppendData(content); await destination.WriteAsync(content, token); offset += content.Length;
         }
         if (Convert.ToHexStringLower(hash.GetHashAndReset()) != artifact.Sha256)
             throw new InvalidDataException("Evidence artifact digest mismatch.");
-        return bytes.ToArray();
+    }
+
+    private static ComputeEvidenceArtifact RequireArtifact(ComputeOperation operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        Id(operation.Id);
+        var artifact = operation.Result?.Artifact;
+        if (operation.Status != "Completed" || operation.Result?.ErrorCode is not null || artifact is null ||
+            !EvidenceHash(artifact.Sha256) || artifact.Length < 1)
+            throw new InvalidOperationException("A completed retained evidence artifact is required.");
+        return artifact;
     }
 
     private static bool EvidenceHash(string? value) => value is { Length: 64 } && value.All(c => c is >= 'a' and <= 'f' or >= '0' and <= '9');

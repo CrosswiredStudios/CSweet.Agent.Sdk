@@ -455,7 +455,7 @@ The retired closed 2.5 RealtyLeads profile is rejected; update such plugins to 2
 
 ## Pinned compute evidence archives (5.7.1)
 
-`PlatformComputeClient.ExportEvidenceAsync` submits one asynchronous `compute.execute.v1` operation for a source/build/script/hash/length-bound browser archive, capped at 4 MiB. Providers derive guest paths; callers supply no URLs, paths or credentials. Ordinary command output remains limited to 8 KiB. `ReadEvidenceAsync` uses bounded authorized `compute.read.v1` pages inside one callback, checks identity/length/offset and final SHA-256, and never reexecutes a browser test. Cancellation retains the operation; a later callback can repeat artifact reads. Status responses contain metadata only.
+`PlatformComputeClient.ExportEvidenceAsync` submits one asynchronous `compute.execute.v1` operation for a source/build/script/hash/length-bound browser archive of any size (since 5.24.0; it was capped at 4 MiB). Providers derive guest paths and stream the archive to Core in 1 MiB parts under the live dispatch; callers supply no URLs, paths or credentials. Ordinary command output remains limited to 8 KiB. `ReadEvidenceAsync` uses bounded authorized `compute.read.v1` pages inside one callback, checks identity/length/offset and final SHA-256, and never reexecutes a browser test. `ReadEvidenceToAsync` streams into a caller stream for large archives. Cancellation retains the operation; a later callback can repeat artifact reads. Status responses contain metadata only.
 
 ### Static build transfer
 
