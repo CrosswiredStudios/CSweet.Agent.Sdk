@@ -9,6 +9,10 @@ public static class TicketWorkflowPlanning
 {
     public static async Task<WorkDeliveryPlanResponse> ConfigureAsync(ConfigureWorkDeliveryPlanRequest request,
         IReadOnlyList<WorkItem> items, AgentRuntimeContext context, CancellationToken ct)
+        => await ConfigureAsync(request, items, context, ct, null);
+
+    internal static async Task<WorkDeliveryPlanResponse> ConfigureAsync(ConfigureWorkDeliveryPlanRequest request,
+        IReadOnlyList<WorkItem> items, AgentRuntimeContext context, CancellationToken ct, IReadOnlySet<Guid>? completionContainers)
     {
         var tickets = new Dictionary<(string Scope, Guid? Item), WorkItem>();
         var scopes = request.Assignments;
@@ -25,7 +29,7 @@ public static class TicketWorkflowPlanning
             return new(ticketId, steps) { Scope = scope.Scope, ScopeItemId = scope.ItemId,
                 EvidenceItemIds = children.Select(id => tickets.FirstOrDefault(t => t.Key.Item == id).Value?.Id ?? id).ToArray(),
                 PromoteOnCompletion = request.Branches.Any(b => b.Scope == scope.Scope && b.ItemId == scope.ItemId && b.SourceBranch != b.TargetBranch),
-                CompleteContainerItemIds = scope.Scope == WorkExecutionScopes.Release ? scopes.Where(s => s.ItemId.HasValue).Select(s => s.ItemId!.Value).ToArray() : [],
+                CompleteContainerItemIds = scope.Scope == WorkExecutionScopes.Release ? scopes.Where(s => s.ItemId.HasValue && (completionContainers is null || completionContainers.Contains(s.ItemId.Value))).Select(s => s.ItemId!.Value).ToArray() : [],
                 FinalReleaseDependencyItemIds = scope.Scope == WorkExecutionScopes.Release ? request.ReleasePlanning?.DependencyItemIds ?? [] : [] };
         }
         foreach (var scope in scopes.OrderBy(s => s.Scope == WorkExecutionScopes.Story ? 0 : s.Scope == WorkExecutionScopes.Epic ? 1 : 2))

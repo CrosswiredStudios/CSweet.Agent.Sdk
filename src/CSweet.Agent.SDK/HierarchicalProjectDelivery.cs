@@ -78,6 +78,26 @@ public static class HierarchicalProjectDelivery
         }
     }
 
+    /// <summary>Prepare a delivery plan for selected Stories. Sibling Stories and their parent roadmap Epics remain available for later increments.</summary>
+    public static async Task<WorkDeliveryPlanResponse> PrepareStoryIncrementAsync(Guid projectId, Guid boardId,
+        Guid managerId, AgentTeamContext roster, Guid repositoryId, string defaultBranch, string profileDigest,
+        bool software, IReadOnlyCollection<Guid> storyItemIds, AgentRuntimeContext context, CancellationToken ct,
+        bool completeFullyDefinedEpics = false)
+    {
+        if (storyItemIds.Count == 0 || storyItemIds.Contains(Guid.Empty) || storyItemIds.Distinct().Count() != storyItemIds.Count)
+            throw new ArgumentException("Select distinct board Story identities.", nameof(storyItemIds));
+        try
+        {
+            return await PrepareCoreAsync(projectId, boardId, managerId, roster, repositoryId, defaultBranch,
+                profileDigest, software, context, ct, null, selectedStories: storyItemIds.ToHashSet(), completeFullyDefinedEpics: completeFullyDefinedEpics);
+        }
+        catch (PlatformCapabilityException error) when (DeliveryConflictReason(error) is not null)
+        {
+            throw new DeliveryStaffingException("Story increment planning needs attention: " + DeliveryConflictReason(error))
+                { RejectedByPlatform = IsRequestRejection(error) };
+        }
+    }
+
     /// <summary>
     /// A rejected plan configuration fails the same way on every retry. The platform marks only
     /// revision races as retryable; platforms that predate that flag report every conflict as
@@ -116,7 +136,7 @@ public static class HierarchicalProjectDelivery
     private static async Task<WorkDeliveryPlanResponse> PrepareCoreAsync(Guid projectId, Guid boardId,
         Guid managerId, AgentTeamContext roster, Guid repositoryId, string defaultBranch,
         string profileDigest, bool software, AgentRuntimeContext context, CancellationToken ct, string? technicalRoleOverride,
-        IReadOnlySet<Guid>? selectedEpics = null)
+        IReadOnlySet<Guid>? selectedEpics = null, IReadOnlySet<Guid>? selectedStories = null, bool completeFullyDefinedEpics = false)
     {
         if (profileDigest.Length != 64 || profileDigest.Any(x => !Uri.IsHexDigit(x)))
             profileDigest = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(profileDigest)));
@@ -124,6 +144,11 @@ public static class HierarchicalProjectDelivery
         var existing = allPlans
             .Where(x => x.Status is not ("Cancelled" or "Completed")).ToArray();
         if (existing.Length > 1) throw new InvalidOperationException("Select the existing release explicitly; project setup cannot choose between multiple delivery plans.");
+        if (selectedStories is not null && existing.SingleOrDefault() is { } pinned &&
+            (pinned.ManagerOrganizationUserId != managerId || pinned.Scopes.Any(s => s.BoardId != boardId) || pinned.Branches.Any(b => b.RepositoryId != repositoryId) ||
+            !selectedStories.SetEquals(pinned.Scopes.Where(s => s.Scope == WorkExecutionScopes.Story && s.ItemId.HasValue)
+                .Select(s => s.ItemId!.Value))))
+            throw new DeliveryStaffingException("The existing plan covers different Stories. Reconcile its pinned scope first.");
         if (existing.SingleOrDefault() is { Status: "Active" or "Paused" } active)
         {
             if (selectedEpics is not null && !selectedEpics.SetEquals(active.EpicItemIds))
@@ -134,11 +159,21 @@ public static class HierarchicalProjectDelivery
         if (draft is not null && (draft.ManagerOrganizationUserId != managerId || draft.Scopes.Any(x => x.BoardId != boardId) || draft.Branches.Any(x => x.RepositoryId != repositoryId)))
             throw new DeliveryStaffingException("The existing draft belongs to another manager or board; reconcile its scope explicitly.");
         var board = await context.Platform.Work.ReadBoardAsync(boardId, ct);
+        if (selectedStories is not null)
+        {
+            var requested = board.Items.Where(x => selectedStories.Contains(x.Id)).ToArray();
+            if (requested.Length != selectedStories.Count || requested.Any(x => x.Kind != "Story" ||
+                x.ExecutionMode != WorkItemExecutionModes.Container || x.ParentItemId is null || x.Status is "Completed" or "Done" or "Cancelled") ||
+                allPlans.Where(x => x.Status == "Completed").SelectMany(x => x.Scopes)
+                    .Any(s => s.Scope == WorkExecutionScopes.Story && s.ItemId is Guid id && selectedStories.Contains(id)))
+                throw new InvalidOperationException("Each selected Story must be local, unfinished and outside completed plans.");
+            selectedEpics = requested.Select(x => x.ParentItemId!.Value).ToHashSet();
+        }
         if (selectedEpics is null && board.Items.Where(x => x.ExecutionMode == WorkItemExecutionModes.Executable && x.Status != "Cancelled")
             .All(x => x.Status is "Done" or "Completed") && allPlans.Where(x => x.Status == "Completed")
             .OrderByDescending(x => x.UpdatedAt).FirstOrDefault() is { } completed) return completed;
         var acceptedEpics = allPlans.Where(x => x.Status == "Completed").SelectMany(x => x.EpicItemIds).ToHashSet();
-        if (selectedEpics is not null && selectedEpics.Any(id => acceptedEpics.Contains(id) || !board.Items.Any(x => x.Id == id && x.Kind == "Epic" &&
+        if (selectedEpics is not null && selectedEpics.Any(id => (selectedStories is null && acceptedEpics.Contains(id)) || !board.Items.Any(x => x.Id == id && x.Kind == "Epic" &&
             x.ExecutionMode == WorkItemExecutionModes.Container && x.Status is not ("Done" or "Completed" or "Cancelled"))))
             throw new InvalidOperationException("Every selected increment must be a current board-local unfinished Epic.");
         if (selectedEpics is not null && draft is not null && !selectedEpics.SetEquals(draft.EpicItemIds))
@@ -146,7 +181,7 @@ public static class HierarchicalProjectDelivery
         var scopedEpics = existing.SingleOrDefault()?.EpicItemIds.ToHashSet() ?? selectedEpics?.ToHashSet() ?? board.Items
             .Where(x => x.Kind == "Epic" && x.ExecutionMode == WorkItemExecutionModes.Container &&
                 x.Status is not ("Done" or "Completed" or "Cancelled") && !acceptedEpics.Contains(x.Id)).Select(x => x.Id).ToHashSet();
-        var scopedStories = board.Items.Where(x => x.Kind == "Story" && x.ParentItemId.HasValue && scopedEpics.Contains(x.ParentItemId.Value)).Select(x => x.Id).ToHashSet();
+        var scopedStories = selectedStories?.ToHashSet() ?? board.Items.Where(x => x.Kind == "Story" && x.ParentItemId.HasValue && scopedEpics.Contains(x.ParentItemId.Value)).Select(x => x.Id).ToHashSet();
         if (selectedEpics is not null && selectedEpics.Any(epic => !board.Items.Any(story => story.ParentItemId == epic && scopedStories.Contains(story.Id))))
             throw new InvalidOperationException("Every selected increment needs at least one detailed Story.");
         if (selectedEpics is not null && scopedStories.Any(story => !board.Items.Any(x => x.ParentItemId == story &&
@@ -205,7 +240,7 @@ public static class HierarchicalProjectDelivery
         var codeAuthors = selected.Values.Where(x => x.Code).Select(x => x.Author.OrganizationUserId!.Value).Distinct().ToArray();
         var scopes = new List<WorkDeliveryScopeAssignment>();
         var branches = new List<WorkDeliveryBranchBinding>();
-        var releaseScopeKey = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("|", scopedEpics.Order()))))[..16];
+        var releaseScopeKey = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(selectedStories is null ? string.Join("|", scopedEpics.Order()) : "stories:" + string.Join("|", selectedStories.Order()))))[..16];
         var releaseBranch = $"csweet/release/{projectId:N}/{releaseScopeKey}";
         foreach (var story in board.Items.Where(x => scopedStories.Contains(x.Id)))
         {
@@ -262,11 +297,30 @@ public static class HierarchicalProjectDelivery
         if (draft is not null)
             branches = branches.Select(branch => draft.Branches.SingleOrDefault(x => x.Scope == branch.Scope &&
                 x.ItemId == branch.ItemId && x.RepositoryId == branch.RepositoryId) ?? branch).ToList();
+        // Workflow evidence uses the children supplied here. Keep sibling Stories out of every
+        // preparation, acceptance and dependency declaration for an explicitly selected increment.
+        var workflowItems = selectedStories is null ? board.Items : board.Items.Where(item =>
+            item.ParentItemId is not Guid parent || !scopedEpics.Contains(parent) || selectedStories.Contains(item.Id)).ToArray();
+        var storyPlanning = selectedStories is null ? null : new WorkItemPlanningSpecification(
+            board.Items.Where(i => selectedStories.Contains(i.Id)).SelectMany(i => i.Planning!.Requirements).Distinct().ToArray(),
+            board.Items.Where(i => selectedStories.Contains(i.Id)).SelectMany(i => i.Planning!.AcceptanceCriteria).Distinct().ToArray())
+        {
+            Constraints = board.Items.Where(i => selectedStories.Contains(i.Id)).SelectMany(i => i.Planning!.Constraints ?? []).Distinct().ToArray()
+        };
+        var completionContainers = selectedStories?.ToHashSet();
+        if (completionContainers is not null && completeFullyDefinedEpics)
+        {
+            var acceptedStories = allPlans.Where(p => p.Status == "Completed").SelectMany(p => p.Scopes)
+                .Where(s => s.Scope == WorkExecutionScopes.Story && s.ItemId.HasValue).Select(s => s.ItemId!.Value).ToHashSet();
+            foreach (var epic in epics.Where(e => board.Items.Where(i => i.ParentItemId == e.Id && i.Status != "Cancelled")
+                         .All(i => i.Kind == "Story" && (selectedStories!.Contains(i.Id) || acceptedStories.Contains(i.Id)))))
+                completionContainers.Add(epic.Id);
+        }
         var scopeChanged = draft is not null && draft.Scopes.Any(scope =>
             scope.ItemId is { } itemId && board.Items.SingleOrDefault(x => x.Id == itemId)?.PlanningRevision != scope.PlanningRevision ||
             scope.ChildPlanningRevisions.Any(child => board.Items.SingleOrDefault(x => x.Id == child.Key)?.PlanningRevision != child.Value) ||
             !scope.ChildIds.Select(id => draft.Scopes.SingleOrDefault(s => s.TicketWorkflow?.TicketId == id)?.ItemId ?? id).Order().SequenceEqual((scope.Scope == WorkExecutionScopes.Release ? epics.Select(x => x.Id) :
-                board.Items.Where(x => x.ParentItemId == scope.ItemId).Select(x => x.Id)).Order()));
+                workflowItems.Where(x => x.ParentItemId == scope.ItemId).Select(x => x.Id)).Order()));
         var assignmentsChanged = draft is not null && scopes.Any(scope => !draft.Scopes.Any(x =>
             x.Scope == scope.Scope && x.ItemId == scope.ItemId && Same(x.Stages, scope.Stages)));
         var plan = draft is not null && !scopeChanged && !assignmentsChanged ? draft : await TicketWorkflowPlanning.ConfigureAsync(new(projectId,
@@ -274,10 +328,10 @@ public static class HierarchicalProjectDelivery
             epics.Select(x => x.Id).ToArray(), branches, scopes, $"delivery-plan:{projectId:N}:{releaseScopeKey}:{profileDigest}:{draft?.Revision ?? 0}:{roster.Revision}")
             {
                 PlanId = draft?.Id, ExpectedRevision = draft?.Revision ?? 0,
-                ReleasePlanning = draft?.Scopes.SingleOrDefault(x => x.Scope == WorkExecutionScopes.Release)?.Planning,
+                ReleasePlanning = draft?.Scopes.SingleOrDefault(x => x.Scope == WorkExecutionScopes.Release)?.Planning ?? storyPlanning,
                 TaskAssignments = tasks.Select(task => new WorkDeliveryTaskAssignment(task.Id,
                     new[] { selected[task.Id].Author, selected[task.Id].Qa })).ToArray()
-            }, board.Items, context, ct);
+            }, workflowItems, context, ct, completionContainers);
         foreach (var task in tasks)
         {
             var assignment = selected[task.Id];
