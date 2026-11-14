@@ -90,6 +90,9 @@ public sealed class PlatformCapabilityClient
     public Task<MutationResponse> ProposeWorkstreamChangeAsync(WorkstreamChangeProposalRequest request, CancellationToken token = default) =>
         InvokeAsync<WorkstreamChangeProposalRequest, MutationResponse>(PlatformCapabilities.WorkstreamChangePropose, request, token);
 
+    public Task<MutationResponse> CompleteWorkstreamDeliveryAsync(CompleteWorkstreamDeliveryRequest request,CancellationToken token=default)=>
+        InvokeAsync<CompleteWorkstreamDeliveryRequest,MutationResponse>(WorkstreamCapabilityNames.CompleteDeliveryV1,request,token);
+
     public Task<IReadOnlyList<WorkstreamGateSummary>> ReadWorkstreamGatesAsync(ReadWorkstreamGatesRequest request, CancellationToken token = default) =>
         InvokeAsync<ReadWorkstreamGatesRequest, IReadOnlyList<WorkstreamGateSummary>>(PlatformCapabilities.WorkstreamGateRead, request, token);
 

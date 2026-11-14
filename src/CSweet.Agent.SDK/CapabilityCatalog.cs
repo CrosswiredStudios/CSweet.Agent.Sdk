@@ -154,6 +154,7 @@ public static class CapabilityNames
         public const string WorkstreamRead = WorkstreamCapabilityNames.ReadV1;
         public const string WorkstreamPlanProposeV2 = WorkstreamCapabilityNames.PlanProposeV2;
         public const string WorkstreamChangePropose = WorkstreamCapabilityNames.ChangeProposeV1;
+        public const string WorkstreamCompleteDelivery = WorkstreamCapabilityNames.CompleteDeliveryV1;
         public const string WorkstreamGateRead = WorkstreamCapabilityNames.GateReadV1;
         public const string WorkstreamGateSubmit = WorkstreamCapabilityNames.GateSubmitV1;
         public const string WorkstreamGateDecide = WorkstreamCapabilityNames.GateDecideV1;
@@ -436,6 +437,7 @@ public static class CapabilityCatalog
                 CapabilityNames.Platform.WorkstreamRead,
                 CapabilityNames.Platform.WorkstreamPlanProposeV2,
                 CapabilityNames.Platform.WorkstreamChangePropose,
+                CapabilityNames.Platform.WorkstreamCompleteDelivery,
                 CapabilityNames.Platform.WorkstreamGateRead,
                 CapabilityNames.Platform.WorkstreamGateSubmit,
                 CapabilityNames.Platform.WorkstreamGateDecide,

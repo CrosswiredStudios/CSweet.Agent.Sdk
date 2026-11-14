@@ -1,5 +1,7 @@
 # Generated capability reference
 
+`platform.workstream.delivery.complete.v1` records verified project delivery. The current accountable manager must supply a completed final-product plan, its current scope revision and the exact current accepted scope source. It cannot change scope, skip lifecycle approvals or authorize public launch. This native operation is hidden from models; installations require an explicit reviewed grant.
+
 `work.delivery.correction.coordinate.v1` binds manager-authorized corrective tasks and exact follow-up acceptance. It does not grant board creation, staffing, spending or scope changes; their existing grants remain required.
 
 ## Enterprise account declarations (SDK 5.5.1)

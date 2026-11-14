@@ -7,6 +7,42 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class DeliveryCorrectionCoordinatorTests
 {
     [Fact]
+    public async Task SeveralSourcesUseIndexedJudgmentsAndOneRetainedWorkflowWithNormalSprintPreparation()
+    {
+        var f=new Fixture {Ambiguous=true};var old=f.Plans[0];var first=old.Findings[0];
+        var second=first with {Id=Guid.NewGuid(),Summary="A separate retained implementation defect"};
+        f.Plans[0]=old with {Findings=[first,second],Corrections=[old.Corrections[0] with {FindingIds=[first.Id,second.Id]}]};
+        // Findings are sorted by their code-owned identity before indexes are supplied.
+        using var client=new SelectionClient("{\"disposition\":\"repair\",\"rationale\":\"Two implementation boundaries need repair\",\"repairs\":[{\"sourceIndex\":0,\"findingIndexes\":[0],\"rationale\":\"First source owns this behavior\"},{\"sourceIndex\":1,\"findingIndexes\":[1],\"rationale\":\"Second source owns this behavior\"}]}");
+        var prepared=new List<WorkCorrectionPreparation>();
+        Task Prepare(WorkCorrectionPreparation request,CancellationToken _){prepared.Add(request);return Task.CompletedTask;}
+        await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project,f.Context(),()=>client,Prepare,default);
+        Assert.Equal(2,Assert.Single(prepared).TaskIds.Count);Assert.Equal(2,f.Plans[0].Corrections[0].SourceItemIds!.Count);
+        Assert.Equal(4,f.Created.Count);Assert.Equal(0,f.Starts);Assert.Equal(1,client.Calls);
+        await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project,f.Context(),()=>throw new InvalidOperationException("Replay must not infer again"),Prepare,default);
+        Assert.Equal(4,f.Created.Count);Assert.Equal(2,prepared.Count);
+    }
+
+    [Fact]
+    public async Task ArtifactCorrectionRetainsDocumentDeliveryAndUsesTheManagersOrdinaryPreparationCallback()
+    {
+        var f=new Fixture();
+        f.Source=f.Source with {Delivery=f.Source.Delivery! with {RepositoryId=Guid.Empty,DeliveryKind="Artifact",BaseBranch=""}};
+        var root=f.Plans[0];
+        var execution=root.Executions.Single();
+        f.Plans[0]=root with {Branches=[],Executions=[execution with {Candidate=execution.Candidate! with {
+            Repositories=[],Documents=[new(f.Source.Id,Guid.NewGuid(),Guid.NewGuid(),"document")]}}]};
+        var prepared=new List<WorkCorrectionPreparation>();
+        await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project,f.Context(),()=>throw new InvalidOperationException("A sole source needs no model"),
+            (request,_)=>{prepared.Add(request);return Task.CompletedTask;},default);
+        Assert.Single(prepared);Assert.Equal(0,f.Starts);
+        Assert.Equal("Artifact",f.Created.Values.Single(i=>i.Delivery is not null).Delivery!.DeliveryKind);
+        Assert.Empty(f.Plans.Single(p=>p.Id!=root.Id).Branches);
+        Assert.Equal(root.Scopes.Single(s=>s.Scope=="Release").TicketWorkflow!.Steps,
+            f.Plans.Single(p=>p.Id!=root.Id).Scopes.Single(s=>s.Scope=="Release").TicketWorkflow!.Steps);
+    }
+
+    [Fact]
     public async Task Lost_create_response_and_cold_restart_reuse_one_corrective_task_and_start_a_separate_sprint_without_a_model()
     {
         var f=new Fixture { LoseCreateResponse=true };
@@ -19,7 +55,7 @@ public sealed class DeliveryCorrectionCoordinatorTests
         Assert.Equal(1,f.Starts);Assert.Equal("Paused",f.Plans[0].Status);
         var follow=Assert.Single(f.Plans.Where(p=>p.Id!=f.OriginalPlan));
         Assert.Equal("Active",follow.Status);
-        Assert.Equal(new[]{"technical-review","quality","manager-review"},follow.Scopes.Single(s=>s.Scope=="Release").TicketWorkflow!.Steps.Select(s=>s.Key));
+        Assert.Equal(f.Plans[0].Scopes.Single(s=>s.Scope=="Release").TicketWorkflow!.Steps.Select(s=>s.Key),follow.Scopes.Single(s=>s.Scope=="Release").TicketWorkflow!.Steps.Select(s=>s.Key));
         Assert.Equal(f.Plans[0].Scopes.Single(s=>s.Scope=="Release").Planning.AcceptanceCriteria,
             follow.Scopes.Single(s=>s.Scope=="Release").Planning.AcceptanceCriteria);
         await DeliveryCorrectionCoordinator.ReconcileProjectAsync(f.Project,f.Context(),default);
@@ -374,11 +410,18 @@ public sealed class DeliveryCorrectionCoordinatorTests
             Plans.Add(new(OriginalPlan,Project,"Increment",Manager,"Active",1,1,[],[new(repo,"Story",story,"story","release"),new(repo,"Release",null,"release","integration")],
                 [scope,release],[new(execution,"Release",null,Board,"Blocked","quality",1,new(new string('a',64),1,[new(repo,"release","integration","a","b","c")],[]),"Wrong sample",[],[])],DateTimeOffset.UtcNow,DateTimeOffset.UtcNow) {
                 Corrections=[c],Findings=[new(finding,execution,c.CandidateDigest,"Explosive sample selects the tough brick","Open",[],null)] });
+            var states=new Dictionary<string,AgentOperatingStateResponse>();
             runtime=new AgentTestRuntime()
+                .RegisterCapability<AgentOperatingStateReadRequest,AgentOperatingStateReadResponse>(PlatformCapabilities.AgentOperatingStateRead,(r,_)=>Task.FromResult(new AgentOperatingStateReadResponse(states.GetValueOrDefault(r.StateKey))))
+                .RegisterCapability<AgentOperatingStateWriteRequest,AgentOperatingStateResponse>(PlatformCapabilities.AgentOperatingStateWrite,(r,_)=> {
+                    var now=DateTimeOffset.UtcNow;var value=new AgentOperatingStateResponse(Guid.NewGuid(),r.StateKey,r.SchemaId,r.SchemaVersion,r.Status,r.SourceRevisions,r.ConditionCodes,r.DecisionFingerprint,r.OpenCommitmentCorrelations,r.AttentionReviewId,r.Payload,1,now,now);
+                    states[r.StateKey]=value;return Task.FromResult(value);
+                })
                 .RegisterCapability<ReadWorkDeliveryPlansRequest,IReadOnlyList<WorkDeliveryPlanResponse>>(WorkDeliveryCapabilities.Read,(r,_)=>Task.FromResult<IReadOnlyList<WorkDeliveryPlanResponse>>(Plans.Where(p=>r.PlanId is null||r.PlanId==p.Id).ToArray()))
                 .RegisterCapability<JsonElement,JsonElement>(WorkItemCapabilities.Read,(r,_)=>{
                     if (r.TryGetProperty("itemId",out var id)) return Task.FromResult(JsonSerializer.SerializeToElement(id.GetGuid()==Source.Id?Source:id.GetGuid()==otherSource?OtherSource:Created.Values.Single(i=>i.Id==id.GetGuid()),Json));
                     return Task.FromResult(JsonSerializer.SerializeToElement(JsonSerializer.Deserialize<WorkBoardDetail>("{}",Json)! with {
+                        Board=JsonSerializer.Deserialize<WorkBoardSummary>("{}",Json)! with {Id=Board,WorkstreamId=Project,ManagerOrganizationUserId=Manager},
                         Items=Ambiguous?[Source,OtherSource!]:[Source,..Created.Values] },Json));})
                 .RegisterCapability<CreateWorkItemRequest,WorkItem>(WorkItemCapabilities.Create,(r,_)=>{
                     Assert.NotNull(Plans[0].Corrections[0].SourceItemId);
@@ -400,7 +443,7 @@ public sealed class DeliveryCorrectionCoordinatorTests
                     if (r.SourceItemId.HasValue) Effects.Add(r.FollowUpPlanId.HasValue ? "bind" : "select");
                     if (!r.SourceItemId.HasValue && !r.FollowUpPlanId.HasValue && r.WaitingReason is not null) WaitWrites++;
                     Plans[0]=Plans[0] with {Revision=Plans[0].Revision+1,Status=r.FollowUpPlanId.HasValue?"Paused":Plans[0].Status,Corrections=[current with {
-                        Revision=current.Revision+1,SourceItemId=r.SourceItemId??current.SourceItemId,FollowUpPlanId=r.FollowUpPlanId??current.FollowUpPlanId,
+                        Revision=current.Revision+1,SourceItemId=r.SourceItemId??current.SourceItemId,SourceItemIds=r.SourceItemIds??current.SourceItemIds,FollowUpPlanId=r.FollowUpPlanId??current.FollowUpPlanId,
                         RemediationTaskIds=r.RemediationTaskIds??current.RemediationTaskIds,WaitingReason=r.WaitingReason,Status=r.FollowUpPlanId.HasValue?"Assigned":"NeedsPlanning"}]};
                     if (LoseSelectionResponse && r.SourceItemId.HasValue && !r.FollowUpPlanId.HasValue) { LoseSelectionResponse=false;throw new IOException("Persisted selection, response lost"); }
                     return Task.FromResult(Plans[0]);})

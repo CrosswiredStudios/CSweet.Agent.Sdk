@@ -478,3 +478,8 @@ verification remain independent checks. Changed events are wake hints, never exe
 Preparation can fail before a plan exists. A nullable plan or retained dependency failure
 cannot enter approval or installation. Catalog credentials remain in trusted platform
 configuration and are never passed to requesting agents or model review.
+
+
+## Verified delivery completion (5.28.0)
+
+The model-hidden `platform.workstream.delivery.complete.v1` requires its own reviewed grant and the current active accountable manager. It records completion only against a completed explicit final-product plan, current scope revision and current accepted project source, with no unresolved findings or remaining work. Receipt, project state and outbox are committed together. No scope change, public-launch authority, lifecycle-stage jump, credential or host access is granted. Replays retain the accepted result; stale or different commands fail closed.
