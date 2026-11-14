@@ -6,9 +6,10 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class IncrementDeliveryPlanningTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task SuccessorIncrementTargetsSharedInternalBranchAndRetainsFinalReleaseAsSeparateBoundary(bool selectStories)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task SuccessorIncrementTargetsSharedInternalBranchAndRetainsFinalReleaseAsSeparateBoundary(bool selectStories, bool documents)
     {
         var project = Guid.NewGuid(); var boardId = Guid.NewGuid(); var manager = Guid.NewGuid(); var repository = Guid.NewGuid();
         AgentTeammate Member(string role) => new(Guid.NewGuid().ToString(), role, "Agent", null, null, "Peer", "Online") {
@@ -21,6 +22,14 @@ public sealed class IncrementDeliveryPlanningTests
             Status = "Ready", Planning = planning, PlanningRevision = 1, ExecutionMode = WorkItemExecutionModes.Container, StageAssignments = [] };
         var story = epic with { Id = Guid.NewGuid(), Kind = "Story", ParentItemId = epic.Id };
         var task = story with { Id = Guid.NewGuid(), Kind = "Task", ParentItemId = story.Id, ExecutionMode = WorkItemExecutionModes.Executable };
+        if (documents)
+        {
+            var author = roster.Members.Single(m => m.DeclaredRoleKeys.Contains("game-technical-director"));
+            var reviewer = roster.Members.Single(m => m.EmployeeId == manager.ToString()) with { DeclaredRoleKeys = ["manager", "game-producer"] };
+            roster = roster with { Members = [author, reviewer] };
+            task = task with { Planning = planning with { DelegationRecommendations =
+                [new("specialist-execution", "game-technical-director", ["work.execution.run"], null, true, "Publish the scope outline")] } };
+        }
         var items = new List<WorkItem> { epic, story, task };
         var sibling = story with { Id = Guid.NewGuid(), Planning = new(["Add scoring"], ["A hit scores once"]) };
         var siblingTask = task with { Id = Guid.NewGuid(), ParentItemId = sibling.Id, Planning = sibling.Planning };
@@ -49,10 +58,18 @@ public sealed class IncrementDeliveryPlanningTests
             .RegisterCapability<ControlWorkDeliveryPlanRequest, WorkDeliveryPlanResponse>(WorkDeliveryCapabilities.Control,
                 (r, _) => Task.FromResult(plans.Single(p => p.Id == r.PlanId) with { Status = "Active" }));
         Task<WorkDeliveryPlanResponse> PrepareStory(Guid id) => HierarchicalProjectDelivery.PrepareStoryIncrementAsync(project, boardId, manager, roster, repository,
-            "main", new string('a', 64), false, [id], runtime.CreateContext(), default, completeFullyDefinedEpics: true);
+            "main", new string('a', 64), false, [id], runtime.CreateContext(), default, completeFullyDefinedEpics: true, usePlannedReview: documents);
         var result = selectStories ? await PrepareStory(story.Id) : await HierarchicalProjectDelivery.PrepareIncrementAsync(project, boardId, manager, roster, repository,
             "main", new string('a', 64), false, [epic.Id], runtime.CreateContext(), default);
         Assert.Equal("Active", result.Status);
+        if (documents)
+        {
+            Assert.Empty(configured!.Branches);
+            Assert.Equal(manager, configured.TaskAssignments.Single().Stages.Single(s => s.StageKey == "quality").OrganizationUserId);
+            Assert.Equal(manager, configured.Assignments.Single(a => a.Scope == WorkExecutionScopes.Release).Stages.Single(s => s.StageKey == "quality").OrganizationUserId);
+            Assert.Equal("Artifact", items.Single(i => i.Id == task.Id).Delivery!.DeliveryKind);
+            return;
+        }
         var release = Assert.Single(configured!.Branches, b => b.Scope == WorkExecutionScopes.Release);
         Assert.Equal($"csweet/integration/{project:N}", release.TargetBranch);
         Assert.DoesNotContain(configured.Branches, b => b.TargetBranch == "main");

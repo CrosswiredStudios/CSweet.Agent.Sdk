@@ -131,3 +131,7 @@ task creation. A later wake reads that receipt and skips model selection even
 after a lost response or cold restart. Scope/grant/staffing checks, corrective
 sprint preflight and independent acceptance remain authoritative. This planning
 step does not use the report client or report budget.
+
+## Staffing a draft sprint
+
+Collect estimates from each proposed author. Re-read the project roster after estimation and match the selected work, including required review, against actual installations. A hiring approval identifies a follow-up. Keep uncovered work provisional or select an independent dependency-complete subset. Record capacity after committing that subset. Managers implementing task and aggregate document review can opt into PrepareStoryIncrementAsync with usePlannedReview enabled. Use PlannedDeliveryReview for the same verification decisions during preparation. Code and explicit verification retain specialist review. Independent document review can use the board manager.

@@ -79,17 +79,24 @@ public static class HierarchicalProjectDelivery
     }
 
     /// <summary>Prepare a delivery plan for selected Stories. Sibling Stories and their parent roadmap Epics remain available for later increments.</summary>
+    public static Task<WorkDeliveryPlanResponse> PrepareStoryIncrementAsync(Guid projectId, Guid boardId,
+        Guid managerId, AgentTeamContext roster, Guid repositoryId, string defaultBranch, string profileDigest,
+        bool software, IReadOnlyCollection<Guid> storyItemIds, AgentRuntimeContext context, CancellationToken ct,
+        bool completeFullyDefinedEpics = false) =>
+        PrepareStoryIncrementAsync(projectId, boardId, managerId, roster, repositoryId, defaultBranch, profileDigest,
+            software, storyItemIds, context, ct, completeFullyDefinedEpics, usePlannedReview: false);
+
     public static async Task<WorkDeliveryPlanResponse> PrepareStoryIncrementAsync(Guid projectId, Guid boardId,
         Guid managerId, AgentTeamContext roster, Guid repositoryId, string defaultBranch, string profileDigest,
         bool software, IReadOnlyCollection<Guid> storyItemIds, AgentRuntimeContext context, CancellationToken ct,
-        bool completeFullyDefinedEpics = false)
+        bool completeFullyDefinedEpics, bool usePlannedReview)
     {
         if (storyItemIds.Count == 0 || storyItemIds.Contains(Guid.Empty) || storyItemIds.Distinct().Count() != storyItemIds.Count)
             throw new ArgumentException("Select distinct board Story identities.", nameof(storyItemIds));
         try
         {
             return await PrepareCoreAsync(projectId, boardId, managerId, roster, repositoryId, defaultBranch,
-                profileDigest, software, context, ct, null, selectedStories: storyItemIds.ToHashSet(), completeFullyDefinedEpics: completeFullyDefinedEpics);
+                profileDigest, software, context, ct, null, selectedStories: storyItemIds.ToHashSet(), completeFullyDefinedEpics: completeFullyDefinedEpics, usePlannedReview: usePlannedReview);
         }
         catch (PlatformCapabilityException error) when (DeliveryConflictReason(error) is not null)
         {
@@ -136,7 +143,7 @@ public static class HierarchicalProjectDelivery
     private static async Task<WorkDeliveryPlanResponse> PrepareCoreAsync(Guid projectId, Guid boardId,
         Guid managerId, AgentTeamContext roster, Guid repositoryId, string defaultBranch,
         string profileDigest, bool software, AgentRuntimeContext context, CancellationToken ct, string? technicalRoleOverride,
-        IReadOnlySet<Guid>? selectedEpics = null, IReadOnlySet<Guid>? selectedStories = null, bool completeFullyDefinedEpics = false)
+        IReadOnlySet<Guid>? selectedEpics = null, IReadOnlySet<Guid>? selectedStories = null, bool completeFullyDefinedEpics = false, bool usePlannedReview = false)
     {
         if (profileDigest.Length != 64 || profileDigest.Any(x => !Uri.IsHexDigit(x)))
             profileDigest = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(profileDigest)));
@@ -226,11 +233,13 @@ public static class HierarchicalProjectDelivery
             var authorRequirements = recommendation is null ? prior?.Requirements : new WorkAssignmentRequirements(authorRole,
                 recommendation.RequiredSpecializationKeys, recommendation.PreferredSpecializationKeys, recommendation.RequiredCapabilityKeys);
             var author = Select(authorKey, authorRole, [], prior?.AgentInstallationId, requestedRequirements: authorRequirements);
-            var code = task.Delivery?.DeliveryKind != "Artifact" && task.Planning.DeliveryKind != "Artifact" && authorRole is "software-developer" or "game-engineer";
+            var code = PlannedDeliveryReview.DeliversCode(task, authorRole);
             var qaEvidence = DeliveryReviewIndependence.IsQaEvidenceArtifact(task.Delivery?.DeliveryKind ?? task.Planning.DeliveryKind, authorRole);
             // QA owns test plans/reports; the board manager checks their evidence. This is
             // distinct from independent QA of the implementation under test.
-            var qa = qaEvidence
+            var managerReview = usePlannedReview && !PlannedDeliveryReview.NeedsSpecialist(task, authorRole) &&
+                author.OrganizationUserId != managerId;
+            var qa = qaEvidence || managerReview
                 ? Select("quality", "manager", [author.OrganizationUserId!.Value], requiredEmployee: managerId, subject: task.Title)
                 : Select("quality", qaRole, [author.OrganizationUserId!.Value], subject: task.Title);
             var technical = code ? Select("technical-review", technicalRole, [author.OrganizationUserId!.Value]) : null;
@@ -259,7 +268,14 @@ public static class HierarchicalProjectDelivery
         var retainedRelease = draft?.Branches.SingleOrDefault(x => x.Scope == WorkExecutionScopes.Release);
         var useComputeTest = !software && branches.Count > 0 && (retainedRelease is not null
             ? retainedRelease.ReadinessMode == "compute-test" : computeReviewer is not null);
-        var releaseStages = new List<WorkStageAssignment> { Select("quality", qaRole, productAuthors), Select("technical-review", technicalRole, codeAuthors) };
+        var managerReviewsDocuments = usePlannedReview && selected.Values.All(s => s.Qa.OrganizationUserId == managerId) &&
+            !productAuthors.Contains(managerId);
+        var releaseStages = new List<WorkStageAssignment> {
+            managerReviewsDocuments ? Select("quality", "manager", productAuthors, requiredEmployee: managerId)
+                : Select("quality", qaRole, productAuthors)
+        };
+        if (!managerReviewsDocuments || tasks.Any(t => t.Planning!.DelegationRecommendations.Any(d => d.StageKey == "technical-review")))
+            releaseStages.Add(Select("technical-review", technicalRole, codeAuthors));
         if (!software && branches.Count > 0)
         {
             // Certified builds are mechanical evidence, not independent product review.
