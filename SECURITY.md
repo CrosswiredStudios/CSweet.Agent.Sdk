@@ -2,6 +2,13 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Security Policy
 
+Native manager recovery (`ManagerWorkRecovery`, SDK 5.33.0) uses authorized current-state reads of
+directly reporting personal boards. Mention bodies cannot identify a retry target or grant authority.
+Code pins retry intent to the recorded episode, source item, reviewed revision and substantive basis;
+it rereads reporting ownership before mutation. The platform independently enforces every action.
+Lost responses replay the retained command, not a new retry. Historical failures, manager judgment
+and manifest declarations never expand permissions, spending, acceptance or product scope.
+
 ## Runtime Git access (5.17.0)
 
 `context.Platform.Git.CloneAsync`, `FetchAsync` and `PushAsync` run the git program against an internal loopback

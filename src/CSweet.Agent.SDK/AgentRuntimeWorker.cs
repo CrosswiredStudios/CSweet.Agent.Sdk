@@ -496,7 +496,7 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                     claim = new PersonalTodoClaim(null);
                     foreach (var candidate in candidates)
                     {
-                        if (!(personalTodoAgent is CSweetManagerAgentBase && ManagerIncidentCoordinator.IsIncidentCommitment(candidate)) &&
+                        if (!(personalTodoAgent is CSweetManagerAgentBase && (ManagerIncidentCoordinator.IsIncidentCommitment(candidate) || ManagerWorkRecovery.IsCommitment(candidate))) &&
                             await policy.EvaluatePersonalTodoClaimAsync(candidate, context, cancellationToken) != PersonalTodoClaimDecision.Claim)
                             continue;
                         claim = await context.Platform.PersonalTodo.ClaimAsync(
@@ -514,7 +514,8 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                 try
                 {
                     result = personalTodoAgent is CSweetManagerAgentBase manager
-                        ? await ManagerIncidentCoordinator.HandlePersonalCommitmentAsync(manager, claim.Item, context, cancellationToken)
+                        ? await ManagerWorkRecovery.HandleAsync(manager, claim.Item, context, cancellationToken)
+                            ?? await ManagerIncidentCoordinator.HandlePersonalCommitmentAsync(manager, claim.Item, context, cancellationToken)
                             ?? await personalTodoAgent.HandlePersonalTodoAsync(claim.Item, context, cancellationToken)
                         : await personalTodoAgent.HandlePersonalTodoAsync(claim.Item, context, cancellationToken);
                 }

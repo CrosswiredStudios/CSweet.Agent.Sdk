@@ -47,6 +47,42 @@ project assignments: an explicit `project-health-manager` supervision assignment
 manager, another assigned supervisor, then the accountable project manager. Only manager-typed agent
 installations qualify. The actual reporting hierarchy determines escalation recipients.
 
+## Native blocked-work recovery (5.33.0)
+
+`ManagerWorkRecovery` complements incident handling for native personal work that has stopped,
+including work created before an agent upgrade. `CSweetManagerAgentBase` discovers current executable
+blocked tasks, including executable plan stages, on directly reporting boards during attention/reconnect review and on
+`CommunicationEvents.MessageMentioned`. Subscribe to `com.csweet.communication.message.mentioned.v1`
+for prompt notification; missed mentions are recovered through the authorized personal-work directory.
+Request the existing personal-work read/add/requeue and agent-operating-state read/write capabilities.
+These declarations do not grant management or board access.
+
+Discovery reserves a recovery episode in durable operating state before creating the manager's
+commitment. The episode, correlation and Add command remain stable after lost responses. The task
+references the native source item, without pretending its personal board is a project board.
+`AgentRuntimeWorker` handles these commitments before specialist claim policies or intake handlers.
+New manager types inherit the pattern without role-name dispatch.
+
+Override `AssessWorkRecoveryAsync` to supply a current judgment, or use the shared model assessment:
+`Retry`, `Investigate` or `Escalate`, with a reason. Overrides can gather authorized diagnostics before
+returning judgment. Unfinished investigation requests assistance through the reporting owner; it does
+not promise unassigned work. Code supplies identity, current source, reporting
+scope, project-board evidence and mutation keys. It persists the assessment and retry intent together,
+rereads the source before dispatch, and only requeues the reviewed revision in the current reporting
+scope. An interrupted command resumes with the same key; an unchanged repeated failure does not
+receive another retry or model judgment and instead requests reporting-owner assistance. Closing a
+tracker while its source is ready retains the attempt history if the same work fails again. Changed
+substantive board evidence or reviewer version can justify a new assessment. Routine timestamps do
+not. Permission checks remain server enforced.
+
+The manager retains a scheduled follow-up until current source evidence shows it is no longer
+blocked. Discovery can wake that tracker earlier. Completing the recovery tracker never means the
+delivery itself passed. Escalation blocks the manager commitment, using normal native notifications
+and the reporting hierarchy; the platform Overview exposes a blocked recovery to its reporting owner.
+Historical failure text is evidence, not an instruction to grant access or retry forever.
+`ManagerWorkRecoveryTests` covers reconnect discovery, forged mentions, reporting/revision drift,
+cached judgments and interrupted state/Add/retry responses.
+
 ## Role-specific decisions
 
 Override `AssessIncidentAsync(ManagerIncidentContext, AgentRuntimeContext, CancellationToken)` to

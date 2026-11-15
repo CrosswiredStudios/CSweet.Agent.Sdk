@@ -4,6 +4,11 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Runtime maintainer guide
 
+SDK 5.33.0 dispatches `ManagerWorkRecovery` before manager-specific personal-work claim policies and
+handlers. Reconnect/attention discovery and subscribed mention wakes create durable current-reporting
+commitments; notification contents never authorize retries. See [manager agents](manager-agents.md)
+for the assessment hook, retained command replay, revision checks and recovery-versus-delivery boundary.
+
 ## Runtime Git access (5.17.0)
 
 `AgentGitForwarder` is an `HttpListener` on `http://127.0.0.1:{ephemeral port}/`. It exists because the guest
