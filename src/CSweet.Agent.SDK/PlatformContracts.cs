@@ -410,6 +410,7 @@ public sealed record ResourceChangeProposalRequest(
     Guid? SupersedesRequestId,
     string IdempotencyKey)
 {
+    public Guid? CorrectionId { get; init; }
     public string? TeamKey { get; init; }
     public string? TeamName { get; init; }
     public string? TeamDescription { get; init; }
@@ -448,6 +449,7 @@ public sealed record ResourceChangeRequestResponse(
     DateTimeOffset CreatedAt,
     DateTimeOffset? DecidedAt)
 {
+    public Guid? CorrectionId { get; init; }
     public Guid? TeamId { get; init; }
     public string? TeamKey { get; init; }
     public string? TeamName { get; init; }
@@ -465,7 +467,17 @@ public sealed record ResourceChangeReadRequest(
     IReadOnlyList<string>? Statuses = null);
 
 public sealed record ResourceChangeReadResponse(
-    IReadOnlyList<ResourceChangeRequestResponse> Requests);
+    IReadOnlyList<ResourceChangeRequestResponse> Requests)
+{
+    public IReadOnlyList<StaffingCorrectionResponse> Corrections { get; init; } = [];
+}
+
+public sealed record StaffingCorrectionResponse(Guid Id, Guid SourceRequestId, Guid RecommendationId,
+    Guid RequesterOrganizationUserId, Guid? TeamId, Guid? WorkstreamId, string RoleKey, string Reason,
+    string Status, Guid? ReplacementRequestId, long Revision, DateTimeOffset CreatedAt)
+{
+    public Guid RequestedByOrganizationUserId { get; init; }
+}
 
 public static class ResourceChangeDecisionKinds
 {

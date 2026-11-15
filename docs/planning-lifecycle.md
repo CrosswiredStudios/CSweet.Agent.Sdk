@@ -1,6 +1,6 @@
 # Shared planning and delivery lifecycle
 
-SDK 5.28.0 supplies mechanics without prescribing a game genre, team roster or number of sprints.
+SDK 5.29.0 supplies mechanics without prescribing a game genre, team roster or number of sprints.
 
 `WorkPlanningJudgments` separates model judgments from the authoritative envelope. Agents assess
 effort, uncertainty and independently available capacity against their actual current commitments.
@@ -44,3 +44,25 @@ publish a product. Public launch continues to require its own actual authorizati
 All events are wake hints. Read current authorized state on reconnect and make mutations
 idempotent. `DurableWorkHandoff` checkpoints input-bound judgments or idempotent domain handoffs;
 external effects still require their own domain receipts.
+# Staffing corrections (5.29.0)
+
+Resource-change reads include authorized pending `Corrections` independently of recent request
+history. Treat their event as a wake hint and rediscover on reconnect. An unresolved correction
+identifies the approved source, disputed slot, accountable author, owner direction and revision;
+it does not itself grant hiring or spending authority.
+
+`ReadResourceChangeContextAsync` resolves each pending correction's exact approved source and current
+replacement using authorized targeted reads when they have fallen outside the recent-request page.
+Filtered `ReadResourceChangesAsync` calls retain their existing semantics.
+
+Staffing-author agents should keep a durable correction commitment, reassess work against the
+actual roster, retain occupied positions, and submit a replacement using `CorrectionId` and the
+current approved source. Include the exact direction as `ResourceChangeEvidence` with kind
+`staffing-correction`, source revision `<correction ID in N format>:<revision>`, and summary equal
+to its reason. Bind identity/evidence in code; the model chooses capability needs and work.
+
+The platform validates the binding and preserves fulfilled staffing. Normal manager approval
+completes the correction and supersedes the source; normal hiring policy fulfills the replacement.
+Do not recreate the cancelled recommendation or treat a proposal as an installed team member.
+New manager decisions may release the specific correction wait after a current-state read;
+unrelated notifications must not bypass a retry deadline or reopen an unchanged terminal block.

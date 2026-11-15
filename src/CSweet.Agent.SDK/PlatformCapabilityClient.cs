@@ -216,6 +216,22 @@ public sealed class PlatformCapabilityClient
     public Task<ResourceChangeReadResponse> ReadResourceChangesAsync(ResourceChangeReadRequest request, CancellationToken token = default) =>
         InvokeAsync<ResourceChangeReadRequest, ResourceChangeReadResponse>(PlatformCapabilities.ResourceChangeRead, request, token);
 
+    /// <summary>Discovers pending corrections and resolves their exact source/current replacement beyond the recent-request page.</summary>
+    public async Task<ResourceChangeReadResponse> ReadResourceChangeContextAsync(CancellationToken token = default)
+    {
+        var current = await ReadResourceChangesAsync(new(), token);
+        var requests = current.Requests.ToDictionary(x => x.Id);
+        var references = current.Corrections.Where(x => x.Status == "Pending")
+            .SelectMany(x => x.ReplacementRequestId is { } replacement ? new[] { x.SourceRequestId, replacement } : new[] { x.SourceRequestId })
+            .Distinct().ToArray();
+        foreach (var id in references.Where(id => !requests.ContainsKey(id)))
+        {
+            var exact = await ReadResourceChangesAsync(new(RequestId: id), token);
+            foreach (var value in exact.Requests.Where(x => x.Id == id)) requests[id] = value;
+        }
+        return current with { Requests = requests.Values.OrderByDescending(x => x.CreatedAt).ToArray() };
+    }
+
     public Task<ResourceChangeRequestResponse> DecideResourceChangeAsync(ResourceChangeDecisionRequest request, CancellationToken token = default) =>
         InvokeAsync<ResourceChangeDecisionRequest, ResourceChangeRequestResponse>(PlatformCapabilities.ResourceChangeDecide, request, token);
 

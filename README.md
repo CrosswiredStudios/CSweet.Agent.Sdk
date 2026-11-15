@@ -1,4 +1,4 @@
-SDK 5.28.0 adds shared judgment-based planning, scoped contributions, exact input reconciliation and evidence-bound final delivery. See [planning lifecycle](docs/planning-lifecycle.md) and [release notes](releases/5.28.0.md).
+SDK 5.29.0 adds shared judgment-based planning, scoped contributions, exact input reconciliation and evidence-bound final delivery. See [planning lifecycle](docs/planning-lifecycle.md) and [release notes](releases/5.29.0.md).
 
 SDK 5.27.0 supports work-specific review for selected Stories. See [release notes](releases/5.27.0.md).
 
@@ -108,7 +108,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.28.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.29.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -125,7 +125,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.28.0
+  --SdkVersion 5.29.0
 cd ResearchAgent
 dotnet test
 ```
@@ -133,7 +133,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.28.0
+dotnet add package CSweet.Agent.SDK --version 5.29.0
 ```
 
 ```csharp
