@@ -1,4 +1,4 @@
-# Generated capability reference
+﻿# Generated capability reference
 
 `platform.workstream.delivery.complete.v1` records verified project delivery. The current accountable manager must supply a completed final-product plan, its current scope revision and the exact current accepted scope source. It cannot change scope, skip lifecycle approvals or authorize public launch. This native operation is hidden from models; installations require an explicit reviewed grant.
 
@@ -559,3 +559,12 @@ Deploy platform schema/broker support before package upgrades. Legacy grants kee
 - `platform.resource.decide.v1`: decide an exact request within the current reporting chain.
 
 Approval queues trusted fulfillment; it is not evidence of readiness.
+
+## Source-bound work issues (SDK 5.31.0)
+
+- `work.issues.read.v1`: read authorized current issues and advice commissions.
+- `work.issues.reconcile.v1`: reconcile responsibility on exact accepted sources within current board management grants.
+- `work.issues.commission.v1`: persist scoped advice intent before idempotent dispatch. Advice grants no execution or acceptance.
+
+`WorkIssueEvents.Changed` (`work.issues.changed.v1`) is a wake hint. Re-read current authorized cases;
+replays and report wording do not grant authority or prove resolution.

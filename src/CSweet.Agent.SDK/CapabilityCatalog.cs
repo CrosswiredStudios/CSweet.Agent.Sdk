@@ -1,4 +1,4 @@
-using CSweet.WorkManagement.Contracts;
+﻿using CSweet.WorkManagement.Contracts;
 
 namespace CSweet.Agent.SDK;
 
@@ -8,6 +8,13 @@ namespace CSweet.Agent.SDK;
 /// </summary>
 public static class CapabilityNames
 {
+    public static class WorkIssues
+    {
+        public const string Read = WorkIssueCapabilities.Read;
+        public const string Reconcile = WorkIssueCapabilities.Reconcile;
+        public const string Commission = WorkIssueCapabilities.Commission;
+    }
+
     public static class Resources
     {
         public const string Request = "platform.resource.request.v1";
@@ -408,6 +415,7 @@ public static class CapabilityCatalog
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
         {
             ["chief-leadership"] = ChiefLeadershipCapabilities.All,
+            ["work-issues"] = Set(WorkIssueCapabilities.Read, WorkIssueCapabilities.Reconcile, WorkIssueCapabilities.Commission),
             ["project-health"] = Set(ProjectHealthCapabilities.Read, ProjectHealthCapabilities.Diagnostics, ProjectHealthCapabilities.Incidents,
                 ProjectHealthCapabilities.Report, ProjectHealthCapabilities.Forward, ProjectHealthCapabilities.Presentation, ProjectHealthCapabilities.Resolution),
             ["compute"] = Set(CapabilityNames.Compute.Provision, CapabilityNames.Compute.Read, CapabilityNames.Compute.List,

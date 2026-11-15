@@ -1,4 +1,4 @@
-# Create a standalone C-Sweet agent
+﻿# Create a standalone C-Sweet agent
 
 This is the portable build contract for Codex and other coding agents. It is authoritative when a
 user points to this SDK from another repository.
@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 5.30.0
+     --SdkVersion 5.31.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed
@@ -215,3 +215,6 @@ For resource needs, use `context.Platform.Resources.RequestAsync` with an exact 
 and stable key. Managers opt into `SupportsResourceApproval` only after requesting resource
 read/decision capabilities and the changed subscription. Continue dependent work only after
 a current read reports Ready; approval or an event payload is not readiness evidence.
+
+
+Use `DurableAgentState` for content-bound compare-and-swap state updates, and `PlatformCapabilityClient.Issues` when several findings need durable ownership and scoped consultation. See [durable issues](docs/planning-lifecycle.md#durable-issues-and-restart-safe-state-5310). Models judge semantic ownership and equivalence; code owns identity, approved references, authority and mutation keys. A completed consultation is not resolved responsibility or accepted execution.

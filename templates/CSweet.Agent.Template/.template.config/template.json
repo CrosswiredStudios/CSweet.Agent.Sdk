@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "http://json.schemastore.org/template",
   "author": "C-Sweet",
   "classifications": ["C-Sweet", "Agent", "AI"],
@@ -60,9 +60,9 @@
     "SdkVersion": {
       "type": "parameter",
       "datatype": "string",
-      "defaultValue": "5.30.0",
+      "defaultValue": "5.31.0",
       "description": "Pinned CSweet.Agent.SDK NuGet version.",
-      "replaces": "5.30.0"
+      "replaces": "5.31.0"
     }
   },
   "sources": [

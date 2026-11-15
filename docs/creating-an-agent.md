@@ -1,4 +1,4 @@
-# Creating a C-Sweet agent
+﻿# Creating a C-Sweet agent
 
 This guide takes a .NET developer from an empty directory to an agent that can be reviewed and
 imported by C-Sweet. C-Sweet agents are ordinary hosted .NET applications with a small callback
@@ -40,7 +40,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.30.0
+  --SdkVersion 5.31.0
 cd ResearchAgent
 dotnet test
 ```

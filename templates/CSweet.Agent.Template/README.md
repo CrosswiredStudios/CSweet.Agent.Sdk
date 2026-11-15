@@ -1,4 +1,4 @@
-# Example Agent
+﻿# Example Agent
 
 Processes a bounded request for C-Sweet.
 
@@ -27,7 +27,7 @@ Keep `csweet-plugin.json` at the repository root. Import a reviewed GitHub commi
 clone this repository as an immediate child of C-Sweet's configured local agent catalog. Review
 the exact manifest, grants, activation mode, and source before approving installation.
 
-Built with `CSweet.Agent.SDK` 5.30.0.
+Built with `CSweet.Agent.SDK` 5.31.0.
 
 ## Business calendars
 

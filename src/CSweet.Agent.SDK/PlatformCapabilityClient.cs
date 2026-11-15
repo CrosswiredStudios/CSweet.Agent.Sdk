@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using CSweet.Agent.SDK.WorkManagement;
 using CSweet.WorkManagement.Contracts;
 using Microsoft.Extensions.AI;
@@ -8,6 +8,8 @@ namespace CSweet.Agent.SDK;
 /// <summary>Typed, grant-governed access to authoritative C-Sweet platform services.</summary>
 public sealed class PlatformCapabilityClient
 {
+    public PlatformWorkIssueClient Issues => new(this);
+
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly IPlatformToolInvoker _tools;
 

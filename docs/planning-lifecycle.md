@@ -87,3 +87,16 @@ with `TrackedCollaboration`; advice is reviewed against the exact approved input
 finding. Actual incompatible requirements go to the authorized manager with supporting evidence.
 Only the existing authority policy may reserve a decision for the user. Replays reuse source-bound
 finding/session keys, and changed or superseded sources must not retain stale alerts.
+
+
+## Durable issues and restart-safe state (5.31.0)
+
+`PlatformCapabilityClient.Issues` provides authorized discovery, reconciliation and durable commission intent through `work.issues.read.v1`, `work.issues.reconcile.v1` and `work.issues.commission.v1`. Initial registry scope is an authorized project board with an exact accepted source. It supports game and non-game project work without a fixed team, stage sequence, consultation count or semantic similarity threshold. A model judges obligation equivalence with `PlanningObligationCatalog`; code binds retained identities, reference selections and revisions.
+
+Read current cases before acting. Keep distinct obligations separate, consolidate compatible consultations by judgment, and retain every required decision. Advice received moves handling to review; only grounded owner reconciliation with explicit evidence resolves the case. A changed accepted source or a new authorized `ReopeningEvidence` link can start another episode. Rephrasing alone cannot reopen a resolved obligation. Cases never grant execution, hiring authority or product acceptance.
+
+`DurableAgentState.UpdateAsync` merges with current typed state and derives mutation identity from intended content and observed revision. `UpdateVersionedAsync` also exposes that revision when intentional clears must be distinguished from stale snapshots. Use domain merges for independent child records. Do not derive mutation keys only from clocks or planning fingerprints. After an interrupted accepted response, reread and merge; exact mutation replay returns its original receipt without rolling back newer state. Reusing a key for different content is a typed conflict.
+
+A commission is recorded before dispatch. The platform commits session, tracking, case links and wake outbox atomically, and rediscovery resumes after restart. `WorkIssueEvents.Changed` wakes the owning manager through the manager base; events convey no authority. `SupersededSessionIds` carries explicit legacy relationships. Current accepted sources and actor ownership are checked again before idle legacy tracking is retired. Leased work and historical failures are retained. `RetireTrackingAsync` accepts a terminal issue receipt and archives only the specified owner's idle typed collaboration cards.
+
+Subscribe to `work.issues.changed.v1`, request the three issue capabilities through the normal reviewed manifest, and retain scoped board and artifact authorization. Missing authority must be surfaced for the responsible manager; a notification or manifest does not grant permission. Preserve full evidence and use concise judgment-authored briefs for Overview.

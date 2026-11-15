@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using CSweet.Agent.SDK;
 using CSweet.WorkManagement.Contracts;
 
@@ -53,6 +53,7 @@ public sealed class CapabilityCatalogTests
                 "source-control",
                 "web",
                 "work-delivery",
+                "work-issues",
                 "work-management"
             ],
             CapabilityCatalog.ByService.Keys.Order(StringComparer.Ordinal));
