@@ -1,4 +1,4 @@
-﻿namespace CSweet.Agent.SDK;
+namespace CSweet.Agent.SDK;
 
 /// <summary>Common manager behavior. The manifest must independently request its capabilities and subscriptions.</summary>
 public abstract partial class CSweetManagerAgentBase : CSweetAgentBase
@@ -9,7 +9,7 @@ public abstract partial class CSweetManagerAgentBase : CSweetAgentBase
     // Sealed entrypoints keep monitoring independent of the specialized workflow's intake state.
     public sealed override async Task HandleEventAsync(AgentEventEnvelope message, AgentRuntimeContext context, CancellationToken token)
     {
-        if (message.EventType == CommunicationEvents.MessageMentioned)
+        if (message.EventType is CommunicationEvents.MessageMentioned or CSweet.WorkManagement.Contracts.WorkRecoveryEvents.Changed)
         {
             await ManagerWorkRecovery.DiscoverAsync(context, token);
             return;

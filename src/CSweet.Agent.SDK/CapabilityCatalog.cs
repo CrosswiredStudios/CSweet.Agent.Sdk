@@ -1,4 +1,4 @@
-﻿using CSweet.WorkManagement.Contracts;
+using CSweet.WorkManagement.Contracts;
 
 namespace CSweet.Agent.SDK;
 
@@ -13,6 +13,12 @@ public static class CapabilityNames
         public const string Read = WorkIssueCapabilities.Read;
         public const string Reconcile = WorkIssueCapabilities.Reconcile;
         public const string Commission = WorkIssueCapabilities.Commission;
+        public const string Propose = WorkIssueCapabilities.Propose;
+        public const string DecideProposal = WorkIssueCapabilities.DecideProposal;
+    }
+    public static class WorkRecovery
+    {
+        public const string Read = WorkRecoveryCapabilities.Read;
     }
 
     public static class Resources
@@ -415,7 +421,7 @@ public static class CapabilityCatalog
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
         {
             ["chief-leadership"] = ChiefLeadershipCapabilities.All,
-            ["work-issues"] = Set(WorkIssueCapabilities.Read, WorkIssueCapabilities.Reconcile, WorkIssueCapabilities.Commission),
+            ["work-issues"] = Set(WorkIssueCapabilities.Read, WorkIssueCapabilities.Reconcile, WorkIssueCapabilities.Commission, WorkIssueCapabilities.Propose, WorkIssueCapabilities.DecideProposal, WorkRecoveryCapabilities.Read),
             ["project-health"] = Set(ProjectHealthCapabilities.Read, ProjectHealthCapabilities.Diagnostics, ProjectHealthCapabilities.Incidents,
                 ProjectHealthCapabilities.Report, ProjectHealthCapabilities.Forward, ProjectHealthCapabilities.Presentation, ProjectHealthCapabilities.Resolution),
             ["compute"] = Set(CapabilityNames.Compute.Provision, CapabilityNames.Compute.Read, CapabilityNames.Compute.List,

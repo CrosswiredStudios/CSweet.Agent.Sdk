@@ -4,6 +4,14 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Runtime maintainer guide
 
+In SDK 5.34.0, `ManagerWorkRecovery` consumes public current-operation facts before optional model
+assessment. The host owns `IWorkRecoveryAuthorizationPolicy`; an agent cannot supply a verdict.
+Keep the original current-state reads, mutation authorization and idempotency checks after every
+wake. `WorkIssueContributions` is an optional wrapper over public proposal/owner-decision commands,
+and `ScopedWorkRefinement` is an optional public coordination convention. Neither depends on
+private persona names or shared inheritance. Preserve public tracking purpose metadata and legacy
+prefix compatibility when recovering older cards.
+
 SDK 5.33.0 dispatches `ManagerWorkRecovery` before manager-specific personal-work claim policies and
 handlers. Reconnect/attention discovery and subscribed mention wakes create durable current-reporting
 commitments; notification contents never authorize retries. See [manager agents](manager-agents.md)

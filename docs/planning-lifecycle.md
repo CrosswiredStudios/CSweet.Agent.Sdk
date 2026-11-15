@@ -1,5 +1,37 @@
 # Shared planning and delivery lifecycle
 
+## Self-resolving public interactions (5.34.0)
+
+`ScopedWorkRefinement` defines `work.planning.refinement.v1` requests and
+`work.planning.refinement-result.v1` answers over normal source-bound board coordination.
+`WorkRefinementRequest` supplies accepted source references, optional exact approved package,
+available work kinds/parent relationships and named role choices. The contributor returns only
+judgment: approaching work, local dependencies, verification and rationale. Code supplies all
+identities, stable command keys and provenance. `PublishAsync` rechecks the accepted source and
+current owner before each ordinary board mutation. Retain the same request/draft/publication key
+after interruption; an accepted command with a lost response is recovered by platform idempotency.
+
+This is additive refinement for missing approved outcomes. It preserves existing work and supports
+caller-defined roles/game types. It does not authorize scope changes, staffing, spending or QA
+overrides. Keep the existing staffing/readiness and protected-decision checks. Choose smaller new
+Stories when useful; delivery still operates on the whole selected Story. Replacing published
+structural work requires its normal governed amendment.
+
+`WorkIssueContributions.ReviewAsync` is the optional owner-side helper for read-only contributors.
+It provides exact approved text and current canonical obligations to judgment. Code binds
+`ReviewedIssues`; the platform rejects stale versions. A platform conflict/validation rejection is
+shown once with fresh records, then an invalid retained proposal is declined with its correction
+reason. Declining a proposal does not resolve its underlying obligation or erase evidence.
+
+Third-party agents can implement these wire contracts directly. Public tracking uses
+`PersonalTodoWorkContext.Purpose = collaboration-tracking` and `CoordinationSessionId`, not private
+SDK state keys or correlation prefixes. Old SDK tracking prefixes remain readable. Accepted
+contributions expose private origin sessions only to their original participant for cleanup.
+
+Use `IndependentWork.RunAsync` for genuinely independent owned continuations. It runs each branch
+and then preserves the original single failure or aggregates multiple failures. It neither swallows
+errors nor bypasses the affected branch's dependencies.
+
 SDK 5.29.0 supplies mechanics without prescribing a game genre, team roster or number of sprints.
 
 `WorkPlanningJudgments` separates model judgments from the authoritative envelope. Agents assess

@@ -117,12 +117,13 @@ public static class TrackedCollaboration
 
     /// <summary>True when the personal card is the owning card of a collaboration queued by this helper.</summary>
     public static bool IsTrackingCard(PersonalTodoItem item) =>
-        item.CorrelationId?.StartsWith(CorrelationPrefix, StringComparison.Ordinal) == true;
+        item.WorkContext?.Purpose == PersonalWorkPurposes.CollaborationTracking || item.CorrelationId?.StartsWith(CorrelationPrefix, StringComparison.Ordinal) == true;
 
     public static bool TryGetSessionId(PersonalTodoItem item, out Guid sessionId)
     {
+        if (item.WorkContext is { Purpose: PersonalWorkPurposes.CollaborationTracking, CoordinationSessionId: Guid current } && current != Guid.Empty) { sessionId = current; return true; }
         sessionId = Guid.Empty;
-        return IsTrackingCard(item) &&
+        return item.CorrelationId?.StartsWith(CorrelationPrefix, StringComparison.Ordinal) == true &&
                Guid.TryParseExact(item.CorrelationId![CorrelationPrefix.Length..], "N", out sessionId) &&
                sessionId != Guid.Empty;
     }
@@ -155,7 +156,7 @@ public static class TrackedCollaboration
                     WorkstreamId: card.WorkstreamId,
                     TeamId: card.TeamId,
                     BoardId: card.BoardId ?? session.BoardSource?.BoardId,
-                    CoordinationSessionId: session.Id)
+                    CoordinationSessionId: session.Id) { Purpose = PersonalWorkPurposes.CollaborationTracking }
             }, cancellationToken);
         }
         catch (PlatformCapabilityException)

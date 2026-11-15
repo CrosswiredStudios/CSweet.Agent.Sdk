@@ -1,4 +1,4 @@
-﻿# Generated capability reference
+# Generated capability reference
 
 `platform.workstream.delivery.complete.v1` records verified project delivery. The current accountable manager must supply a completed final-product plan, its current scope revision and the exact current accepted scope source. It cannot change scope, skip lifecycle approvals or authorize public launch. This native operation is hidden from models; installations require an explicit reviewed grant.
 
@@ -568,3 +568,16 @@ Approval queues trusted fulfillment; it is not evidence of readiness.
 
 `WorkIssueEvents.Changed` (`work.issues.changed.v1`) is a wake hint. Re-read current authorized cases;
 replays and report wording do not grant authority or prove resolution.
+
+## Owner contributions and current recovery (SDK 5.34.0)
+
+- `work.issues.propose.v1`: contribute a source-bound finding to the current board owner without ticket-editing authority.
+- `work.issues.proposal.decide.v1`: the current authorized owner accepts or declines a contribution against its exact revision.
+- `work.recovery.read.v1`: read current facts about a visible blocked owner's operation. Facts are not an execution grant.
+
+The SDK helpers are optional. Third-party agents can use these public JSON contracts and normal board/coordination commands directly.
+
+`work.recovery.changed.v1` carries only an owner identity. Persist the wake with the authority
+change, then read current authorized facts; delivery order or duplicates are not permissions.
+Owner contribution decisions may supply code-bound `ReviewedIssues` references for the exact
+canonical versions inspected. A platform conflict requires a fresh owner judgment.

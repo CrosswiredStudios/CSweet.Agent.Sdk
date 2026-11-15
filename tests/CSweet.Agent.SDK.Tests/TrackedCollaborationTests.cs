@@ -10,6 +10,16 @@ public sealed class TrackedCollaborationTests
         new(Guid.NewGuid(), Guid.NewGuid(), "Gabriel Reyes", "Producer");
 
     [Fact]
+    public void PublicTrackingPurposeWorksWithAThirdPartyCorrelationWithoutSdkPrefixes()
+    {
+        var session = Guid.NewGuid();
+        var item = System.Text.Json.JsonSerializer.Deserialize<PersonalTodoItem>("{}")! with {
+            CorrelationId = "external-vendor-reference", WorkContext = new(CoordinationSessionId: session) { Purpose = PersonalWorkPurposes.CollaborationTracking } };
+        Assert.True(TrackedCollaboration.IsTrackingCard(item));
+        Assert.True(TrackedCollaboration.TryGetSessionId(item, out var actual)); Assert.Equal(session, actual);
+    }
+
+    [Fact]
     public void BlockedSessionNamesTheOtherParticipantAsOwnerOfTheNextStep()
     {
         var session = Session(AgentCoordinationStatuses.Blocked, "The staffing roles\n do not match the template",

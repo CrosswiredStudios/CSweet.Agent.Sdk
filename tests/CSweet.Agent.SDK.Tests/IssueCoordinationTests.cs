@@ -57,15 +57,17 @@ public sealed class IssueCoordinationTests
         Assert.Equal(2, writes.Count); Assert.NotEqual(writes[0].IdempotencyKey, writes[1].IdempotencyKey);
         Assert.Equal(2, changed.Payload.References.Count);
     }
-    [Fact]
-    public async Task TerminalReceiptRetiresOnlyIdleOwnerTrackingAndNeverTheFailedAttemptOrActualWork()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TerminalReceiptRetiresOnlyIdleOwnerTrackingAndNeverTheFailedAttemptOrActualWork(bool contributed)
     {
         var owner = Guid.NewGuid(); var project = Guid.NewGuid(); var session = Guid.NewGuid();
         var tracked = JsonSerializer.Deserialize<PersonalTodoItem>("{}")! with { Id = Guid.NewGuid(), Revision = 2,
-            Status = PersonalTodoStatuses.Blocked, CorrelationId = TrackedCollaboration.Correlation(session),
-            WorkContext = new(WorkstreamId: project, CoordinationSessionId: session) };
+            Status = PersonalTodoStatuses.Blocked, CorrelationId = contributed ? "external-partner-reference" : TrackedCollaboration.Correlation(session),
+            WorkContext = new(WorkstreamId: project, CoordinationSessionId: session) { Purpose = contributed ? PersonalWorkPurposes.CollaborationTracking : null } };
         var running = tracked with { Id = Guid.NewGuid(), Status = PersonalTodoStatuses.Running };
-        var actual = tracked with { Id = Guid.NewGuid(), CorrelationId = "actual-deliverable" };
+        var actual = tracked with { Id = Guid.NewGuid(), CorrelationId = "actual-deliverable", WorkContext = new(WorkstreamId: project) };
         var archived = new List<Guid>();
         var runtime = new AgentTestRuntime().RegisterCapability<object,PersonalTodoDirectory>(PersonalTodoCapabilities.Read,
             (_,_) => Task.FromResult(new PersonalTodoDirectory([new(Guid.NewGuid(), owner, "Manager", null, null, 1, [tracked,running,actual]),
@@ -73,7 +75,10 @@ public sealed class IssueCoordinationTests
             .RegisterCapability<ArchivePersonalTodoItemRequest,PersonalTodoItem>(PersonalTodoCapabilities.Archive,
                 (r,_) => { archived.Add(r.ItemId); return Task.FromResult(tracked); });
         var issue = new WorkIssueCaseResponse(Guid.NewGuid(), Guid.NewGuid(), project, "feasibility", "Approved feasibility", "Original failed review retained",
-            "Resolved", "AwaitingReview", owner, "Continue accepted work", new(Guid.NewGuid(),Guid.NewGuid(),"source"), [], [new("Coordination", session)], "Verified exact replacement", 3, DateTimeOffset.UtcNow);
+            "Resolved", "AwaitingReview", owner, "Continue accepted work", new(Guid.NewGuid(),Guid.NewGuid(),"source"), [], contributed ? [] : [new("Coordination", session)], "Verified exact replacement", 3, DateTimeOffset.UtcNow);
+        if (contributed) runtime.RegisterCapability<ReadWorkIssuesRequest,WorkIssueDirectory>(WorkIssueCapabilities.Read,
+            (_,_) => Task.FromResult(new WorkIssueDirectory([issue], [JsonSerializer.Deserialize<WorkIssueCommissionResponse>("{}")! with {
+                Status = "Accepted", RequestedByEmployeeId = owner, IssueIds = [issue.Id], OriginSessionIds = [session] }])));
         await runtime.CreateContext().Platform.Issues.RetireTrackingAsync(issue, owner);
         Assert.Equal(new[] { tracked.Id }, archived);
         await Assert.ThrowsAsync<ArgumentException>(() => runtime.CreateContext().Platform.Issues.RetireTrackingAsync(issue with { Status = "Open" }, owner));

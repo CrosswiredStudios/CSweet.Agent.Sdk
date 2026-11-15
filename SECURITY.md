@@ -2,6 +2,14 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Security Policy
 
+SDK 5.34.0 exposes current blocked-operation facts through `work.recovery.read.v1`. Facts bind the
+actual employee, current installation and recorded intent; they do not authorize commands. Public
+read-only issue proposals are separate from owner-only canonical edits. Owner decisions bind the
+source and versions actually reviewed. Private coordination provenance is visible only to its
+original participant. Wakes are hints followed by current authorized reads. Shared refinement
+publishes only through ordinary source-bound board commands and grants no spending, hiring,
+scope change or QA-override authority.
+
 Native manager recovery (`ManagerWorkRecovery`, SDK 5.33.0) uses authorized current-state reads of
 directly reporting personal boards. Mention bodies cannot identify a retry target or grant authority.
 Code pins retry intent to the recorded episode, source item, reviewed revision and substantive basis;

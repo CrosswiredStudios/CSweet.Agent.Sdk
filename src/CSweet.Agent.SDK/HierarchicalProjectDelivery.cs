@@ -194,7 +194,7 @@ public static class HierarchicalProjectDelivery
         if (selectedEpics is not null && scopedStories.Any(story => !board.Items.Any(x => x.ParentItemId == story &&
             x.ExecutionMode == WorkItemExecutionModes.Executable && x.Status != "Cancelled")))
             throw new InvalidOperationException("Detail every Story within the selected increment before configuring its delivery; future increments remain outside this plan.");
-        var tasks = board.Items.Where(x => x.ExecutionMode == WorkItemExecutionModes.Executable &&
+        var tasks = board.Items.Where(x => x.Status != "Cancelled" && x.ExecutionMode == WorkItemExecutionModes.Executable &&
             x.ParentItemId.HasValue && scopedStories.Contains(x.ParentItemId.Value)).ToArray();
         if (tasks.Length == 0) throw new InvalidOperationException("Plan at least one executable task within a story and epic before activating delivery.");
         foreach (var task in tasks)
@@ -209,7 +209,7 @@ public static class HierarchicalProjectDelivery
         {
             if (parent.Planning?.AcceptanceCriteria.Count > 0) continue;
             board = await context.Platform.Work.ReadBoardAsync(boardId, ct);
-            var children = board.Items.Where(x => x.ParentItemId == parent.Id).ToArray();
+            var children = board.Items.Where(x => x.ParentItemId == parent.Id && x.Status != "Cancelled").ToArray();
             if (children.Length == 0 || children.Any(x => x.Planning?.AcceptanceCriteria.Count is null or 0))
                 throw new InvalidOperationException("Every scoped story and epic needs nonempty, agreed child work and acceptance criteria.");
             var planning = new WorkItemPlanningSpecification(children.SelectMany(x => x.Planning!.Requirements).Distinct().ToArray(),
@@ -218,7 +218,7 @@ public static class HierarchicalProjectDelivery
                 parent.ParentItemId, planning, parent.Revision, parent.PlanningRevision, $"delivery-parent:{parent.Id:N}:{parent.PlanningRevision}"), ct);
         }
         board = await context.Platform.Work.ReadBoardAsync(boardId, ct);
-        tasks = board.Items.Where(x => x.ExecutionMode == WorkItemExecutionModes.Executable &&
+        tasks = board.Items.Where(x => x.Status != "Cancelled" && x.ExecutionMode == WorkItemExecutionModes.Executable &&
             x.ParentItemId.HasValue && scopedStories.Contains(x.ParentItemId.Value)).ToArray();
         var selected = new Dictionary<Guid, (WorkStageAssignment Author, WorkStageAssignment Qa, WorkStageAssignment? Technical, bool Code, bool QaEvidence)>();
         var qaRole = software ? "software-qa" : "game-quality-assurance";

@@ -6,6 +6,54 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class ManagerWorkRecoveryTests
 {
     [Fact]
+    public async Task DefaultAssessmentRetainsActualEscalationAsJudgmentRatherThanAnAuthorizationFact()
+    {
+        var reply = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Fixtures", "manager-recovery-stale-denial.json"));
+        var runtime = new AgentTestRuntime().RegisterCapability<JsonElement,object>(PlatformCapabilities.LlmChatStream,
+            (_,_) => Task.FromResult<object>(new { text = reply }));
+        var work = JsonSerializer.Deserialize<PersonalTodoItem>("{}")! with { Id = Guid.NewGuid(), BlockReason = "Historical access refusal" };
+        var result = await new DefaultAssessmentManager().AssessWorkRecoveryAsync(new(work,"Producer",null,"unknown-current-operation",false,null),runtime.CreateContext(),default);
+        Assert.Equal("Escalate", result.Action); Assert.Contains("repeated platform denial",result.Reason);
+        // Known permission facts are exercised separately through HandleAsync and never delegated to this model.
+    }
+    private sealed class DefaultAssessmentManager : CSweetManagerAgentBase
+    {
+        public override string AgentId => "example.manager-with-default-assessment";
+        public override string Version => "1.0.0";
+        protected override string ManagementResponsibility => "Current assigned work";
+        protected override AgentConfigurationBuilder Configure(AgentConfigurationBuilder builder) =>
+            builder.LlmProvider("provider","Test provider",defaultValue:Guid.NewGuid().ToString());
+    }
+
+    [Fact]
+    public async Task CurrentOwnerPermissionFactsWakeAnEscalatedTrackerAndResumeOriginalWorkOnce()
+    {
+        var f = new Fixture(); f.Manager.Action = "Escalate";
+        f.Facts = new(f.Work.Id, f.Work.OwnerOrganizationUserId, null, null, "platform.capability.denied", WorkIssueCapabilities.Read, "Denied", "denied-basis", "Current owner access is denied");
+        await ManagerWorkRecovery.DiscoverAsync(f.Context, default);
+        var blocked = await ManagerWorkRecovery.HandleAsync(f.Manager, f.Recoveries[0], f.Context, default);
+        Assert.Contains("needs assistance", blocked!.Content); Assert.Equal(0, f.Manager.Assessments);
+        f.Recoveries[0] = f.Recoveries[0] with { Status = PersonalTodoStatuses.Blocked };
+        f.Facts = f.Facts with { Eligibility = "Permitted", Basis = "corrected-basis", Explanation = "Current scoped owner operation is permitted" };
+        await ManagerWorkRecovery.DiscoverAsync(f.Context, default);
+        Assert.Equal(1, f.TrackerWakes); Assert.Single(f.Recoveries);
+        await ManagerWorkRecovery.HandleAsync(f.Manager, f.Recoveries[0], f.Context, default);
+        Assert.Equal(1, f.Retries); Assert.Equal(0, f.Manager.Assessments);
+        f.Work = f.Work with { Status = PersonalTodoStatuses.Blocked, Revision = f.Work.Revision + 1 };
+        var repeat = await ManagerWorkRecovery.HandleAsync(f.Manager, f.Recoveries[0], f.Context, default);
+        Assert.Contains("still blocked", repeat!.Content); Assert.Equal(1, f.Retries);
+    }
+
+    [Fact]
+    public async Task RequeueReturningBlockedCannotBeReportedAsResumed()
+    {
+        var f = new Fixture { NoOpRetry = true };
+        await ManagerWorkRecovery.DiscoverAsync(f.Context, default);
+        var result = await ManagerWorkRecovery.HandleAsync(f.Manager, f.Recoveries[0], f.Context, default);
+        Assert.Contains("has not resumed", result!.Content); Assert.Null(result.NextReviewAt);
+    }
+
+    [Fact]
     public async Task ExecutableStagesInsideAPlanReceiveRecoveryWithoutRequiringATopLevelExecutableRoot()
     {
         var f = new Fixture(); f.Work = f.Work with { ParentItemId = Guid.NewGuid() };
@@ -157,6 +205,8 @@ public sealed class ManagerWorkRecoveryTests
         private Guid Owner { get; } = Guid.NewGuid();
         public bool ReportsHere = true, LoseStateResponse, LoseAddResponse, LoseRetryResponse, FailBeforeRetry, LoseReviewResponse;
         public int Retries, TrackerWakes;
+        public WorkRecoveryFacts? Facts;
+        public bool NoOpRetry;
         public PersonalTodoItem Work;
         public List<PersonalTodoItem> Recoveries { get; } = [];
         public Manager Manager { get; } = new();
@@ -168,6 +218,7 @@ public sealed class ManagerWorkRecoveryTests
                 IsExecutable = true, Revision = 7, BlockReason = "Recorded platform authorization failure" };
             var states = new Dictionary<string, AgentOperatingStateResponse>();
             var runtime = new AgentTestRuntime()
+                .RegisterCapability<ReadWorkRecoveryRequest, WorkRecoveryFacts>(WorkRecoveryCapabilities.Read, (_, _) => Task.FromResult(Facts ?? throw new PlatformCapabilityException(WorkRecoveryCapabilities.Read, PlatformCapabilityErrorCode.Unavailable, "Older host")))
                 .RegisterCapability<object, PersonalTodoDirectory>(PersonalTodoCapabilities.Read, (_, _) => Task.FromResult(new PersonalTodoDirectory([
                     new(Guid.NewGuid(), Self, "Manager", null, null, 1, Recoveries),
                     new(Work.BoardId, Owner, "Producer", ReportsHere ? Self : Guid.NewGuid(), "Manager", 1, [Work])], Self)))
@@ -197,7 +248,7 @@ public sealed class ManagerWorkRecoveryTests
                         Recoveries[Recoveries.FindIndex(t => t.Id == tracker.Id)] = tracker; return Task.FromResult(tracker); }
                     if (FailBeforeRetry) { FailBeforeRetry = false; throw new InvalidOperationException("Interrupted before dispatch"); }
                     Assert.Equal(Work.Id, r.ItemId); Assert.Equal(Work.Revision, r.ExpectedRevision);
-                    Retries++; Work = Work with { Status = PersonalTodoStatuses.Ready, Revision = Work.Revision + 1 };
+                    Retries++; if (NoOpRetry) return Task.FromResult(Work); Work = Work with { Status = PersonalTodoStatuses.Ready, Revision = Work.Revision + 1 };
                     if (LoseRetryResponse) { LoseRetryResponse = false; throw new InvalidOperationException("Response lost after retry"); }
                     return Task.FromResult(Work);
                 });

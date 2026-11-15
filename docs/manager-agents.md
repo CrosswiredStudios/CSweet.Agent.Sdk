@@ -1,5 +1,25 @@
 # Manager agents
 
+## Current-operation recovery (5.34.0)
+
+Request `work.recovery.read.v1` when supporting `ManagerWorkRecovery`. Its public
+`ReadWorkRecoveryRequest` contains only the visible native item ID. The platform binds current
+owner/installation, recorded failure, board and effective authority; the manager does not supply
+these facts. `Permitted` and `AlternativeAvailable` allow one attempt to resume the original
+persisted intent per relevant basis. The latter names a supported continuation such as contributing
+a finding instead of attempting a denied canonical edit. Neither result grants execution authority.
+
+Subscribe to `work.recovery.changed.v1`. Treat it as a wake hint and re-read current state. Bounded
+discovery also revisits blocked manager tracking when the operation basis changes, so missed events
+or offline agents do not permanently park work. Reviewer permissions, unrelated ticket edits and
+repeated identical failures do not create new retry authority. A requeue response still marked
+Blocked is a no-op, not a successful recovery. Unknown operations and old hosts retain ordinary
+owned judgment; unsupported capabilities fail safely.
+
+A trusted platform can register an `IWorkRecoveryAuthorizationPolicy` for another operation. Agent
+supplied text cannot register policy or pronounce itself authorized. Existing money, scope,
+staffing, QA and human-reserved decisions continue through their own services.
+
 Product Manager and Video Game Producer are both managers to C-Sweet. The common type is declared
 in `csweet-plugin.json`; the specialized job and skills are separate metadata:
 
