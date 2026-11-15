@@ -66,3 +66,24 @@ completes the correction and supersedes the source; normal hiring policy fulfill
 Do not recreate the cancelled recommendation or treat a proposal as an installed team member.
 New manager decisions may release the specific correction wait after a current-state read;
 unrelated notifications must not bypass a retry deadline or reopen an unchanged terminal block.
+
+## Meaningful ownership and scoped reconciliation (5.30.0)
+
+`PlanningOwnershipEvidence` retains code-supplied identity, kind, exact text and scope. A manager
+supplies the candidate catalog; the model judges semantics and selects indexes. `BindEvidence`
+rejects invented references. Outcomes, criteria, constraints and authoritative decisions can own
+obligations without copying every rule into every criterion. A binding is planning responsibility,
+not proof of implementation, authority change or test success.
+
+`PlanningScopeOwnership.BlockedScopes` holds the affected scope, contained work and transitive
+consumers, preserving independent work and prerequisites. Unknown impact must be resolved or
+conservatively represented as all affected scope; it cannot silently release work. Re-read current
+judgments at admission and final closure. A hold is never acceptance or permission to weaken criteria.
+
+`PlanningFinding.StatusSummary` presents what needs reconciliation, scoped impact, actor, next action
+and whether a user decision is required. Instructions to escalate *if* evidence fails are not evidence
+of failure. Commission ordinary missing responsibilities using `WorkContributions` and track delivery
+with `TrackedCollaboration`; advice is reviewed against the exact approved inputs before closing a
+finding. Actual incompatible requirements go to the authorized manager with supporting evidence.
+Only the existing authority policy may reserve a decision for the user. Replays reuse source-bound
+finding/session keys, and changed or superseded sources must not retain stale alerts.

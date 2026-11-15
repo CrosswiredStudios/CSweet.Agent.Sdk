@@ -400,6 +400,9 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
+# Local package feeds, test reports and verification outputs.
+/.artifacts/
+
 # Authored release notes are source, not build outputs. Every releases/<version>.md is tracked;
 # publish.yml requires one for the package version being released.
 !/releases/
