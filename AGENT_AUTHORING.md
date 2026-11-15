@@ -1,4 +1,4 @@
-﻿# Create a standalone C-Sweet agent
+# Create a standalone C-Sweet agent
 
 This is the portable build contract for Codex and other coding agents. It is authoritative when a
 user points to this SDK from another repository.
@@ -57,7 +57,7 @@ configuration, no credentials, and `webAccess.mode` `None`.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 5.31.0
+     --SdkVersion 5.32.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed

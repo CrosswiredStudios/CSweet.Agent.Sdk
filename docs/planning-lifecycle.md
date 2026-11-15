@@ -100,3 +100,22 @@ Read current cases before acting. Keep distinct obligations separate, consolidat
 A commission is recorded before dispatch. The platform commits session, tracking, case links and wake outbox atomically, and rediscovery resumes after restart. `WorkIssueEvents.Changed` wakes the owning manager through the manager base; events convey no authority. `SupersededSessionIds` carries explicit legacy relationships. Current accepted sources and actor ownership are checked again before idle legacy tracking is retired. Leased work and historical failures are retained. `RetireTrackingAsync` accepts a terminal issue receipt and archives only the specified owner's idle typed collaboration cards.
 
 Subscribe to `work.issues.changed.v1`, request the three issue capabilities through the normal reviewed manifest, and retain scoped board and artifact authorization. Missing authority must be surfaced for the responsible manager; a notification or manifest does not grant permission. Preserve full evidence and use concise judgment-authored briefs for Overview.
+## Current planning facts and advice receipts (5.32.0)
+
+`PlanningResourceContext.ReadAsync` reads the exact project team's roster, project/team staffing
+requests and project resource requests through existing authorized clients. `Fingerprint` covers
+substantive identity, revision, approval and readiness facts, not changing report timestamps or
+wording. A pending request, approved plan, filled seat and Ready resource are distinct facts. This
+snapshot does not grant execution authority or impose a required team composition. A missing
+execution resource need not block decomposition or estimates.
+
+The requesting agent routes `WorkContributions.IsReply` to `ReceiveAsync` before domain-specific
+intake. `ReadAnswerAsync` also supports recovery of a complete specialist answer followed by an
+older requester's incorrect finalization. It revalidates speaker, key, final page, board ownership
+and exact accepted sources. Callers exclude cancelled/failed sessions and bind retained scope;
+neither a session summary nor completed advice proves execution or closes an obligation.
+
+`DecisionContinuations` follows explicit replacement references, rejecting cycles, missing links
+and cross-project references. A cached terminal status is not the current direction after replacement.
+Agents can use `DecisionRecord` requester/decider identities (Contracts 5.9.0) to distinguish their
+own judgments from human decisions. Missing authorship from an older host remains unknown.

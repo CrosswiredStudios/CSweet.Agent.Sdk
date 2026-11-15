@@ -13,7 +13,59 @@ public static class WorkContributions
 {
     public const string RequestType = "work.planning.contribution.v1";
     public const string AnswerType = "work.planning.contribution-result.v1";
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
+
+    /// <summary>Routes the requester's reply/finalization by protocol, independently of subject or turn disposition.</summary>
+    public static bool IsReply(AgentCoordinationTurnRequest request) => request.Transcript.Any(t =>
+        t.SpeakerOrganizationUserId == request.Self.OrganizationUserId && t.Artifact?.Type == RequestType);
+
+    /// <summary>Receives advice without re-running the specialist or treating advice as execution permission.</summary>
+    public static async Task<AgentCoordinationTurnResult> ReceiveAsync(AgentCoordinationTurnRequest request,
+        AgentRuntimeContext context, CancellationToken ct = default)
+    {
+        var evidence = await ReadAnswerAsync(request.Transcript, request.Self.OrganizationUserId,
+            request.Counterpart.OrganizationUserId, request.WorkContext?.WorkstreamId, request.BoardSource?.BoardId,
+            context.Platform, ct);
+        return evidence is null
+            ? AgentCoordinationTurnResult.Blocked("Planning advice needs the expected specialist's complete answer and current accepted project sources.")
+            : AgentCoordinationTurnResult.Completed("Scoped planning advice received for reconciliation. Existing scope, staffing and execution approvals remain authoritative.");
+    }
+
+    /// <summary>
+    /// Revalidates a retained specialist answer, including one followed by an older requester's failed finalization.
+    /// A session's summary is not evidence. Cancelled/failed sessions must be filtered by the caller.
+    /// </summary>
+    public static async Task<WorkContributionEvidence?> ReadAnswerAsync(IReadOnlyList<AgentCoordinationTurn> turns,
+        Guid requester, Guid specialist, Guid? workstream, Guid? boardId, PlatformCapabilityClient platform,
+        CancellationToken ct = default)
+    {
+        if (requester == specialist || workstream is null || boardId is null) return null;
+        var invitation = turns.OrderBy(t => t.Ordinal).FirstOrDefault(t =>
+            t.SpeakerOrganizationUserId == requester && t.Artifact?.Type == RequestType);
+        WorkContributionRequest? input;
+        try { input = invitation?.Artifact?.Payload.Deserialize<WorkContributionRequest>(Json); }
+        catch (JsonException) { return null; }
+        if (input is null || input.WorkstreamId != workstream || input.BoardId != boardId ||
+            string.IsNullOrWhiteSpace(input.ScopeKey) || string.IsNullOrWhiteSpace(input.Question) || input.Sources is not { Count: > 0 }) return null;
+        // Only the expected participant's latest turn can supply advice. An earlier answer followed by
+        // a specialist retraction/block is not usable; a later requester routing failure does not erase it.
+        var response = turns.Where(t => t.SpeakerOrganizationUserId == specialist).OrderByDescending(t => t.Ordinal).FirstOrDefault();
+        if (response is not { Disposition: "Completed", Artifact: { IsFinalPage: true, Type: AnswerType } artifact } ||
+            response.Ordinal <= invitation!.Ordinal || artifact.Key != invitation.Artifact!.Key) return null;
+        WorkContributionAnswer? answer;
+        try { answer = artifact.Payload.Deserialize<WorkContributionAnswer>(Json); }
+        catch (JsonException) { return null; }
+        if (answer is null || string.IsNullOrWhiteSpace(answer.Assessment) || string.IsNullOrWhiteSpace(answer.EvidenceNeeded)) return null;
+        var board = await platform.Work.ReadBoardAsync(boardId.Value, ct);
+        if (board.Board.WorkstreamId != workstream || board.Board.ManagerOrganizationUserId != requester) return null;
+        foreach (var source in input.Sources)
+        {
+            var document = await platform.Artifacts.GetAsync(source.DocumentId, ct);
+            if (document.WorkstreamId != workstream || document.AcceptedRevisionId != source.RevisionId ||
+                !document.Revisions.Any(r => r.Id == source.RevisionId && r.Status == "Accepted" && r.ContentSha256 == source.Digest)) return null;
+        }
+        return new(invitation.Artifact.Key, input, answer, artifact.Digest);
+    }
 
     public static async Task<AgentCoordinationTurnResult> ExecuteAsync(AgentCoordinationTurnRequest request,
         AgentRuntimeContext context, AgentLlmSelection model, string expertise, ChatOptions? options, CancellationToken ct)
@@ -57,3 +109,5 @@ public static class WorkContributions
         return AgentCoordinationTurnResult.Completed(answer.Assessment,new(AnswerType,"1.0",turn.Artifact!.Key,1,true,JsonSerializer.SerializeToElement(answer,Json)));
     }
 }
+
+public sealed record WorkContributionEvidence(string Key, WorkContributionRequest Request, WorkContributionAnswer Answer, string Digest);
