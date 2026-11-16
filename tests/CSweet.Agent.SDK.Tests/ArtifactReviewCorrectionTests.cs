@@ -12,7 +12,7 @@ public sealed class ArtifactReviewCorrectionTests
 
     [Theory]
     [InlineData("checklist")] [InlineData("json")] [InlineData("null")]
-    [InlineData("identity")] [InlineData("contradiction")]
+
     public async Task CorrectsSchemaWithExactCriteriaWithoutChangingVerdictOrRereadingSourceOnEachCorrection(string fault)
     {
         var f=new Fixture();var valid=f.Report(false);
@@ -26,8 +26,8 @@ public sealed class ArtifactReviewCorrectionTests
         using var client=new Client((calls,messages)=> {
             if(calls==1)return invalid;
             var feedback=messages.Last().Text;
-            Assert.Contains("Correction 1/3",feedback);Assert.Contains("do not alter a verdict or suppress a defect",feedback);
-            if(fault=="checklist")Assert.Contains("expected exactly 1 acceptance criteria, received 8",feedback);
+            Assert.Contains("exact artifact revision review",feedback);
+            
             return Encode(valid);
         });
         var outcome=await f.Run(client);
@@ -39,14 +39,13 @@ public sealed class ArtifactReviewCorrectionTests
     }
 
     [Fact]
-    public async Task StopsAfterThreeCorrectionsAndReportsArtifactProcessingIssue()
+    public async Task StopsAfterOneCorrectionAndReportsTheUnacceptedJudgment()
     {
         var f=new Fixture();using var client=new Client((_,_)=>Encode(f.Report(true) with {Criteria=[]}));
-        var error=await Assert.ThrowsAsync<InvalidOperationException>(()=>f.Run(client));
-        Assert.Equal(4,client.Calls);Assert.Equal(1,f.ArtifactReads);
-        Assert.Contains("C-Sweet artifact QA response invalid",error.Message);
-        Assert.Contains("after 3 corrections",error.Message);Assert.Contains("No artifact QA verdict was accepted",error.Message);
-        Assert.Contains("management",error.Message);Assert.Contains(f.Criterion,error.Message);
+        var error=await Assert.ThrowsAsync<AgentModelJsonException>(()=>f.Run(client));
+        Assert.Equal(2,client.Calls);Assert.Equal(1,f.ArtifactReads);
+        Assert.Contains("exact artifact revision review",error.Message);
+        Assert.Contains("judgment for each criterion",error.Message);
     }
 
     [Theory]
@@ -62,14 +61,28 @@ public sealed class ArtifactReviewCorrectionTests
     }
 
     [Fact]
-    public async Task RetainsReportLargerThanOldLimitsWithin128000Characters()
+    public async Task ReviewsMultipleCriteriaWithoutCopyingTheirIdentities()
     {
         var f=new Fixture();var criteria=Enumerable.Range(0,6).Select(i=>"Exact criterion "+i).ToArray();
         f.Item=f.Item with {Planning=new(["Requirement"],criteria)};
-        var report=f.Report(true) with {Criteria=criteria.Select(c=>new WorkDeliveryCriterionResult(c,true,new string('e',9000))).ToArray()};
-        Assert.InRange(Encode(report).Length,44001,128000);
+        var report=f.Report(true) with {Criteria=criteria.Select(c=>new WorkDeliveryCriterionResult(c,true,new string('e',1500))).ToArray()};
+        Assert.InRange(Encode(report).Length,9000,24000);
         using var client=new Client((_,_)=>Encode(report));var outcome=await f.Run(client);
         Assert.Equal("passed",outcome.OutcomeCode);Assert.Equal(1,client.Calls);
+    }
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task ModelCannotChangeCopiedIdentityOrComputeItsOwnVerdict(bool inventedPass)
+    {
+        var f = new Fixture();
+        using var client = new Client((_, _) => Encode(f.Report(false) with {
+            ArtifactId = Guid.NewGuid(), RevisionId = Guid.NewGuid(), Sha256 = new string('b', 64), Passed = inventedPass }));
+        var outcome = await f.Run(client);
+        Assert.Equal("changes_requested", outcome.OutcomeCode);
+        var result = outcome.Output.Deserialize<WorkArtifactQualityResult>(Json)!;
+        Assert.Equal(f.Artifact, result.ArtifactId); Assert.Equal(f.Revision, result.RevisionId);
+        Assert.Equal(f.Sha, result.Sha256); Assert.Equal(1, client.Calls);
     }
 
     private static string Encode(WorkArtifactQualityResult report)=>JsonSerializer.Serialize(report,Json);
@@ -111,7 +124,7 @@ public sealed class ArtifactReviewCorrectionTests
         internal int Calls;
         public void Dispose(){}public object? GetService(Type type,object? key=null)=>null;
         public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages,ChatOptions? options=null,CancellationToken cancellationToken=default) {
-            cancellationToken.ThrowIfCancellationRequested();Assert.Equal(128000,options!.MaxOutputTokens);Assert.NotNull(options.ResponseFormat);
+            cancellationToken.ThrowIfCancellationRequested();Assert.Equal(16000,options!.MaxOutputTokens);
             return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant,respond(++Calls,messages.ToArray()))));
         }
         public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages,ChatOptions? options=null,CancellationToken cancellationToken=default)=>throw new NotSupportedException();

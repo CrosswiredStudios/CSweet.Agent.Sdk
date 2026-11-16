@@ -88,6 +88,7 @@ public static class RequirementDecisions
                     define the intended outcome, not an execution grant. A request to add capacity may first need
                     supported setup discovery, a resource plan, approval or a qualified responsible participant.
                     Use the normal resource, work, decision and delegation interactions that are actually offered.
+                    A calendar event schedules real work; it is never a substitute for a native decision or owned blocker.
                     Do not manufacture capabilities, run installers, rewrite approved scope, waive certification,
                     answer an approval on somebody else's behalf or claim readiness from a submitted request.
                     An unknown or unavailable route must leave concrete owned next work or an actionable question.

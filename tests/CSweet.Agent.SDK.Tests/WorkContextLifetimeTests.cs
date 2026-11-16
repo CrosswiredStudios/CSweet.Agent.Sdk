@@ -139,6 +139,30 @@ public sealed class WorkContextLifetimeTests
         Assert.Equal(1, recorder.Calls);
     }
 
+    [Fact]
+    public async Task DuplicateObservationsAreBoundedToCallbackAndInvalidatedByEffects()
+    {
+        using var deadline = new CancellationTokenSource();
+        var transport = new Invoker();
+        using (var first = Scope(deadline))
+        {
+            first.Enter(); var client = first.BindPlatform(transport);
+            await client.Tools.InvokeAsync("work.sprint.read", Json());
+            await client.Tools.InvokeAsync("work.sprint.read", Json());
+            Assert.Equal(1, transport.Calls);
+            await client.Tools.InvokeAsync("artifact.read", Json());
+            await client.Tools.InvokeAsync("artifact.read", Json());
+            Assert.Equal(3, transport.Calls); // Exact evidence/authority reads always stay fresh.
+            await client.Tools.InvokeAsync("work.sprint.read", Json());
+            await client.Tools.InvokeAsync("work.sprint.update", Json());
+            await client.Tools.InvokeAsync("work.sprint.read", Json());
+            Assert.Equal(6, transport.Calls);
+        }
+        using var second = Scope(deadline); second.Enter();
+        await second.BindPlatform(transport).Tools.InvokeAsync("work.sprint.read", Json());
+        Assert.Equal(7, transport.Calls);
+    }
+
     private static InferenceExecutionScope Scope(CancellationTokenSource deadline) => new(new(Guid.NewGuid(), 1,
         AgentWorkKind.Event, "test", Json(), "lease", DateTimeOffset.UtcNow.AddMinutes(1), DateTimeOffset.UtcNow.AddHours(1),
         Guid.NewGuid(), null), deadline, new Progress());

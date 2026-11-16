@@ -8,6 +8,8 @@ internal sealed class InferenceExecutionScope(AgentWorkLease lease, Cancellation
     private readonly InferenceExecutionScope? previous = CurrentSlot.Value;
     private readonly CancellationTokenSource ended = CancellationTokenSource.CreateLinkedTokenSource(deadline.Token);
     private int closed;
+    internal readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task<System.Text.Json.JsonElement>> Observations = new();
+    internal void InvalidateObservations() => Observations.Clear();
     public static InferenceExecutionScope? Current => CurrentSlot.Value;
     public AgentWorkLease Lease => lease;
     internal CancellationToken Token => ended.Token;

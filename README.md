@@ -1,4 +1,4 @@
-SDK 5.37.0 adds owner-scoped work/calendar availability and explicit capacity offers. Unknown availability stays distinct from zero; changed evidence invalidates retained effort/capacity judgments. See [release notes](releases/5.37.0.md).
+SDK 5.38.0 adds owner-scoped work/calendar availability and explicit capacity offers. Unknown availability stays distinct from zero; changed evidence invalidates retained effort/capacity judgments. See [release notes](releases/5.38.0.md).
 
 SDK 5.34.0 adds shared durable manager recovery for blocked native work. See [manager agents](docs/manager-agents.md).
 
@@ -114,7 +114,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.37.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.38.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -131,7 +131,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.37.0
+  --SdkVersion 5.38.0
 cd ResearchAgent
 dotnet test
 ```
@@ -139,7 +139,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.37.0
+dotnet add package CSweet.Agent.SDK --version 5.38.0
 ```
 
 ```csharp

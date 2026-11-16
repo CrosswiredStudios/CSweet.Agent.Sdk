@@ -508,3 +508,8 @@ configuration and are never passed to requesting agents or model review.
 ## Verified delivery completion (5.29.0)
 
 The model-hidden `platform.workstream.delivery.complete.v1` requires its own reviewed grant and the current active accountable manager. It records completion only against a completed explicit final-product plan, current scope revision and current accepted project source, with no unresolved findings or remaining work. Receipt, project state and outbox are committed together. No scope change, public-launch authority, lifecycle-stage jump, credential or host access is granted. Replays retain the accepted result; stale or different commands fail closed.
+
+
+## Document evidence and rework (5.38.0)
+
+`DocumentEvidence` re-reads authorized exact accepted revisions and checks their content digests. `DocumentResearch` offers only granted public research reads, bounds page observations and treats retrieved text as untrusted evidence. It never supplies calendar or host tools. `DocumentWork` retains attempt-bound drafts, validates retained artifact ownership and publishes identities through typed artifact commands. A model's request for resolution is a blocked outcome, not approval. `WorkRequirementResolution` binds inference-authored choices to code-owned authority, source evidence and material dependency identity, then re-reads the current decision. Callback observation reuse never crosses a lease, model turn or effect; exact source, decision, item and authority reads remain fresh.

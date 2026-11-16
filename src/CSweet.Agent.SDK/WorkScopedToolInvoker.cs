@@ -34,6 +34,12 @@ internal sealed class WorkScopedProgressReporter(IAgentProgressReporter inner, I
 // Binding is private SDK state, not agent-selected authority or a disposal acknowledgement.
 internal sealed class WorkScopedToolInvoker(IPlatformToolInvoker inner, InferenceExecutionScope owner) : IPlatformToolInvoker, IAgentGitRemote
 {
+    // Only repeated observations within one callback. Mutations/inference clear this cache. Exact item,
+    // source, grant and decision reads remain fresh; no observations survive a wake, reconnect or lease.
+    private static readonly HashSet<string> ReusableObservations = [
+        "work.personal-todo.read.v1", "work.sprint.read", "platform.agent-operating-state.read.v1",
+        "work.delivery.read.v1", "work.orchestration.read", "work.flow-metrics.read.v1"
+    ];
     public AgentGitRemoteAccess? OpenGitRemote(Guid workspaceId, long assignmentRevision)
     {
         owner.RequireActive("git.workspace.remote");
@@ -44,7 +50,20 @@ internal sealed class WorkScopedToolInvoker(IPlatformToolInvoker inner, Inferenc
     {
         owner.RequireActive(capability);
         using var call = CancellationTokenSource.CreateLinkedTokenSource(owner.Token, cancellationToken);
-        var result = await inner.InvokeAsync(capability, arguments, call.Token);
+        JsonElement result;
+        if (ReusableObservations.Contains(capability))
+        {
+            var key = capability + ":" + arguments.GetRawText();
+            var pending = owner.Observations.GetOrAdd(key, _ => inner.InvokeAsync(capability, arguments, call.Token));
+            try { result = await pending; }
+            catch { owner.Observations.TryRemove(key, out _); throw; }
+        }
+        else
+        {
+            owner.InvalidateObservations();
+            try { result = await inner.InvokeAsync(capability, arguments, call.Token); }
+            finally { owner.InvalidateObservations(); }
+        }
         owner.RequireActive(capability);
         call.Token.ThrowIfCancellationRequested();
         return result;
@@ -54,6 +73,7 @@ internal sealed class WorkScopedToolInvoker(IPlatformToolInvoker inner, Inferenc
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         owner.RequireActive(capability);
+        owner.InvalidateObservations();
         using var call = CancellationTokenSource.CreateLinkedTokenSource(owner.Token, cancellationToken);
         await foreach (var result in inner.InvokeStreamingAsync(capability, arguments, call.Token))
         {
@@ -63,6 +83,7 @@ internal sealed class WorkScopedToolInvoker(IPlatformToolInvoker inner, Inferenc
         }
         owner.RequireActive(capability);
         call.Token.ThrowIfCancellationRequested();
+        owner.InvalidateObservations();
     }
 
     public async Task<IReadOnlyList<AgentToolDescriptor>> ListToolsAsync(CancellationToken cancellationToken = default)
