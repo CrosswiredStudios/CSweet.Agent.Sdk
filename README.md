@@ -1,4 +1,6 @@
-SDK 5.38.0 adds owner-scoped work/calendar availability and explicit capacity offers. Unknown availability stays distinct from zero; changed evidence invalidates retained effort/capacity judgments. See [release notes](releases/5.38.0.md).
+SDK 5.38.0 adds shared exact document evidence, granted public research, retained artifact rework and inference-authored dependency decisions. See [release notes](releases/5.38.0.md).
+
+SDK 5.37.0 adds owner-scoped work/calendar availability and explicit capacity offers. Unknown availability stays distinct from zero; changed evidence invalidates retained effort/capacity judgments. See [release notes](releases/5.37.0.md).
 
 SDK 5.34.0 adds shared durable manager recovery for blocked native work. See [manager agents](docs/manager-agents.md).
 

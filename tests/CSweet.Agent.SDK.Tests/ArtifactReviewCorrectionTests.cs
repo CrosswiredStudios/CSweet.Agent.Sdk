@@ -27,7 +27,7 @@ public sealed class ArtifactReviewCorrectionTests
             if(calls==1)return invalid;
             var feedback=messages.Last().Text;
             Assert.Contains("exact artifact revision review",feedback);
-            
+
             return Encode(valid);
         });
         var outcome=await f.Run(client);
