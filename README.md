@@ -1,4 +1,6 @@
-SDK 5.34.0 adds shared durable manager recovery for blocked native work. See [manager agents](docs/manager-agents.md) and [release notes](releases/5.34.0.md).
+SDK 5.35.0 adds exact resource-dependency waits and reusable staffing work descriptions, review discovery and revision lineage. See [staffing reviews](docs/staffing-reviews.md) and [release notes](releases/5.35.0.md).
+
+SDK 5.34.0 adds shared durable manager recovery for blocked native work. See [manager agents](docs/manager-agents.md).
 
 SDK 5.32.0 adds typed planning-advice receipts, current staffing/resource context and explicit decision continuation. See [release notes](releases/5.32.0.md).
 
@@ -112,7 +114,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.34.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.35.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -129,7 +131,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.34.0
+  --SdkVersion 5.35.0
 cd ResearchAgent
 dotnet test
 ```
@@ -137,7 +139,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.34.0
+dotnet add package CSweet.Agent.SDK --version 5.35.0
 ```
 
 ```csharp

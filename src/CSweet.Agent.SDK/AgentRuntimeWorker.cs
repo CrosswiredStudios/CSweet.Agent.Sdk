@@ -539,7 +539,7 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                     await context.Platform.PersonalTodo.DeferAsync(
                         claim.Item.Id, eventId, context.Platform.PersonalTodo.ClaimedRevision(claim.Item.Id, claim.Item.Revision),
                         nextReviewAt, result.Content, result.WaitingOnOrganizationUserId,
-                        cancellationToken);
+                        cancellationToken, result.Dependency);
                 }
                 else if (result.KeepInProgress)
                 {

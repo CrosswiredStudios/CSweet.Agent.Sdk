@@ -1,3 +1,5 @@
+using CSweet.WorkManagement.Contracts;
+
 namespace CSweet.Agent.SDK;
 
 /// <summary>The authoring result for one personal to-do callback.</summary>
@@ -22,6 +24,7 @@ public sealed record PersonalTodoResult
     internal string Content { get; }
     internal DateTimeOffset? NextReviewAt { get; }
     internal Guid? WaitingOnOrganizationUserId { get; }
+    public PersonalTodoDependency? Dependency { get; init; }
 
     public static PersonalTodoResult Completed(string? summary = null) =>
         new(true, false, summary?.Trim() ?? string.Empty);
@@ -36,13 +39,20 @@ public sealed record PersonalTodoResult
     public static PersonalTodoResult WaitingUntil(
         DateTimeOffset nextReviewAt,
         string reason,
-        Guid? waitingOnOrganizationUserId = null)
+        Guid? waitingOnOrganizationUserId = null) =>
+        WaitingUntil(nextReviewAt, reason, waitingOnOrganizationUserId, null);
+
+    public static PersonalTodoResult WaitingUntil(
+        DateTimeOffset nextReviewAt,
+        string reason,
+        Guid? waitingOnOrganizationUserId,
+        PersonalTodoDependency? dependency)
     {
         if (nextReviewAt <= DateTimeOffset.UtcNow)
             throw new ArgumentOutOfRangeException(nameof(nextReviewAt), "The next review must be in the future.");
         if (string.IsNullOrWhiteSpace(reason))
             throw new ArgumentException("Waiting work requires a durable reason.", nameof(reason));
-        return new(false, true, reason.Trim(), nextReviewAt, waitingOnOrganizationUserId);
+        return new(false, true, reason.Trim(), nextReviewAt, waitingOnOrganizationUserId) { Dependency = dependency };
     }
 
     public static PersonalTodoResult Blocked(string reason)

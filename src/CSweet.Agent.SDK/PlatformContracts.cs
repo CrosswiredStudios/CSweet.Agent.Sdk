@@ -410,6 +410,7 @@ public sealed record ResourceChangeProposalRequest(
     Guid? SupersedesRequestId,
     string IdempotencyKey)
 {
+    public Guid? RevisesRequestId { get; init; }
     public Guid? CorrectionId { get; init; }
     public string? TeamKey { get; init; }
     public string? TeamName { get; init; }
@@ -449,6 +450,7 @@ public sealed record ResourceChangeRequestResponse(
     DateTimeOffset CreatedAt,
     DateTimeOffset? DecidedAt)
 {
+    public Guid? RevisesRequestId { get; init; }
     public Guid? CorrectionId { get; init; }
     public Guid? TeamId { get; init; }
     public string? TeamKey { get; init; }
