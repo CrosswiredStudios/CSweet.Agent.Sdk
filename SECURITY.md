@@ -2,6 +2,14 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Security Policy
 
+SDK 5.36.0 requirement follow-through discovers only currently granted model-visible tools.
+It rechecks the recorded decision before every dispatch and derives mutation identities in code.
+The ordinary services still authorize each operation; a decision or a follow-through report cannot
+establish resource readiness, waive certification, impersonate another approver or grant new access.
+Retained contribution references recheck project/board/author and current evidence before use.
+A retraction is a source failure, not an optional display failure. Only failed link publication
+can become independent repair work.
+
 SDK 5.34.0 exposes current blocked-operation facts through `work.recovery.read.v1`. Facts bind the
 actual employee, current installation and recorded intent; they do not authorize commands. Public
 read-only issue proposals are separate from owner-only canonical edits. Owner decisions bind the

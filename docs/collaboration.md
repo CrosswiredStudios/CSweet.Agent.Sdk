@@ -5,6 +5,35 @@ clarification, review, and handoff. These are typed artifacts carried by the exi
 coordination service, not a new transport or a source of authority. Domain agents still decide
 what is sufficient, which questions matter, and how to staff their work.
 
+## Retained contributions and requirement decisions
+
+`WorkContributions` retains an attributed answer in its source collaboration. Use
+`WorkContributionLinks.AssociateAsync` to reference that evidence from one or more work items.
+The source session, author, artifact and destination bind each association. Publishing a more
+detailed item does not change the original contribution. The helper rechecks the source before
+linking it; a retracted or inaccessible answer cannot remain usable as current evidence.
+If only display publication fails, the SDK creates separate repair work and the caller can
+continue assessing the retained answer. The runtime handles that repair through normal personal
+work callbacks. No source evidence, grants or accepted work are rewritten.
+
+`RequirementDecisions.AssessAsync` asks inference to trace an unresolved requirement and author
+relevant choices, consequences and next work. `Bind` attaches the caller's authoritative project,
+evidence, decision type and authority rule, with code-owned option identities and a free-text
+direction option. It works for capacity, access, assurance coverage and other workflow requirements;
+it does not prescribe a standard menu or a particular technical role.
+
+`FollowThroughAsync` discovers currently granted model-visible tools and uses inference to choose
+normal work, resource or delegation actions after a decision is recorded. It rechecks the decision
+at every dispatch and binds mutation keys in code. A retained receipt prevents repeated dispatch
+after a lost response. Its report confirms follow-through, never resource readiness or resolution;
+the responsible evaluator must verify the changed facts. Explicit holds remain holds. Further
+approval requirements and access restrictions remain enforced by the ordinary services.
+
+`ToolchainReviewContext.Describe` supplies individual certified build-host alternatives separately
+from product targets. A provider's list of supported operating systems does not establish a product
+requirement to provision or test all of them. Agents still assess actual compatibility and accepted
+verification obligations through inference.
+
 ## Request and provide documentation
 
 `RequestDocumentation(key, DocumentationRequest)` asks the addressed participant to supply or

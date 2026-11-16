@@ -1,3 +1,10 @@
+SDK 5.36.0 dispatches `WorkContributionLinks` repair commitments before role-specific personal work.
+Associations bind source collaboration, current author evidence and destination. Source invalidation
+blocks use; only display-write failures are separated from substantive assessment. Requirement
+follow-through reads the current decision before each tool dispatch and uses only discovered granted
+tools. Its durable receipt records actions, not readiness. Business evaluators must independently
+verify changed resources and accepted requirements before advancing affected work.
+
 SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service with no overall installation deadline. Short compute commands launch or observe the job; runtime restarts reuse its stable identity and only a completed successful job receipt permits tests/build. A lost launch reply leads to observation rather than another install. The VM lease, explicit destruction and npm's own completion/failure remain authoritative.
 
 `AggregateSourceReview` partitions large aggregate source inputs before criterion assessment. `DeliveryScopeReview` removes duplicate document bodies and transient prior outcomes, supplies source inspection evidence to the criterion and consistency steps, and retains all source findings. Inspection checkpoints bind exact source/planning identities and are authorized again before reuse and persistence. This bounds request input without reducing the 128k output allowance or treating summaries as test execution.
