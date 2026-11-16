@@ -1,0 +1,22 @@
+{
+  "Assumptions": [
+    "No confirmed calendar availability or sprint capacity was supplied; the assigned work item alone does not establish available capacity, so confirmed capacity is treated as zero pending explicit allocation.",
+    "The planning-only artifact can proceed without package installation, repository inspection, browser execution, QA, or external deadlines.",
+    "Public package information is sufficient for planning where available; gaps are recorded as unknown and do not block the planning increment.",
+    "No package, alternative engine, dependency, commit, scaffold, canvas, input, startup baseline, QA, playtest, hiring, budget, or spend is approved or completed."
+  ],
+  "AvailableSprintCapacity": 0,
+  "Blockers": [],
+  "BoardId": "5d0242b5-825e-4c65-9072-080da45491df",
+  "Estimates": [
+    {
+      "Confidence": "medium",
+      "EstimatePoints": 8,
+      "WorkItemId": "ea08b8f6-fa1e-4304-9f22-0137a9b07ab8"
+    }
+  ],
+  "PlanningDigest": "a6cd595fe494f934070d23f87457095278b8974c5bfcb008f1cfac45057c55c7",
+  "PlanningRevision": 1,
+  "ProposalDigest": "0fca28c5d63bde2087980b72b9d4fc8a1d0f057262b968e658f37f194ec242e9",
+  "RoleKey": "game-technical-director"
+}

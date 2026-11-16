@@ -1,4 +1,4 @@
-SDK 5.36.0 dispatches `WorkContributionLinks` repair commitments before role-specific personal work.
+SDK 5.37.0 `WorkAvailabilityContext` reads authorized work/calendar observations and attributes them to the assessed owner. Observations and inspection windows are not allocations. Capacity is an inference-authored offer; null and zero have different meanings. Estimate cache keys bind the assessment contract and stable availability basis. Bookkeeping for the same board does not create independent demand or invalidate its own offer. SDK 5.36.0 dispatches `WorkContributionLinks` repair commitments before role-specific personal work.
 Associations bind source collaboration, current author evidence and destination. Source invalidation
 blocks use; only display-write failures are separated from substantive assessment. Requirement
 follow-through reads the current decision before each tool dispatch and uses only discovered granted

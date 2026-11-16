@@ -14,4 +14,5 @@
     <Using Include="Xunit" />
   </ItemGroup>
 <ItemGroup><None Update="realtyleads-manifest.json" CopyToOutputDirectory="PreserveNewest" /></ItemGroup>  <ItemGroup><Content Include="Fixtures/manager-recovery-stale-denial.json" CopyToOutputDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="Fixtures/shardfall-zero-capacity.json" CopyToOutputDirectory="PreserveNewest" /></ItemGroup>
 </Project>
