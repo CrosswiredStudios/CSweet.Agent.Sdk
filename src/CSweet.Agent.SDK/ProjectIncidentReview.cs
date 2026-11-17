@@ -43,14 +43,30 @@ public static class ProjectIncidentReview
         Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<ManagerIncidentAssessment>> assess, CancellationToken token,
         Func<ManagerIncidentContext, AgentRuntimeContext, CancellationToken, Task<IncidentOwnerReport?>>? generateReport)
     {
-        // Exactly one refresh. Re-assess changed evidence and revalidate the recipient;
-        // never replay a stale report against a new revision or a revoked authority.
-        try { await ReviewManagerCoreAsync(incident, context, assess, token, generateReport); }
-        catch (PlatformCapabilityException error) when (error.FailureCode is "project-health.stale_revision" or "project-health.stale_evidence")
+        await ReviewCurrentAsync(incident, context,
+            current => ReviewManagerCoreAsync(current, context, assess, token, generateReport), token);
+    }
+
+    private static async Task ReviewCurrentAsync(ManagementIncident incident, AgentRuntimeContext context,
+        Func<ManagementIncident, Task> review, CancellationToken token)
+    {
+        // Exactly one refresh, including fresh diagnostics and owner prose. A second race is
+        // an ordinary pending report: durable incident discovery/deadlines retain ownership.
+        for (var attempt = 0; attempt < 2; attempt++)
         {
-            var current = await context.Platform.ProjectHealth.ReadIncidentsAsync(new(IncidentId: incident.Id), token);
-            if (current.Incidents.SingleOrDefault(x => x.Id == incident.Id) is { } refreshed)
-                await ReviewManagerCoreAsync(refreshed, context, assess, token, generateReport);
+            try { await review(incident); return; }
+            catch (PlatformCapabilityException error) when (error.FailureCode is "project-health.stale_revision" or "project-health.stale_evidence")
+            {
+                if (attempt == 1)
+                {
+                    await context.ReportProgressAsync(new { incidentReportPending = incident.Id,
+                        reason = "Current incident evidence changed during reporting; the next incident review will reassess it." }, token);
+                    return;
+                }
+                var page = await context.Platform.ProjectHealth.ReadIncidentsAsync(new(IncidentId: incident.Id), token);
+                if (page.Incidents.SingleOrDefault(x => x.Id == incident.Id) is not { } refreshed) return;
+                incident = refreshed;
+            }
         }
     }
 
@@ -124,6 +140,12 @@ public static class ProjectIncidentReview
     }
 
     private static async Task ReviewAsync(ManagementIncident incident, AgentRuntimeContext context, string responsibility,
+        bool diagnose, CancellationToken token)
+    {
+        await ReviewCurrentAsync(incident, context, current => ReviewCoreAsync(current, context, responsibility, diagnose, token), token);
+    }
+
+    private static async Task ReviewCoreAsync(ManagementIncident incident, AgentRuntimeContext context, string responsibility,
         bool diagnose, CancellationToken token)
     {
         if (incident.Status != "Open" || incident.CurrentRecipientId.ToString("D") != context.Identity?.EmployeeId) return;

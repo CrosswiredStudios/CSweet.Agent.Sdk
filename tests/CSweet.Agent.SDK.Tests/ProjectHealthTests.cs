@@ -17,8 +17,10 @@ public sealed class ProjectHealthTests
             .RegisterCapability<ReadProjectDiagnostics, ProjectDiagnosticsPage>(ProjectHealthCapabilities.Diagnostics, (_, _) => Task.FromResult(new ProjectDiagnosticsPage([], null, [])))
             .RegisterCapability<ReportManagementIncident, ManagementIncident>(ProjectHealthCapabilities.Report, (_, _) =>
             { reports++; throw new PlatformCapabilityException(ProjectHealthCapabilities.Report, PlatformCapabilityErrorCode.Conflict, "safe", failureCode: failure); });
-        await Assert.ThrowsAsync<PlatformCapabilityException>(() => ProjectIncidentReview.HandleManagerAsync(Hint(incident),
-            runtime.CreateContext(identity: Identity(employee)), (_, _, _) => Task.FromResult(ManagerIncidentAssessment.Escalate("Review")), default));
+        Task Review() => ProjectIncidentReview.HandleManagerAsync(Hint(incident),
+            runtime.CreateContext(identity: Identity(employee)), (_, _, _) => Task.FromResult(ManagerIncidentAssessment.Escalate("Review")), default);
+        if (failure == "project-health.denied") await Assert.ThrowsAsync<PlatformCapabilityException>(Review);
+        else { await Review(); Assert.Single(runtime.Progress); }
         Assert.Equal(expectedCalls, reports); Assert.Equal(expectedCalls, reads);
     }
 

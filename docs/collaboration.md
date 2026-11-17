@@ -163,6 +163,13 @@ by their ticket and are not checked.
 
 ## Permissions, retries, and migration
 
+`ConsultationRouting.Candidates` filters a caller-supplied authorized participant set, excluding self
+and unavailable agent runtimes. `SelectAsync` infers who can answer the actual bounded question from
+names, expertise and reporting relationships. A suggested capability is a hint, not a recipient ID.
+Code binds the returned index, persists that binding before dispatch, and validates current eligibility
+on replay. The helper grants no board access. A null choice needs an owned dependency; do not send to
+self or invent a participant. Return a platform rejection to inference once before an owned stop.
+
 Declare the existing communication coordination, artifact read/create/revise/submit/decide or
 request-access capabilities actually used. Personal work needs the existing personal-todo
 capabilities. There are no new blanket collaboration grants; manifest requests never grant

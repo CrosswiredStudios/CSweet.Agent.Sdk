@@ -5,6 +5,31 @@ namespace CSweet.Agent.SDK.Tests;
 
 public sealed class ManagerIncidentCoordinatorTests
 {
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task Changed_report_evidence_is_refreshed_once_then_deferred_without_failing_work(bool keepsChanging)
+    {
+        var self = Guid.NewGuid(); var incident = Incident(self) with { CurrentRecipientId = self };
+        var reads = 0; var reports = 0; var generated = new List<string>();
+        var runtime = new AgentTestRuntime()
+            .RegisterCapability<ReadManagementIncidents,ManagementIncidentPage>(ProjectHealthCapabilities.Incidents,
+                (_,_) => Task.FromResult(new ManagementIncidentPage([incident],null)))
+            .RegisterCapability<ReadProjectDiagnostics,ProjectDiagnosticsPage>(ProjectHealthCapabilities.Diagnostics,
+                (_,_) => Task.FromResult(new ProjectDiagnosticsPage([],null,[]) { CurrentState = new(new string(++reads == 1 ? 'A' : 'B',64),"Project",[],[]) }))
+            .RegisterCapability<ReportManagementIncident,ManagementIncident>(ProjectHealthCapabilities.Report, (r,_) => {
+                reports++; Assert.Equal(reports == 1 ? new string('A',64) : new string('B',64),r.OwnerReport!.SourceHash);
+                if (reports == 1 || keepsChanging) throw new PlatformCapabilityException(ProjectHealthCapabilities.Report,
+                    PlatformCapabilityErrorCode.Conflict,"The report's source evidence changed.",failureCode:"project-health.stale_evidence",retryable:true);
+                return Task.FromResult(incident);
+            });
+        await ProjectIncidentReview.HandleManagerAsync(new(Guid.NewGuid(), Guid.NewGuid(), ProjectHealthEvents.IncidentChanged,
+            JsonSerializer.SerializeToElement(new ProjectHealthHint(incident.WorkstreamId,incident.Id,incident.Revision)), DateTimeOffset.UtcNow),
+            runtime.CreateContext(identity:new(self.ToString(),"Manager",null,null,null,[],null,null,null)),
+            (_,_,_) => Task.FromResult(ManagerIncidentAssessment.Escalate("Current operational blocker")), default,
+            (review,_,_) => { generated.Add(review.Diagnostics.CurrentState!.Hash); return Task.FromResult(ManagerIncidentCoordinator.FactualFallback(review)); });
+        Assert.Equal(2,reports); Assert.Equal(2,generated.Distinct().Count());
+        Assert.Equal(keepsChanging,runtime.Progress.Any(p => p.GetRawText().Contains("incidentReportPending")));
+    }
     [Fact]
     public async Task Failed_reporting_cannot_prevent_or_replace_a_durable_recovery_assignment()
     {
