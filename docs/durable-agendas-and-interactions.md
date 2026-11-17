@@ -92,6 +92,7 @@ Override `HandlePersonalTodoAsync` and return exactly one `PersonalTodoResult`:
 | `Completed(summary)` | Completes the claimed card | All required effects and evidence succeeded |
 | `WaitingUntil(time, reason, person)` | Keeps the card in Doing, releases the claim, and records a scheduled review | A time-based follow-up or dependency needs a safety-net review |
 | `InProgress(summary)` | Keeps the card in Doing and releases the claim without scheduling a review | A known external event will requeue the exact card |
+| `RetryLater(failure)` | Keeps the card in Doing and schedules a retry after 1, 2, 5, 15 then 30 minutes; blocks with the exact failure when the budget is spent | The attempt failed for a reason that may clear by itself: a rejected model reply, a platform conflict, facts that changed mid-attempt |
 | `Blocked(reason)` | Moves the card to Blocked and records the reason | Explicit intervention or new authority is required |
 
 `InProgress` does **not** mean “call this callback again.” Before returning it, persist the event

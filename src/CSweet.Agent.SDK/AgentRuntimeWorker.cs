@@ -518,8 +518,27 @@ internal sealed class AgentRuntimeWorker<TAgent>(
                             ?? await ManagerIncidentCoordinator.HandlePersonalCommitmentAsync(manager, claim.Item, context, cancellationToken)
                             ?? await personalTodoAgent.HandlePersonalTodoAsync(claim.Item, context, cancellationToken)
                         : await personalTodoAgent.HandlePersonalTodoAsync(claim.Item, context, cancellationToken));
+                    if (result.RetryFailure is { } failure)
+                        result = await PersonalTodoRetry.ResolveAsync(context.Platform, claim.Item, failure, cancellationToken);
                 }
                 catch (WorkloadResourceHandoffException) { throw; }
+                catch (Exception error) when (error is not OperationCanceledException && !cancellationToken.IsCancellationRequested)
+                {
+                    // An unexpected failure is retried within a budget and keeps its real cause. Releasing and
+                    // rethrowing left the item to be blocked later as "execution stopped unexpectedly".
+                    PersonalTodoResult? retry = null;
+                    try { retry = await PersonalTodoRetry.ResolveAsync(context.Platform, claim.Item, PersonalTodoRetry.Describe(error), cancellationToken); }
+                    catch (Exception) when (!cancellationToken.IsCancellationRequested) { }
+                    if (retry is null)
+                    {
+                        await context.Platform.PersonalTodo.ReleaseAsync(
+                            claim.Item.Id, eventId, context.Platform.PersonalTodo.ClaimedRevision(claim.Item.Id, claim.Item.Revision),
+                            keepInProgress: false, cancellationToken);
+                        throw;
+                    }
+                    logger.LogWarning(error, "Personal to-do {ItemId} failed and was scheduled for retry or blocked with its cause.", claim.Item.Id);
+                    result = retry;
+                }
                 catch
                 {
                     await context.Platform.PersonalTodo.ReleaseAsync(

@@ -1,4 +1,4 @@
-SDK 5.39.0 adds inference-driven consultation recipient selection and bounded recovery from changing incident evidence. See [release notes](releases/5.39.0.md).
+SDK 5.40.0 adds inference-driven consultation recipient selection and bounded recovery from changing incident evidence. See [release notes](releases/5.40.0.md).
 
 SDK 5.38.0 adds shared exact document evidence, granted public research, retained artifact rework and inference-authored dependency decisions. See [release notes](releases/5.38.0.md).
 
@@ -118,7 +118,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.39.0 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.40.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -135,7 +135,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.39.0
+  --SdkVersion 5.40.0
 cd ResearchAgent
 dotnet test
 ```
@@ -143,7 +143,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.39.0
+dotnet add package CSweet.Agent.SDK --version 5.40.0
 ```
 
 ```csharp

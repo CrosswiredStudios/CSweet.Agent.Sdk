@@ -25,6 +25,7 @@ public sealed record PersonalTodoResult
     internal DateTimeOffset? NextReviewAt { get; }
     internal Guid? WaitingOnOrganizationUserId { get; }
     public PersonalTodoDependency? Dependency { get; init; }
+    internal string? RetryFailure { get; private init; }
 
     public static PersonalTodoResult Completed(string? summary = null) =>
         new(true, false, summary?.Trim() ?? string.Empty);
@@ -53,6 +54,20 @@ public sealed record PersonalTodoResult
         if (string.IsNullOrWhiteSpace(reason))
             throw new ArgumentException("Waiting work requires a durable reason.", nameof(reason));
         return new(false, true, reason.Trim(), nextReviewAt, waitingOnOrganizationUserId) { Dependency = dependency };
+    }
+
+    /// <summary>
+    /// The attempt failed for a reason that may clear without anyone acting, such as a rejected model reply,
+    /// a platform conflict or facts that changed mid-attempt. The runtime waits and retries with increasing
+    /// delay, and blocks the item with this exact failure only when the retry budget is spent. Use
+    /// <see cref="Blocked"/> when a named person or authority must act, and <see cref="WaitingUntil(DateTimeOffset, string, Guid?)"/>
+    /// when someone else owns the next step.
+    /// </summary>
+    public static PersonalTodoResult RetryLater(string failure)
+    {
+        if (string.IsNullOrWhiteSpace(failure))
+            throw new ArgumentException("A retry requires the failure it follows.", nameof(failure));
+        return new(false, true, failure.Trim()) { RetryFailure = failure.Trim() };
     }
 
     public static PersonalTodoResult Blocked(string reason)
