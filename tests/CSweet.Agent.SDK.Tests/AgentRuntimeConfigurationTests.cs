@@ -1,9 +1,25 @@
 using System.Text.Json;
+using CSweet.Agent.Testing;
 
 namespace CSweet.Agent.SDK.Tests;
 
 public sealed class AgentRuntimeConfigurationTests
 {
+    [Fact]
+    public async Task Test_host_dispatches_configuration_with_the_worker_result_contract()
+    {
+        var agent = new ConfigurableAgent();
+        var host = new AgentTestHost(agent, new AgentTestRuntime());
+        var update = new AgentConfigurationUpdate(Guid.NewGuid(), "1",
+            new Dictionary<string, JsonElement> { ["llmModel"] = JsonSerializer.SerializeToElement("new-model") },
+            ["llmModel"], 12, "digest");
+        var result = await host.ApplyConfigurationAsync(update);
+        Assert.True(result.Succeeded);
+        Assert.Equal(12, result.Value!.Value.GetProperty("appliedRevision").GetInt32());
+        Assert.Equal("Applied", result.Value.Value.GetProperty("result").GetString());
+        Assert.Equal("new-model", agent.CurrentModel);
+    }
+
     [Fact]
     public async Task RuntimeSessionConfiguration_IsAppliedBeforeAgentWork()
     {

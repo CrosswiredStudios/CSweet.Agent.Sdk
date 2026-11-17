@@ -8,6 +8,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\CSweet.Agent.Testing\CSweet.Agent.Testing.csproj" />
     <ProjectReference Include="..\..\src\CSweet.Agent.SDK\CSweet.Agent.SDK.csproj" />
   </ItemGroup>
   <ItemGroup>

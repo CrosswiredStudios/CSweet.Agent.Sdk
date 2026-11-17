@@ -92,10 +92,11 @@ public sealed partial class AuthoringKitQualityTests
     public void Version_IsSynchronizedAcrossAuthoringSurfaces()
     {
         var root = RepositoryRoot();
-        const string version = "5.40.0";
+        const string version = "5.41.0";
         var files = new[]
         {
             "src/CSweet.Agent.SDK/CSweet.Agent.SDK.csproj",
+            "src/CSweet.Agent.Testing/CSweet.Agent.Testing.csproj",
             "README.md",
             "AGENT_AUTHORING.md",
             "docs/creating-an-agent.md",
@@ -201,7 +202,7 @@ public sealed partial class AuthoringKitQualityTests
             "src",
             "CSweet.Agent.Template",
             "CSweet.Agent.Template.csproj"));
-        Assert.Contains("<PackageReference Include=\"CSweet.Agent.SDK\" Version=\"5.40.0\"", project);
+        Assert.Contains("<PackageReference Include=\"CSweet.Agent.SDK\" Version=\"5.41.0\"", project);
         Assert.DoesNotContain("<ProjectReference", project);
     }
 

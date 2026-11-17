@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using CSweet.Agent.Contracts.Packaging;
+using CSweet.Agent.Testing;
 using CSweet.WorkManagement.Contracts;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -49,6 +50,8 @@ public sealed class PersonalTodoLeaseLifecycleTests
             Assert.Equal(new long[] { 1, 2 }, transport.ProgressSequences);
             // A report the platform did not accept does not use up its number (QFN Games, 2026-11-11).
             Assert.Equal(firstProgressFails ? new long[] { 1, 1, 2 } : new long[] { 1, 2 }, transport.AttemptedSequences);
+            if (!replacement && !firstProgressFails)
+                await AssertStandaloneCompletionMatchesAsync(transport);
             var failure = await Assert.ThrowsAsync<PlatformCapabilityException>(() => agent.RetainedContext!.Platform.ReadBusinessProfileAsync());
             Assert.Equal("agent.context_ended", failure.FailureCode);
             Assert.False(failure.Retryable);
@@ -61,6 +64,26 @@ public sealed class PersonalTodoLeaseLifecycleTests
             await worker.StopAsync(default);
             File.Delete(path);
         }
+    }
+
+    private static async Task AssertStandaloneCompletionMatchesAsync(Transport worker)
+    {
+        PersonalTodoItem? ready = worker.Item;
+        CompletePersonalTodoItemRequest? completion = null;
+        var runtime = new AgentTestRuntime()
+            .RegisterCapability<ClaimPersonalTodoItemRequest, PersonalTodoClaim>(PersonalTodoCapabilities.Claim,
+                (_, _) => Task.FromResult(new PersonalTodoClaim(Interlocked.Exchange(ref ready, null))))
+            .RegisterCapability<CompletePersonalTodoItemRequest, PersonalTodoItem>(PersonalTodoCapabilities.Complete,
+                (request, _) => { completion = request; return Task.FromResult(worker.Item); })
+            .RegisterCapability<JsonElement, JsonElement>(PlatformCapabilities.LlmChatStream,
+                (_, _) => Task.FromResult(JsonSerializer.SerializeToElement(new { text = "Implemented" })));
+
+        var result = await new AgentTestHost(new TestAgent(), runtime).DeliverEventAsync(
+            PersonalTodoEvents.Available, new { }, worker.EventId);
+        Assert.True(result.Succeeded);
+        Assert.NotNull(worker.Completion);
+        Assert.Equal(worker.Completion, completion);
+        Assert.Equal(["coding", "tested"], runtime.Progress.Select(value => value.GetProperty("stage").GetString()));
     }
 
     private sealed class TestAgent : CSweetAgentBase
@@ -92,6 +115,9 @@ public sealed class PersonalTodoLeaseLifecycleTests
         public List<string> Failures { get; } = [];
         public List<long> ProgressSequences { get; } = [];
         public int PersonalClaims, CompletedItems, InferenceCalls;
+        public Guid EventId => eventId;
+        public PersonalTodoItem Item => item;
+        public CompletePersonalTodoItemRequest? Completion { get; private set; }
         private bool delivered;
         private readonly Guid eventId = Guid.NewGuid();
         private readonly Guid workId = Guid.NewGuid();
@@ -123,12 +149,17 @@ public sealed class PersonalTodoLeaseLifecycleTests
             object result = capability switch
             {
                 var c when c == PersonalTodoCapabilities.Claim => new PersonalTodoClaim(PersonalClaims++ == 0 ? item : null),
-                var c when c == PersonalTodoCapabilities.Complete => CompleteItem(),
+                var c when c == PersonalTodoCapabilities.Complete => CompleteItem(arguments),
                 _ => throw new InvalidOperationException("Unexpected capability: " + capability)
             };
             return Task.FromResult(JsonSerializer.SerializeToElement(result, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
         }
-        private PersonalTodoItem CompleteItem() { CompletedItems++; return item; }
+        private PersonalTodoItem CompleteItem(JsonElement arguments)
+        {
+            Completion = arguments.Deserialize<CompletePersonalTodoItemRequest>(CSweetAgentBase.SerializerOptions);
+            CompletedItems++;
+            return item;
+        }
         public async IAsyncEnumerable<JsonElement> InvokeStreamingAsync(string capability, JsonElement arguments,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {

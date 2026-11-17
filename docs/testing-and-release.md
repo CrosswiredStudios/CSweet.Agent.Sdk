@@ -93,3 +93,9 @@ reviewed revision.
 - Retried downstream failures resume their stage without repeating completed model generation.
 - README explains purpose, configuration, provided work, required authority, side effects, and
   limitations.
+
+## Testing SDK deliveries in a standalone checkout
+
+Reference `CSweet.Agent.Testing` 5.41.0 from the test project. Create an `AgentTestRuntime`, register the platform capabilities the scenario expects, and pass it with a real agent instance to `AgentTestHost`. Use `DeliverEventAsync` for work notifications or `DeliverCoordinationTurnAsync` for a turn with a known session revision. The host routes through the same dispatcher as the worker, including personal-work claiming, retry resolution and result submission. Inspect the requests accepted by your fixtures. Supply the same event ID to test redelivery. To simulate restart, construct a new agent and host over the retained fixture state.
+
+A missing capability fails the delivery even if a callback recovers from the denial. Register a handler that throws a specific `PlatformCapabilityException` to exercise an intentional platform rejection. The host has no lease broker, reconnect loop or model endpoint. Existing `AgentTestRuntime.DeliverEventAsync` keeps its callback-level behavior for existing tests.
