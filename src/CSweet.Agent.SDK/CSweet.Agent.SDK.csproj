@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <PackageId>CSweet.Agent.SDK</PackageId>
-    <Version>5.41.0</Version>
+    <Version>5.42.0</Version>
     <PackageVersion Condition="'$(CSweetAgentSdkPackageVersion)' != ''">$(CSweetAgentSdkPackageVersion)</PackageVersion>
     <Authors>C-Sweet</Authors>
     <Company>C-Sweet</Company>
@@ -31,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="CSweet.Agent.SDK.Tests" />
+    <InternalsVisibleTo Include="CSweet.Agent.Testing" />
     <PackageReference Include="Microsoft.Extensions.AI" Version="10.10.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />

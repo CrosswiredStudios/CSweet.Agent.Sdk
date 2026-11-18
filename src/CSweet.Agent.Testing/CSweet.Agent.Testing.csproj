@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>CSweet.Agent.Testing</PackageId>
+    <Version>5.42.0</Version>
+    <Authors>C-Sweet</Authors>
+    <Description>Run standalone agent scenarios through the C-Sweet SDK delivery dispatcher.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../CSweet.Agent.SDK/CSweet.Agent.SDK.csproj" />
+    <None Include="../../docs/testing-and-release.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+</Project>

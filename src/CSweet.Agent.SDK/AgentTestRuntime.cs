@@ -115,9 +115,13 @@ public sealed class AgentTestRuntime
     public AgentRuntimeContext CreateContext(
         string businessId = "test-organization",
         string installationId = "00000000-0000-0000-0000-000000000001",
-        AgentIdentity? identity = null)
+        AgentIdentity? identity = null) =>
+        CreateContext(businessId, installationId, identity, null);
+
+    internal AgentRuntimeContext CreateContext(
+        string businessId, string installationId, AgentIdentity? identity, Action<string>? onMissingCapability)
     {
-        var invoker = new TestInvoker(_capabilities, ObserveCollaboration);
+        var invoker = new TestInvoker(_capabilities, ObserveCollaboration, onMissingCapability);
         return new AgentRuntimeContext(
             businessId,
             installationId,
@@ -189,7 +193,8 @@ public sealed class AgentTestRuntime
 
     private sealed class TestInvoker(
         IReadOnlyDictionary<string, TestCapability> capabilities,
-        Action<string, JsonElement, JsonElement> observe)
+        Action<string, JsonElement, JsonElement> observe,
+        Action<string>? onMissingCapability)
         : IPlatformToolInvoker
     {
         public async Task<JsonElement> InvokeAsync(
@@ -198,10 +203,13 @@ public sealed class AgentTestRuntime
             CancellationToken cancellationToken = default)
         {
             if (!capabilities.TryGetValue(capability, out var registered))
+            {
+                onMissingCapability?.Invoke(capability);
                 throw new PlatformCapabilityException(
                     capability,
                     PlatformCapabilityErrorCode.Denied,
                     $"Capability '{capability}' is not registered in this test runtime.");
+            }
             var result = await registered.Handler(arguments, cancellationToken);
             observe(capability, arguments, result);
             return result;
@@ -232,7 +240,7 @@ public sealed class AgentTestRuntime
     {
         public Task ReportAsync(object? value, CancellationToken cancellationToken = default)
         {
-            progress.Add(JsonSerializer.SerializeToElement(value, JsonOptions));
+            lock (progress) progress.Add(JsonSerializer.SerializeToElement(value, JsonOptions));
             return Task.CompletedTask;
         }
     }
