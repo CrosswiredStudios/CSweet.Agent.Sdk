@@ -21,6 +21,10 @@ This repository contains one standalone C-Sweet protocol-v2 agent. Its purpose i
 
 ## Verification
 
+Every agent-flow fix includes a regression using the real agent in `CSweet.Agent.Testing.AgentTestHost`. Exercise the callback that failed, script its external inputs, and assert the durable effect that allows the next participant to proceed. For restart or redelivery, use a new agent instance over retained platform state, replay the original delivery ID and assert a single accepted effect.
+
+Add or extend a test marked `[Trait("Category", "AgentHarness")]`. Run the affected scenario and the full suite. Report the scenario name, executed count and before-and-after outcome. A cross-agent fix also exercises the receiving agent with the sending agent's actual output in the workflow suite.
+
 Run from the repository root:
 
 ```powershell

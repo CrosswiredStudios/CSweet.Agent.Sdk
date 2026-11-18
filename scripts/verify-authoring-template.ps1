@@ -62,6 +62,14 @@ try {
 
     Copy-Item -LiteralPath $nugetConfig -Destination (Join-Path $generated 'NuGet.config')
 
+    $instructions = Get-Content -Raw -LiteralPath (Join-Path $generated 'AGENTS.md')
+    $claude = Get-Content -Raw -LiteralPath (Join-Path $generated 'CLAUDE.md')
+    $copilot = Get-Content -Raw -LiteralPath (Join-Path $generated '.github/copilot-instructions.md')
+    if (!$instructions.Contains('AgentTestHost') -or !$instructions.Contains('AgentHarness') -or
+        $claude.Trim() -ne '@AGENTS.md' -or !$copilot.Contains('../AGENTS.md')) {
+        throw 'Generated agent instructions must expose the agent-flow test requirement to coding assistants.'
+    }
+
     $generatedProject = Get-Content `
         -LiteralPath (Join-Path $generated 'src/VerifiedAgent/VerifiedAgent.csproj') `
         -Raw
