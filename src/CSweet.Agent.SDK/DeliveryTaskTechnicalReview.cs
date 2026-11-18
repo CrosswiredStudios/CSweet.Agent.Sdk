@@ -25,47 +25,68 @@ public static class DeliveryTaskTechnicalReview
         if (candidate.TargetBranch != item.Delivery.BaseBranch || candidate.TargetCommitSha is not { Length: 40 or 64 } ||
             candidate.CandidateCommitSha.Length is not (40 or 64))
             throw new InvalidOperationException("The review must include the exact source, authorized story target and reviewable patch.");
-        var identity = BranchDiffTechnicalReview.Hash(JsonSerializer.Serialize(new { BranchDiffTechnicalReview.Policy,
-            item.Id, item.PlanningRevision, assignment.AssignmentRevision, assignment.DeliveryPlanId, assignment.ScopeRevision,
-            item.Planning, item.Delivery, candidate.PublicationId, candidate.CandidateCommitSha, candidate.TargetCommitSha,
-            candidate.PatchDigest }, Json));
-        var stateKey = $"task-review:{item.Id:N}:{identity[..32]}";
-        async Task<BranchDiffTechnicalReview.PageReview?> Load(int offset, CancellationToken token)
+        // File judgments only see this scope and their own source. Publication identity and validation
+        // receipts are checked on every final decision. A new target or changed assignment cannot inherit them.
+        var scope = BranchDiffTechnicalReview.Hash(JsonSerializer.Serialize(new { BranchDiffTechnicalReview.Policy,
+            assignment.BoardId, item.Id, item.PlanningRevision, assignment.DeliveryPlanId, assignment.ScopeRevision,
+            context.InstallationId, item.Planning, item.Delivery, candidate.RepositoryId, candidate.SourceBranch,
+            candidate.TargetBranch, candidate.TargetCommitSha }, Json));
+        string Key(ReviewSection section) =>
+            $"task-file:{item.Id:N}:{BranchDiffTechnicalReview.Hash(scope + ":" + section.CacheKey)}";
+        async Task<BranchDiffTechnicalReview.FileReceipt?> Load(ReviewSection section, CancellationToken token)
         {
-            var state = await context.Platform.ReadOperatingStateAsync<BranchDiffTechnicalReview.PageReview>($"{stateKey}:{offset}", token);
-            if (state is not null && (state.SchemaId != BranchDiffTechnicalReview.Policy || state.SchemaVersion != 1))
-                throw new InvalidOperationException("The retained review has a different review policy.");
+            var state = await context.Platform.ReadOperatingStateAsync<BranchDiffTechnicalReview.FileReceipt>(Key(section), token);
+            if (state is not null && (state.SchemaId != BranchDiffTechnicalReview.Policy || state.SchemaVersion != 1 ||
+                state.DecisionFingerprint != scope))
+                throw new InvalidOperationException("Retained file evidence belongs to a different review scope.");
             return state?.Payload;
         }
-        async Task Save(BranchDiffTechnicalReview.PageReview page, CancellationToken token)
+        async Task Save(ReviewSection section, BranchDiffTechnicalReview.FileReceipt receipt, CancellationToken token)
         {
-            var key = $"{stateKey}:{page.Offset}";
+            var key = Key(section);
+            BranchDiffTechnicalReview.FileReceipt? accepted;
             try
             {
-                var stored = await context.Platform.WriteOperatingStateAsync(new WriteAgentOperatingStateRequest<BranchDiffTechnicalReview.PageReview>(
-                    key, BranchDiffTechnicalReview.Policy, 1, "Active", new Dictionary<string,string> { ["review"] = identity }, [],
-                    identity, [], assignment.StageExecutionId, page, null, key + ":accepted"), token);
-                // An idempotent replay may return the first writer's different judgment without a CAS conflict.
-                // Never synthesize from content that differs from the accepted durable ledger.
-                if (JsonSerializer.Serialize(stored.Payload, Json) != JsonSerializer.Serialize(page, Json))
-                    throw new InvalidOperationException("A concurrent review already retained different page evidence; resume from the accepted ledger.");
+                var stored = await context.Platform.WriteOperatingStateAsync(new WriteAgentOperatingStateRequest<BranchDiffTechnicalReview.FileReceipt>(
+                    key, BranchDiffTechnicalReview.Policy, 1, "Active", new Dictionary<string,string> { ["scope"] = scope }, [],
+                    scope, [], assignment.StageExecutionId, receipt, null, key + ":accepted"), token);
+                accepted = stored.Payload;
             }
             catch (PlatformCapabilityException error) when (error.Code == PlatformCapabilityErrorCode.Conflict)
             {
-                var concurrent = await Load(page.Offset, token);
-                if (JsonSerializer.Serialize(concurrent, Json) != JsonSerializer.Serialize(page, Json)) throw;
+                accepted = await Load(section, token);
             }
+            if (JsonSerializer.Serialize(accepted, Json) != JsonSerializer.Serialize(receipt, Json))
+                throw new InvalidOperationException("A concurrent review retained different file evidence; resume from the accepted ledger.");
+        }
+        var candidateFingerprint = BranchDiffTechnicalReview.Hash(JsonSerializer.Serialize(new { scope, assignment.AssignmentRevision,
+            candidate.PublicationId, candidate.CandidateCommitSha, candidate.PatchDigest, candidate.ChangedFiles,
+            candidate.RemovedFiles, candidate.ImplementationEvidence }, Json));
+        var historyKey = $"task-review-open:{item.Id:N}:{scope}";
+        AgentOperatingState<BranchDiffTechnicalReview.ReviewHistory>? history = null;
+        async Task<BranchDiffTechnicalReview.ReviewHistory?> ReadHistory(CancellationToken token)
+        {
+            history = await context.Platform.ReadOperatingStateAsync<BranchDiffTechnicalReview.ReviewHistory>(historyKey, token);
+            if (history is not null && (history.SchemaId != BranchDiffTechnicalReview.Policy || history.SchemaVersion != 1 ||
+                history.DecisionFingerprint != scope))
+                throw new InvalidOperationException("Earlier findings belong to a different review scope.");
+            return history?.Payload;
         }
         var result = await BranchDiffTechnicalReview.ExecuteAsync(candidate, item.Planning,
             (read, token) => context.Platform.SourceControl.ReviewMergeAsync(new(item.Id, assignment.AssignmentRevision,
                 $"task-review:{assignment.StageExecutionId:N}:{assignment.AttemptId:N}:{read.Offset}")
-                { IncludePatch = false, DiffRead = read }, token), client, ct, Load, Save);
+                { IncludePatch = false, DiffRead = read }, token), client, ct, Load, Save, ReadHistory, candidateFingerprint);
         var latest = await context.Platform.SourceControl.ReviewMergeAsync(new(item.Id, assignment.AssignmentRevision,
             $"task-review:{assignment.AttemptId:N}:final") { IncludePatch = false }, ct);
         var current = await context.Platform.Work.ReadItemAsync(new(assignment.BoardId, item.Id), ct);
         if (latest.PublicationId != candidate.PublicationId || latest.CandidateCommitSha != candidate.CandidateCommitSha ||
             latest.TargetCommitSha != candidate.TargetCommitSha || latest.PatchDigest != candidate.PatchDigest ||
+            latest.RepositoryId != candidate.RepositoryId || latest.TargetBranch != candidate.TargetBranch ||
+            !latest.ImplementationEvidence.SequenceEqual(candidate.ImplementationEvidence) ||
+            !latest.ChangedFiles.SequenceEqual(candidate.ChangedFiles) || !latest.RemovedFiles.SequenceEqual(candidate.RemovedFiles) ||
             current.PlanningRevision != item.PlanningRevision ||
+            current.StageAssignments.Where(x => x.StageKey is "development" or "specialist-execution")
+                .Any(x => x.AgentInstallationId.ToString() == context.InstallationId) ||
             JsonSerializer.Serialize(current.Planning, Json) != JsonSerializer.Serialize(item.Planning, Json) ||
             JsonSerializer.Serialize(current.Delivery, Json) != JsonSerializer.Serialize(item.Delivery, Json) ||
             current.StageAssignments.Single(x => x.StageKey == "technical-review").AgentInstallationId.ToString() != context.InstallationId)
@@ -74,6 +95,20 @@ public static class DeliveryTaskTechnicalReview
             string.IsNullOrWhiteSpace(result.Summary) || result.Findings.Any(string.IsNullOrWhiteSpace) ||
             (result.Approved ? result.Findings.Count != 0 : result.Findings.Count == 0))
             throw new InvalidOperationException("Technical Review must bind both exact commits and return a consistent decision.");
+        if (result.SectionCount > 0 && !result.ReusedVerdict)
+        {
+            var updated = new BranchDiffTechnicalReview.ReviewHistory(candidate.CandidateCommitSha, result.OpenFindings, candidateFingerprint, result);
+            // Large verdicts can still be delivered. Keep open findings and re-synthesize on replay.
+            if (JsonSerializer.Serialize(updated, Json).Length > AgentOperatingStateValidation.MaximumPayloadCharacters)
+                updated = updated with { Verdict = null };
+            var revision = history?.Revision ?? 0;
+            var fingerprint = BranchDiffTechnicalReview.Hash(JsonSerializer.Serialize(new { scope, revision, updated }, Json));
+            var stored = await context.Platform.WriteOperatingStateAsync(new WriteAgentOperatingStateRequest<BranchDiffTechnicalReview.ReviewHistory>(
+                historyKey, BranchDiffTechnicalReview.Policy, 1, "Active", new Dictionary<string, string> { ["scope"] = scope },
+                [], scope, [], assignment.StageExecutionId, updated, revision, $"review-findings:{fingerprint}"), ct);
+            if (JsonSerializer.Serialize(stored.Payload, Json) != JsonSerializer.Serialize(updated, Json))
+                throw new InvalidOperationException("Concurrent review changed the open findings; resume against the accepted record.");
+        }
         return AgentWorkResult.Success(Outcome(assignment, result));
     }
     internal static WorkExecutionOutcomeV1 Outcome(WorkExecutionAssignment assignment, BranchDiffTechnicalReview.Decision result)

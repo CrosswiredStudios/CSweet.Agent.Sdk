@@ -82,7 +82,7 @@ internal static class TechnicalReviewJson
     };
     private static int? ArrayBound(string name) => name switch
     {
-        "blockingFindings" => FindingLimit,
+        "blockingFindings" or "additionalFindings" => FindingLimit,
         "observations" or "questions" => NoteLimit,
         "evidenceOffsets" => OffsetLimit,
         _ => null
@@ -132,7 +132,7 @@ internal static class TechnicalReviewJson
                             foreach (var item in property.Value.EnumerateArray()) Text(item, $"{child}[{index++}]", TextCharacters);
                         }
                     }
-                    if (property.Name is "blockingFindings" or "criteria" or "resolutions" && property.Value.ValueKind == JsonValueKind.Array)
+                    if (property.Name is "blockingFindings" or "additionalFindings" or "criteria" or "resolutions" && property.Value.ValueKind == JsonValueKind.Array)
                     {
                         var index = 0;
                         foreach (var item in property.Value.EnumerateArray())

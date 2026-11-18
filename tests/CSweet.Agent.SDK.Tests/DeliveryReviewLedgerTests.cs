@@ -19,7 +19,7 @@ public sealed class DeliveryReviewLedgerTests
             Delivery=new(repo,["Implement"],["Works"]) {DeliveryPlanId=plan,BaseBranch="story"},
             StageAssignments=[new("technical-review","AgentInstallation",AgentInstallationId:Guid.Parse("00000000-0000-0000-0000-000000000001"))] };
         var reference=new GitMergeReview(publication,repo,itemId,"Test",new string('a',40),null,"",[],[],"AwaitingValidation") {
-            TargetBranch="story",TargetCommitSha=new string('b',40),PatchDigest=new string('c',64),ChangedFiles=["source.js"] };
+            TargetBranch="story",TargetCommitSha=new string('b',40),PatchDigest=BranchDiffTechnicalReview.Hash("abc"),ChangedFiles=["source.js"] };
         var runtime=new AgentTestRuntime().RegisterCapability<WorkItemReference,WorkItem>(WorkManagementCapabilityNames.ItemRead,(_,_)=>Task.FromResult(item))
             .RegisterCapability<ReviewGitMergeRequest,GitMergeReview>(GitMergeCapabilities.Review,(r,_)=>Task.FromResult(r.DiffRead is null?reference:
                 reference with {DiffPage=new(reference.PatchDigest!,0,3,"abc",null)}))

@@ -10,23 +10,23 @@ namespace CSweet.Agent.SDK.Tests;
 public sealed class DeclaredVerificationReviewTests
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-    private static readonly string Source = new('a', 40), Target = new('b', 40), Digest = new('c', 64);
+    private static readonly string Source = new('a', 40), Target = new('b', 40);
     private static readonly WorkItemVerificationRequirement Canvas = new(WorkItemVerificationKinds.BrowserSmoke) { RequireCanvas = true };
 
     private static GitMergeReview Reference(params GitValidationResult[] evidence) =>
         new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Game", Source, null, "", [], [], "AwaitingValidation")
-        { TargetCommitSha = Target, TargetBranch = "story", PatchDigest = Digest, ChangedFiles = ["src/GameScene.js"], ImplementationEvidence = evidence };
+        { TargetCommitSha = Target, TargetBranch = "story", PatchDigest = BranchDiffTechnicalReview.Hash(new string('x',100)), ChangedFiles = ["src/GameScene.js"], ImplementationEvidence = evidence };
 
     private static WorkItemPlanningSpecification Planning(IReadOnlyList<WorkItemVerificationRequirement>? verifications) =>
         new(["Break blocks"], ["Ball hits and breaks a block"]) { Verifications = verifications };
 
     private static Task<GitMergeReview> Read(GitMergeReview reference, GitReviewDiffRead read) =>
-        Task.FromResult(reference with { DiffPage = new(Digest, read.Offset, 100, new string('x', 100), null) });
+        Task.FromResult(reference with { DiffPage = new(reference.PatchDigest!, read.Offset, 100, new string('x', 100), null) });
 
     private static string Respond(JsonElement input) => input.TryGetProperty("page", out _)
         ? JsonSerializer.Serialize(new BranchDiffTechnicalReview.PageContent("Reviewed", [], [], []), Json)
-        : JsonSerializer.Serialize(new BranchDiffTechnicalReview.FinalContent(true, "Approved", [], [],
-            [new("Ball hits and breaks a block", true, "Collision handler destroys the block", [0])]), Json);
+        : JsonSerializer.Serialize(new BranchDiffTechnicalReview.FinalJudgment("Approved", [], [],
+            [new(true, "Collision handler destroys the block", [0])]), Json);
 
     [Fact]
     public async Task A_missing_declared_receipt_is_rejected_without_calling_the_model()
@@ -49,7 +49,7 @@ public sealed class DeclaredVerificationReviewTests
         string? note = null;
         var client = new BranchDiffTechnicalReviewTests.Client((_, input) =>
         {
-            note ??= input.GetProperty("reference").GetProperty("declaredVerification").GetString();
+            if (!input.TryGetProperty("page", out var page)) note = input.GetProperty("reference").GetProperty("declaredVerification").GetString();
             return Respond(input);
         });
 

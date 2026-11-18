@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>CSweet.Agent.Testing</PackageId>
-    <Version>5.42.0</Version>
+    <Version>5.43.1</Version>
     <Authors>C-Sweet</Authors>
     <Description>Run standalone agent scenarios through the C-Sweet SDK delivery dispatcher.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

@@ -24,7 +24,7 @@ public sealed class DeliveryReviewStageBoundaryTests
             Delivery = new(repository, ["Pin Phaser"], [criterion]) { DeliveryPlanId = plan, BaseBranch = "story" },
             StageAssignments = [new("technical-review", "AgentInstallation", AgentInstallationId: Guid.Parse("00000000-0000-0000-0000-000000000001"))] };
         var reference = new GitMergeReview(Guid.NewGuid(), repository, itemId, "PRISM BREAK", new string('a', 40), null, "", [], [], "AwaitingValidation") {
-            TargetBranch = "story", TargetCommitSha = new string('b', 40), PatchDigest = new string('c', 64), ChangedFiles = ["package.json", "package-lock.json"] };
+            TargetBranch = "story", TargetCommitSha = new string('b', 40), PatchDigest = BranchDiffTechnicalReview.Hash(new string('x', 90)), ChangedFiles = ["package.json", "package-lock.json"] };
         // A page assessed under the former policy must not be reused under the corrected contract.
         var oldIdentity = BranchDiffTechnicalReview.Hash(JsonSerializer.Serialize(new { Policy = "bounded-review-2026-10-15",
             item.Id, item.PlanningRevision, assignment.AssignmentRevision, assignment.DeliveryPlanId, assignment.ScopeRevision,
@@ -47,17 +47,17 @@ public sealed class DeliveryReviewStageBoundaryTests
         var defect = new BranchDiffTechnicalReview.Issue("package.json", scenario == "code-defect" ? "Phaser uses a range" : "Focused installed-version check is missing",
             "Visible candidate evidence", "Correct the candidate pin or provide the required executed check");
         using var client = new BranchDiffTechnicalReviewTests.Client((messages, input) => {
+            if (input.TryGetProperty("page", out _))
+                return JsonSerializer.Serialize(new BranchDiffTechnicalReview.PageContent("Candidate pin/lockfile inspected; integration remains downstream.",
+                    approved ? [] : [defect], ["No integrated target revision is claimed by candidate review."], []), Json);
             var policy = messages[0].Text;
             Assert.Contains("pre-integration candidate source review", policy);
             Assert.Contains("Missing target-branch integration alone is not a code-review defect", policy);
             Assert.Contains("independent QA and final acceptance remain mandatory downstream gates", policy);
-            if (input.TryGetProperty("page", out _))
-                return JsonSerializer.Serialize(new BranchDiffTechnicalReview.PageContent("Candidate pin/lockfile inspected; integration remains downstream.",
-                    approved ? [] : [defect], ["No integrated target revision is claimed by candidate review."], []), Json);
             var findings = input.GetProperty("findings").EnumerateArray().ToArray();
-            return JsonSerializer.Serialize(new BranchDiffTechnicalReview.FinalContent(approved, "Candidate obligations reviewed; platform integration and QA remain downstream.", [],
-                findings.Select(x => new BranchDiffTechnicalReview.Resolution(x.GetProperty("findingId").GetString()!, "unresolved", "Actual candidate defect remains", [0])).ToArray(),
-                [new(criterion, approved, approved ? "Exact candidate pin and lockfile with supplied focused validation; integration and QA are pending downstream." : "Required candidate evidence is unsatisfied.", [0])]), Json);
+            return JsonSerializer.Serialize(new BranchDiffTechnicalReview.FinalJudgment("Candidate obligations reviewed; platform integration and QA remain downstream.", [],
+                findings.Select(x => new BranchDiffTechnicalReview.ResolutionJudgment(false, "Actual candidate defect remains", [0])).ToArray(),
+                [new(approved, approved ? "Exact candidate pin and lockfile with supplied focused validation; integration and QA are pending downstream." : "Required candidate evidence is unsatisfied.", [0])]), Json);
         });
         var result = await DeliveryTaskTechnicalReview.ExecuteAsync(assignment, runtime.CreateContext(), client, default);
         Assert.True(result.Succeeded);
@@ -66,7 +66,7 @@ public sealed class DeliveryReviewStageBoundaryTests
         Assert.Equal(criterion, outcome.Output.GetProperty("criteria")[0].GetProperty("criterionText").GetString());
         Assert.Equal(reference.CandidateCommitSha, outcome.Output.GetProperty("sourceCommitSha").GetString());
         Assert.Equal(reference.TargetCommitSha, outcome.Output.GetProperty("targetCommitSha").GetString());
-        Assert.Equal(2, client.Calls); Assert.Single(reads); Assert.Single(saved);
+        Assert.Equal(2, client.Calls); Assert.Equal(2, reads.Count); Assert.Equal(2, saved.Count);
         Assert.Equal(reads[0], saved[0]);
     }
 }

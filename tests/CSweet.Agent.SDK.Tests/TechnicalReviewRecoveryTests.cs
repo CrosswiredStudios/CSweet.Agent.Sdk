@@ -115,14 +115,14 @@ public sealed class TechnicalReviewRecoveryTests
         const int total = 42285;
         var reference = new GitMergeReview(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Game", new string('a', 40), null, "", [], [], "AwaitingValidation")
         {
-            TargetCommitSha = new string('b', 40), TargetBranch = "story", PatchDigest = new string('c', 64), ChangedFiles = ["src/audio/AudioManager.ts"]
+            TargetCommitSha = new string('b', 40), TargetBranch = "story", PatchDigest = BranchDiffTechnicalReview.Hash(new string('x', total)), ChangedFiles = ["src/audio/AudioManager.ts"]
         };
         var reads = new List<int>();
         var loads = new List<int>();
         var client = new Client((call, messages) =>
         {
             Assert.DoesNotContain("\"page\":", messages[1].Text!);
-            return Encode(call == 1 ? Final(16001, 16002) : Final());
+            return Encode(new BranchDiffTechnicalReview.FinalJudgment(call == 1 ? new string('s', 16001) : "Reviewed", [], [], [new(true, "Accepted evidence", [0])]));
         });
         var result = await BranchDiffTechnicalReview.ExecuteAsync(reference,
             new WorkItemPlanningSpecification(["Requirements"], ["Exact accepted criterion"], []),
@@ -132,13 +132,14 @@ public sealed class TechnicalReviewRecoveryTests
                 var count = Math.Min(12000, total - read.Offset);
                 return Task.FromResult(reference with { DiffPage = new(reference.PatchDigest, read.Offset, total, new string('x', count), read.Offset + count < total ? read.Offset + count : null) });
             }, client, default,
-            (offset, _) =>
+            (section, _) =>
             {
+                var offset = section.Offset;
                 loads.Add(offset);
                 var count = Math.Min(12000, total - offset);
-                return Task.FromResult<BranchDiffTechnicalReview.PageReview?>(new(offset, count, total, BranchDiffTechnicalReview.Hash(new string('x', count)),
+                return Task.FromResult<BranchDiffTechnicalReview.FileReceipt?>(new( BranchDiffTechnicalReview.Hash(new string('x', count)),
                     new("Previously accepted source review", [], [], [])));
-            }, (_, _) => throw new Exception("Saved pages must not be rewritten."));
+            }, (_, _, _) => throw new Exception("Saved pages must not be rewritten."));
         Assert.True(result.Approved);
         Assert.Equal(total, result.CoveredCharacters);
         Assert.Equal(new[] { 0, 12000, 24000, 36000 }, reads);
