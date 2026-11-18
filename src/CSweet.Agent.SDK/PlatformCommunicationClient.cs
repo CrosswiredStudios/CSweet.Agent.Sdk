@@ -250,9 +250,22 @@ public sealed record RespondToAgentCoordinationRequest(
 
 public sealed record ReadAgentCoordinationRequest(Guid SessionId);
 
-public sealed record ListAgentCoordinationRequest(Guid? ChatId = null, bool ActiveOnly = false);
+public sealed record BoardContributionQuery(Guid WorkstreamId, Guid TeamId, Guid BoardId,
+    Guid TargetOrganizationUserId, string RequestType, string RequestKey, Guid? AfterSessionId = null);
 
-public sealed record AgentCoordinationSessions(IReadOnlyList<AgentCoordinationSession> Sessions);
+public sealed record BoardContributionPage(IReadOnlyList<Guid> SessionIds, Guid? NextCursor);
+
+public sealed record ListAgentCoordinationRequest(Guid? ChatId = null, bool ActiveOnly = false)
+{
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public BoardContributionQuery? BoardContributions { get; init; }
+}
+
+public sealed record AgentCoordinationSessions(IReadOnlyList<AgentCoordinationSession> Sessions)
+{
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public BoardContributionPage? Contributions { get; init; }
+}
 
 public sealed record ResumeAgentCoordinationRequest(
     Guid SessionId,
@@ -543,6 +556,14 @@ public sealed class PlatformCommunicationClient
         CancellationToken token = default) =>
         _platform.InvokeAsync<ListAgentCoordinationRequest, AgentCoordinationSessions>(
             CommunicationCapabilities.CoordinationList, new(chatId, activeOnly), token);
+
+    /// <summary>Discovers the caller's board requests by their original artifact identity, without loading transcripts.</summary>
+    public async Task<BoardContributionPage> DiscoverBoardContributionsAsync(BoardContributionQuery query, CancellationToken token = default)
+    {
+        var result = await _platform.InvokeAsync<ListAgentCoordinationRequest, AgentCoordinationSessions>(
+            CommunicationCapabilities.CoordinationList, new() { BoardContributions = query }, token);
+        return result.Contributions ?? throw new InvalidOperationException("The platform must support board contribution discovery.");
+    }
 
     public Task<AgentCoordinationSession> ResumeCoordinationAsync(
         Guid sessionId,
