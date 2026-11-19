@@ -24,26 +24,28 @@ public sealed class WorkAvailabilityContextTests
     }
 
     [Fact]
-    public async Task CachedLegacyZeroIsNotReplayedAndChangedAvailabilityGetsFreshOwnerJudgment()
+    public async Task AssignedAgentCoversAllEffortAcrossProjectsAndCalendarChangesDoNotInvalidateIt()
     {
         var f = new Fixture();
         var input = JsonSerializer.SerializeToElement(new { f.BoardId, RoleKey = "operations-analyst", PlanningRevision = 1,
-            PlanningDigest = "accepted", RequestFingerprint = "request", WorkItems = new[] { new { WorkItemId = f.Proposed, outcome = "Research note" } } });
+            PlanningDigest = "accepted", RequestFingerprint = "request", WorkItems = new[] { new { WorkItemId = f.Proposed, outcome = "Research note" },
+                new { WorkItemId = Guid.NewGuid(), outcome = "Verify findings" } } });
         var oldKey = WorkPlanningJudgments.EstimateStateKey("request", input);
-        f.States[oldKey] = f.State(oldKey, JsonSerializer.SerializeToElement(new WorkPlanningJudgments.Assessment([new(8, "medium", "Research")], 0, ["No calendar allocation supplied"], [])));
+        f.States[oldKey] = f.State(oldKey, JsonSerializer.SerializeToElement(new WorkPlanningJudgments.Assessment([new(8, "medium", "Research"), new(13, "low", "Verification")], 0, ["No calendar allocation supplied"], [])));
         using var client = new Replies();
         var first = await WorkPlanningJudgments.EstimateAsync(input, "request", f.Context, client, null, default);
         var replay = await WorkPlanningJudgments.EstimateAsync(input, "request", f.Context, client, null, default);
         Assert.Equal(1, client.Calls);
-        Assert.Equal(5, WorkCapacityAssessment.FromEvidence(first.Artifact!.Payload, 5).OfferedPoints);
+        Assert.Equal(21, WorkCapacityAssessment.FromEvidence(first.Artifact!.Payload, 21).OfferedPoints);
         Assert.Equal(first.Artifact.Payload.GetRawText(), replay.Artifact!.Payload.GetRawText());
         f.CalendarRevision++;
         var changed = await WorkPlanningJudgments.EstimateAsync(input, "request", f.Context, client, null, default);
-        Assert.Equal(2, client.Calls);
-        Assert.Equal("Unavailable", WorkCapacityAssessment.FromEvidence(changed.Artifact!.Payload, 0).State);
-        Assert.NotEqual(first.Artifact.Payload.GetProperty("AssessmentStateKey").GetString(), changed.Artifact.Payload.GetProperty("AssessmentStateKey").GetString());
+        Assert.Equal(1, client.Calls);
+        Assert.Equal(21, changed.Artifact!.Payload.GetProperty("AvailableSprintCapacity").GetDecimal());
+        Assert.Equal(first.Artifact.Payload.GetProperty("AssessmentStateKey").GetString(), changed.Artifact.Payload.GetProperty("AssessmentStateKey").GetString());
         Assert.True(f.States.ContainsKey(oldKey));
-        Assert.Contains("Own booking", client.LastInput);
+        Assert.DoesNotContain("Own booking", client.LastInput);
+        Assert.DoesNotContain("Other committed work", client.LastInput);
         Assert.DoesNotContain("Another person's", client.LastInput);
     }
 
@@ -104,10 +106,11 @@ public sealed class WorkAvailabilityContextTests
         public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default)
         {
             LastInput = messages.Last().Text!;
-            var points = Calls++ == 0 ? 5 : 0;
+            Calls++;
             return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, JsonSerializer.Serialize(new {
-                estimates = new[] { new { points = 8, confidence = "medium", rationale = "Research uncertainty" } },
-                capacityAssessment = new { offeredPoints = points, rationale = "Current independently reviewed commitments" }, assumptions = Array.Empty<string>(), blockers = Array.Empty<string>() }))));
+                estimates = new[] { new { points = 8, confidence = "medium", rationale = "Research uncertainty" },
+                    new { points = 13, confidence = "low", rationale = "Integration and verification" } },
+                assumptions = Array.Empty<string>(), blockers = Array.Empty<string>() }))));
         }
         public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public object? GetService(Type serviceType, object? serviceKey = null) => null;

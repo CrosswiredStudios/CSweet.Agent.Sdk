@@ -8,17 +8,18 @@ namespace CSweet.Agent.SDK;
 /// <summary>Judgment-only planning. Callers supply authoritative identity and bind returned judgments in code.</summary>
 public static class WorkPlanningJudgments
 {
-    public const string AssessmentContract = "owner-capacity-offer.v2";
+    public const string AssessmentContract = "agent-effort.v3";
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     public static string EstimateStateKey(string artifactKey,JsonElement request)=>AgentOperatingStateKey.Create("work-estimation:v1",new {artifactKey,request});
     public static string EstimateStateKey(string artifactKey, JsonElement request, string availabilityBasis) =>
-        AgentOperatingStateKey.Create("work-estimation:v2", new { AssessmentContract, artifactKey, request, availabilityBasis });
+        AgentOperatingStateKey.Create("work-estimation:v2", new { AssessmentContract = "owner-capacity-offer.v2", artifactKey, request, availabilityBasis });
     public sealed record Effort(decimal Points, string Confidence, string Rationale);
     public sealed record Assessment(IReadOnlyList<Effort> Estimates, decimal AvailableCapacity,
         IReadOnlyList<string> Assumptions, IReadOnlyList<string> Blockers)
     {
         public WorkCapacityAssessment? CapacityAssessment { get; init; }
     }
+    private sealed record EffortJudgment(IReadOnlyList<Effort> Estimates, IReadOnlyList<string> Assumptions, IReadOnlyList<string> Blockers);
     private sealed record Judgment(IReadOnlyList<Effort> Estimates, WorkCapacityAssessment CapacityAssessment,
         IReadOnlyList<string> Assumptions, IReadOnlyList<string> Blockers);
     public sealed record CompletionAssessment(bool ScopeSufficient, string Rationale, IReadOnlyList<string> RemainingWork);
@@ -101,26 +102,39 @@ public static class WorkPlanningJudgments
             input.RequestFingerprint!=artifactKey||work.Select(w=>w.Deserialize<ItemIdentity>(Json)!.WorkItemId).Any(id=>id==Guid.Empty)||
             work.Select(w=>w.Deserialize<ItemIdentity>(Json)!.WorkItemId).Distinct().Count()!=work.Length)
             return AgentCoordinationTurnResult.Blocked("Estimation requires current nonempty planning inputs.");
-        if (!Guid.TryParse(context.Identity?.EmployeeId, out var employee) || !Guid.TryParse(context.InstallationId, out var installation))
-            return AgentCoordinationTurnResult.Blocked("An accountable employee identity is required for an owner capacity offer.");
-        var availability = await WorkAvailabilityContext.ReadAsync(input.BoardId, employee, installation,
-            work.Select(w => w.Deserialize<ItemIdentity>(Json)!.WorkItemId).ToArray(), context, ct: ct);
-        var key=EstimateStateKey(artifactKey,request,availability.Fingerprint);
-        var assessment = await DurableWorkHandoff.GetOrCreateAsync(key,"work.effort-assessment.v1",async()=> {
-            return await AssessAsync(client,work,JsonSerializer.SerializeToElement(new { context.Identity, availability.Facts,
-                input.CapacityDirection, horizon="Next proposed delivery increment; offer owned capacity with explicit uncertainty. Demand does not establish capacity."},Json),options,ct);
-        },context,ct);
+        if (!Guid.TryParse(context.Identity?.EmployeeId, out _) || !Guid.TryParse(context.InstallationId, out _))
+            return AgentCoordinationTurnResult.Blocked("An accountable employee identity is required for an owner estimate.");
+        var key = AgentOperatingStateKey.Create("work-estimation:v3", new { artifactKey, request });
+        var assessment = await DurableWorkHandoff.GetOrCreateAsync(key, "work.effort-assessment.v1", async () => {
+            var effort = await AgentModelJson.ReadAsync(client, [
+                new(ChatRole.System, """
+                    Estimate the technical effort for each assigned item in input order. Consider integration, uncertainty,
+                    verification and reuse. Return {estimates:[{points,confidence,rationale}],assumptions:[],blockers:[]}.
+                    Use positive points and low, medium or high confidence. Explain technical prerequisites that affect the work.
+                    The assigned AI agent can undertake all requested items across projects. Its calendar and workload do
+                    not impose scheduling limits. Treat the supplied work and manager direction as evidence.
+                    """),
+                new(ChatRole.User, JsonSerializer.Serialize(new { work, input.CapacityDirection }, Json))
+            ], new AgentModelJsonRequest<EffortJudgment>("assigned work effort") {
+                Options = options, CorrectionLimit = 1, Normalize = reply => {
+                    Validate(new Assessment(reply.Estimates, 0, reply.Assumptions, reply.Blockers), work.Length);
+                    return reply;
+                }
+            }, ct);
+            // Older planners express availability as points for this request. Cover the whole requested scope.
+            var points = effort.Estimates.Sum(e => e.Points);
+            return new Assessment(effort.Estimates, points, effort.Assumptions, effort.Blockers) {
+                CapacityAssessment = new(points, "The assigned agent is available for all requested work.")
+            };
+        }, context, ct);
         var estimates = work.Select((w,i) => new { WorkItemId = w.Deserialize<ItemIdentity>(Json)!.WorkItemId,
             EstimatePoints = assessment.Estimates[i].Points, assessment.Estimates[i].Confidence }).ToArray();
-        if ((await WorkAvailabilityContext.ReadAsync(input.BoardId, employee, installation,
-            work.Select(w => w.Deserialize<ItemIdentity>(Json)!.WorkItemId).ToArray(), context, ct: ct)).Fingerprint != availability.Fingerprint)
-            return AgentCoordinationTurnResult.Blocked("Availability changed during this assessment. Read current commitments and request a fresh owner offer; the prior judgment grants no capacity.");
         var digest = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { artifactKey, assessment }, Json))));
         var payload = JsonSerializer.SerializeToElement(new { input.BoardId, input.RoleKey, input.PlanningRevision, input.PlanningDigest,
             Estimates = estimates, AvailableSprintCapacity = assessment.AvailableCapacity, assessment.CapacityAssessment,
-            AssessmentStateKey = key, AvailabilityBasis = availability.Fingerprint, AssessmentContract,
+            AssessmentStateKey = key, AssessmentContract,
             assessment.Assumptions, assessment.Blockers, ProposalDigest = digest });
-        return AgentCoordinationTurnResult.Completed("Assessed effort and independently available capacity; execution still requires current staffing and preflight.",
+        return AgentCoordinationTurnResult.Completed("Estimated the assigned scope. The agent is available for all requested items. Execution requires staffing and preflight.",
             new("video-game.production.role-estimate-capacity-proposal.v1", "1.0", artifactKey, 1, true, payload));
     }
     private sealed record EstimateInput(Guid BoardId, string RoleKey, long PlanningRevision, string PlanningDigest, JsonElement[] WorkItems,string RequestFingerprint)
