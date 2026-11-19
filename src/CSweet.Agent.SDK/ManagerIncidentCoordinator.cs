@@ -131,7 +131,8 @@ public static class ManagerIncidentCoordinator
                 at most 25 words about confirmed attempts, without repeating the summary. nextStep:
                 at most 25 words stating the owner's next decision and what you will do.
                 Option labels: at most 7 words; descriptions: at most 25 words about outcome and resources.
-                Keep intendedOutcome precise for execution but at most 80 words. Only when owner input is
+                Write intendedOutcome in plain English for the person choosing: explain what happens next,
+                what would still wait, and any further approval needed. Keep it precise and at most 80 words. Only when owner input is
                 required, supply 2-4 distinct options with one recommended, addressing that specific requirement.
                 Use only the supplied granted capabilities; changing scope, spending and document acceptance
                 remain governed. If only investigation is authorized, offer investigation and collecting user

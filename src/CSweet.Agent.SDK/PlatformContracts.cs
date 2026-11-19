@@ -294,7 +294,10 @@ public sealed record WorkforcePlanProposalRequest(
     string Rationale,
     string IdempotencyKey);
 
-public sealed record AskUserOption(string Id, string Label, string? Description = null);
+public sealed record AskUserOption(string Id, string Label, string? Description = null)
+{
+    public string? Impact { get; init; }
+}
 
 public sealed record AskUserRequest(
     Guid ConversationId,
@@ -306,7 +309,10 @@ public sealed record AskUserRequest(
     Guid? ConversationMessageId = null);
 
 public sealed record UserQuestionOptionResponse(
-    string Id, string Label, string? Description, bool Recommended);
+    string Id, string Label, string? Description, bool Recommended)
+{
+    public string? Impact { get; init; }
+}
 
 public sealed record UserQuestionResponse(
     Guid Id,

@@ -22,8 +22,8 @@ public sealed class RequirementDecisionsTests
             .RegisterCapability<JsonElement, object>(PlatformCapabilities.LlmChatStream, (_, _) => {
                 inference++; return Task.FromResult<object>(new { text = JsonSerializer.Serialize(new RequirementDecisionDraft(
                     "How should we obtain the missing reference?", "Research waits for access; independent work continues.",
-                    [new("Obtain reference access", "Restore the evidence", "Request access through the authorized owner"),
-                     new("Investigate another authoritative source", "Preserve required coverage", "Commission a bounded evidence investigation")], 0), JsonSerializerOptions.Web) });
+                    [new("Obtain reference access", "Restore the evidence", "Request access through the authorized owner") { Impact = "The team will ask the owner for access. Research waits for permission." },
+                     new("Investigate another authoritative source", "Preserve required coverage", "Commission a bounded evidence investigation") { Impact = "The team will look for another reliable source." }], 0), JsonSerializerOptions.Web) });
             })
             .RegisterCapability<DecisionRequest, DecisionRecord>(PlatformCapabilities.DecisionRequest, (r, _) => {
                 requests++; var now = DateTimeOffset.UtcNow;
@@ -51,10 +51,11 @@ public sealed class RequirementDecisionsTests
         var runtime = new AgentTestRuntime().RegisterCapability<JsonElement, object>(PlatformCapabilities.LlmChatStream, (r, _) => {
             calls++;
             Assert.Contains(requirement, r.GetRawText());
+            Assert.Contains("plain English", r.GetRawText());
             return Task.FromResult<object>(new { text = JsonSerializer.Serialize(new RequirementDecisionDraft(
                 "How should we resolve " + requirement + "?", "Affected work waits; independent planning continues.",
-                [new(first, "Adjust the actual requirement", "Ask the authorized owner to record the exact change"),
-                 new(second, "Obtain missing access or capacity", "Discover supported setup and qualified assistance before requesting authority")], 1), JsonSerializerOptions.Web) });
+                [new(first, "Adjust the actual requirement", "Ask the authorized owner to record the exact change") { Impact = "The owner reviews the change before work starts." },
+                 new(second, "Obtain missing access or capacity", "Discover supported setup and qualified assistance before requesting authority") { Impact = "The team checks who can help before asking for approval." }], 1), JsonSerializerOptions.Web) });
         });
         using var client = runtime.CreateContext().CreateChatClient(new(Guid.NewGuid(), "test"));
         var facts = JsonSerializer.SerializeToElement(new { requirement });
@@ -64,6 +65,10 @@ public sealed class RequirementDecisionsTests
         Assert.Equal(project, request.WorkstreamId); Assert.Equal("owner-required", request.AuthorityRuleKey);
         Assert.Equal("bound-by-code", request.IdempotencyKey); Assert.Equal("choice-1", request.RecommendedOptionId);
         Assert.Equal(first, request.Options[0].Label); Assert.Equal(second, request.Options[1].Label);
+        Assert.Equal(draft.Choices[0].Consequences, request.Options[0].Description);
+        Assert.Equal(draft.Choices[0].Impact, request.Options[0].Impact);
+        Assert.Equal(draft.Choices[0].FollowThrough, request.TypeData!.Value.GetProperty("draft")
+            .GetProperty("choices")[0].GetProperty("followThrough").GetString());
         Assert.Contains(request.Options, o => o.Id == "provide-direction"); Assert.Equal(1, calls);
     }
 

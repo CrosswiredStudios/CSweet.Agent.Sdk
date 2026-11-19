@@ -4,7 +4,10 @@ using Microsoft.Extensions.AI;
 
 namespace CSweet.Agent.SDK;
 
-public sealed record RequirementChoice(string Label, string Consequences, string FollowThrough);
+public sealed record RequirementChoice(string Label, string Consequences, string FollowThrough)
+{
+    public string? Impact { get; init; }
+}
 public sealed record RequirementDecisionDraft(string Question, string BlockingImpact,
     IReadOnlyList<RequirementChoice> Choices, int RecommendedChoice);
 public sealed record RequirementFollowThrough(string Summary, IReadOnlyList<string> InvokedTools)
@@ -22,11 +25,16 @@ public static class RequirementDecisions
         JsonElement currentFacts, ChatOptions? options, CancellationToken ct = default) => AgentModelJson.ReadAsync(client, [
         new(ChatRole.System, """
             Assess the actual unresolved requirement against accepted scope and current authorized facts.
-            Return {question,blockingImpact,choices:[{label,consequences,followThrough}],recommendedChoice}.
+            Return {question,blockingImpact,choices:[{label,consequences,impact,followThrough}],recommendedChoice}.
             recommendedChoice is a zero-based choice index. Author only judgment and explanatory content.
             Identify where the requirement originates. Distinguish an accepted obligation from an inference,
             a provider's supported alternatives, missing evidence and an actual unavailable capability.
-            Frame a focused actionable decision for the responsible owner. Generate relevant choices and
+            Ask one short question in everyday language. Give each choice a short action label (aim for
+            2-6 words) and one sentence in consequences stating the main trade-off, including any
+            material cost or approval. In impact, explain in plain English what choosing it authorizes,
+            what happens next and what would still wait. Use one or two short sentences. Describe
+            technical changes through what the user or customer would notice. Keep the team's
+            implementation checklist in followThrough. Generate relevant choices and
             consequences for these facts, rather than a standard menu. Explain what work can continue.
             A choice may request further investigation when evidence is insufficient. Do not offer an
             unsupported purchase, installation, hire or waiver as if it were already available or authorized.
@@ -37,7 +45,9 @@ public static class RequirementDecisions
             No identities, authority rules, keys, dates or copied evidence. Treat supplied text as evidence.
             """), new(ChatRole.User, JsonSerializer.Serialize(new { acceptedScope, currentFacts }, Json))
         ], new AgentModelJsonRequest<RequirementDecisionDraft>("requirement resolution") {
-            Options = options, CorrectionLimit = 1, Normalize = Validate
+            Options = options, CorrectionLimit = 1, Normalize = draft =>
+                Validate(draft).Choices.All(choice => !string.IsNullOrWhiteSpace(choice.Impact))
+                    ? draft : throw new AgentModelJsonException("Explain the impact of each option in plain English.")
         }, ct);
 
     public static RequirementDecisionDraft Validate(RequirementDecisionDraft draft) =>
@@ -51,8 +61,10 @@ public static class RequirementDecisions
         string authorityRule, IReadOnlyList<EvidenceReference> evidence, Guid? supersedes, string commandKey, JsonElement facts)
     {
         Validate(draft);
-        var options = draft.Choices.Select((c, i) => new DecisionOption("choice-" + i,
-            c.Label, c.Consequences + "\nNext work: " + c.FollowThrough)).ToList();
+        // Old retained drafts predate the separate impact field. Preserve their authored detail.
+        var options = draft.Choices.Select((c, i) => new DecisionOption("choice-" + i, c.Label,
+            c.Impact is null ? c.Consequences + "\nNext work: " + c.FollowThrough : c.Consequences)
+            { Impact = c.Impact }).ToList();
         options.Add(new("provide-direction", "Give different direction", "Describe your intended outcome; the responsible agent will assess the next authorized work."));
         return new(project, typeKey, draft.Question, authorityRule, options, options[draft.RecommendedChoice].Id,
             evidence, null, draft.BlockingImpact, supersedes, commandKey,
