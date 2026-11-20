@@ -73,6 +73,72 @@ public sealed class PlatformGitWorkspaceRemoteTests
     }
 
     [Fact]
+    public async Task Shatterpoint_checkpoints_push_each_changed_tip_and_record_each_changed_receipt()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var git = fixture.Client();
+        var local = await git.CloneAsync(fixture.Workspace, 7);
+        var hook = Path.Combine(local.Path, ".git", "hooks", "pre-push");
+        await File.WriteAllTextAsync(hook, "#!/bin/sh\necho push >> .git/push-count\n");
+        if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(hook, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+        // Ordered equivalence classes of (source commit, full checkpoint payload), QFN Games, 14:07-14:30 PT.
+        (int Source, int Evidence)[] trace = [
+        (20, 41), (20, 32), (20, 37), (20, 39), (20, 39), (20, 39), (20, 39), (20, 39),
+        (20, 39), (20, 39), (20, 40), (20, 43), (20, 34), (20, 34), (20, 34), (20, 42),
+        (20, 33), (20, 38), (20, 38), (14, 18), (12, 6), (9, 19), (21, 15), (27, 14),
+        (26, 17), (8, 21), (4, 24), (15, 9), (3, 5), (1, 13), (7, 4), (19, 7),
+        (11, 2), (11, 2), (11, 2), (6, 8), (25, 23), (2, 1), (2, 1), (16, 11),
+        (13, 25), (13, 25), (24, 10), (24, 10), (24, 10), (24, 10), (24, 28), (24, 35),
+        (22, 16), (5, 20), (5, 29), (5, 36), (5, 36), (18, 22), (10, 12), (10, 30),
+        (10, 30), (10, 30), (23, 26), (23, 26), (23, 31), (23, 31), (23, 31), (23, 31),
+        (23, 31), (17, 3), (17, 27), (17, 27), (17, 27)
+        ];
+        foreach (var (source, evidence) in trace)
+        {
+            await File.WriteAllTextAsync(Path.Combine(local.Path, "module.txt"), source.ToString());
+            await git.UploadCheckpointAsync(local, 7, resumeSummary: new(source.ToString("x64"), [new($"check-{evidence}", true, 0)]));
+        }
+        var pushes = File.ReadAllLines(Path.Combine(local.Path, ".git", "push-count")).Length;
+        var receipts = fixture.Platform.Syncs.Count(x => x.Direction == "checkpoint");
+        Assert.True((pushes, receipts) == (27, 43), $"Shatterpoint replay: {pushes} Git pushes, {receipts} checkpoint saves.");
+
+        // A failed command left a partial edit. Interrupt its acknowledgement, then retry the save.
+        var start = new System.Diagnostics.ProcessStartInfo(OperatingSystem.IsWindows() ? "cmd.exe" : "/bin/sh")
+            { WorkingDirectory = local.Path, UseShellExecute = false, CreateNoWindow = true };
+        if (OperatingSystem.IsWindows()) start.ArgumentList.Add("/d");
+        start.ArgumentList.Add(OperatingSystem.IsWindows() ? "/c" : "-c");
+        start.ArgumentList.Add(OperatingSystem.IsWindows() ? "echo retained partial edit>partial.txt & exit /b 1"
+            : "echo 'retained partial edit' > partial.txt; exit 1");
+        using var failedCommand = System.Diagnostics.Process.Start(start)!;
+        await failedCommand.WaitForExitAsync();
+        Assert.Equal(1, failedCommand.ExitCode);
+        fixture.Platform.FailNextCheckpoint = true;
+        await Assert.ThrowsAsync<IOException>(() => git.UploadCheckpointAsync(local, 7));
+        var saved = await git.UploadCheckpointAsync(local, 7);
+        Assert.Equal("retained partial edit", await fixture.GitAsync(fixture.Remote, "show", saved.Digest + ":partial.txt"));
+        var count = fixture.Platform.Syncs.Count;
+        await Task.WhenAll(git.UploadCheckpointAsync(local, 7), git.UploadCheckpointAsync(local, 7));
+        Assert.Equal(count, fixture.Platform.Syncs.Count);
+        var resourceInput = new string('a', 64);
+        await git.UploadCheckpointAsync(local, 7, commandClass: "build", inputFingerprint: resourceInput);
+        await git.UploadCheckpointAsync(local, 7, commandClass: "test", inputFingerprint: resourceInput);
+        await git.UploadCheckpointAsync(local, 7, commandClass: "test", inputFingerprint: new string('b', 64));
+        Assert.Equal(count + 3, fixture.Platform.Syncs.Count);
+        count = fixture.Platform.Syncs.Count;
+        var replacement = fixture.Client();
+        await replacement.UploadCheckpointAsync(local, 7, commandClass: "test", inputFingerprint: new string('b', 64));
+        Assert.Equal(count + 1, fixture.Platform.Syncs.Count);
+
+        // A direct push changes what the remote holds. Returning to the old local tip cannot
+        // acknowledge it without trying the platform again (this non-fast-forward push is refused).
+        await File.WriteAllTextAsync(Path.Combine(local.Path, "later.txt"), "next");
+        await replacement.CommitAsync(local, Commit);
+        await replacement.PushAsync(local, 7);
+        await fixture.GitAsync(local.Path, "checkout", "--detach", saved.Digest);
+        await Assert.ThrowsAsync<GitWorkspaceCommandException>(() => replacement.UploadCheckpointAsync(local, 7));
+    }
+
+    [Fact]
     public async Task The_snapshot_calls_use_git_for_a_workspace_the_platform_gave_a_work_branch()
     {
         await using var fixture = await Fixture.CreateAsync();
@@ -218,6 +284,11 @@ public sealed class PlatformGitWorkspaceRemoteTests
             Assert.Equal(PlatformGitWorkspaceClient.SyncCapability, capability);
             var request = arguments.Deserialize<GitWorkspaceSyncRequest>(Web)!;
             Syncs.Add(request);
+            if (request.Direction == "checkpoint" && FailNextCheckpoint)
+            {
+                FailNextCheckpoint = false;
+                throw new IOException("Checkpoint acknowledgement interrupted");
+            }
             Assert.Null(request.Archive);
             var result = request.Direction == "resume"
                 ? new GitWorkspaceSyncResult { ResourceProfiles = [new("build", new string('f', 64), 4096)], ResumeSummary = new(new string('e', 64), []) }
@@ -225,6 +296,7 @@ public sealed class PlatformGitWorkspaceRemoteTests
             return Task.FromResult(JsonSerializer.SerializeToElement(result, Web));
         }
 
+        public bool FailNextCheckpoint { get; set; }
         private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
         public async IAsyncEnumerable<JsonElement> InvokeStreamingAsync(string capability, JsonElement arguments,

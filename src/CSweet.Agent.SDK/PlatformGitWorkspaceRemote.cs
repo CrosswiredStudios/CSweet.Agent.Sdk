@@ -15,6 +15,36 @@ public sealed class GitWorkspaceCommandException(string message, int exitCode, s
 
 public sealed partial class PlatformGitWorkspaceClient
 {
+    // This client belongs to one platform context. A new materialization, assignment or runtime
+    // must contact the platform again. Keep only the most recent explicitly acknowledged receipt.
+    private readonly SemaphoreSlim _checkpointGate = new(1, 1);
+    private GitWorkspaceResult? _checkpointWorkspace;
+    private WorkspaceCheckpointReceipt? _acknowledged;
+    private string? _acknowledgedMetadata;
+
+    private bool HasAcknowledgedSource(GitWorkspaceResult workspace, long revision, string digest) =>
+        ReferenceEquals(workspace, _checkpointWorkspace) && _acknowledged is { } receipt &&
+        receipt.WorkspaceId == workspace.WorkspaceId && receipt.AssignmentRevision == revision && receipt.Digest == digest;
+
+    private async Task<WorkspaceCheckpointReceipt> SyncCheckpointAsync(GitWorkspaceResult workspace,
+        GitWorkspaceSyncRequest request, string digest, CancellationToken ct)
+    {
+        var metadata = System.Text.Json.JsonSerializer.Serialize(new { request.Direction, request.CommandClass,
+            request.InputFingerprint, request.ResumeSummary }, JsonOptions);
+        if (HasAcknowledgedSource(workspace, request.AssignmentRevision, digest) && metadata == _acknowledgedMetadata)
+            return _acknowledged!;
+
+        _acknowledged = null;
+        var result = await InvokeAsync<GitWorkspaceSyncRequest, GitWorkspaceSyncResult>(SyncCapability, request, ct);
+        var expected = new WorkspaceCheckpointReceipt(workspace.WorkspaceId, request.AssignmentRevision, digest);
+        if (result.Checkpoint is null) return expected; // Older snapshot hosts supplied no reusable receipt.
+        if (result.Checkpoint != expected) throw new InvalidDataException("Checkpoint acknowledgement does not match the submitted workspace revision and digest.");
+        _acknowledged = result.Checkpoint;
+        _checkpointWorkspace = workspace;
+        _acknowledgedMetadata = metadata;
+        return result.Checkpoint;
+    }
+
     private static readonly Regex BranchPattern = new(@"\A[A-Za-z0-9][A-Za-z0-9._/-]{0,199}\z", RegexOptions.CultureInvariant);
     private static readonly Regex CommitPattern = new(@"\A([0-9a-f]{40}|[0-9a-f]{64})\z", RegexOptions.CultureInvariant);
     // Never committed: the SDK's receipt and dependency folders every developer restores for themselves.
@@ -88,12 +118,21 @@ public sealed partial class PlatformGitWorkspaceClient
         GitWorkspaceCommitRequest commit, CancellationToken ct = default,
         string? commandClass = null, string? inputFingerprint = null, WorkspaceResumeSummary? resumeSummary = null)
     {
-        await CommitAsync(workspace, commit, ct);
-        var pushed = await PushAsync(workspace, assignmentRevision, ct);
-        var result = await InvokeAsync<GitWorkspaceSyncRequest, GitWorkspaceSyncResult>(SyncCapability,
-            new GitWorkspaceSyncRequest(workspace.WorkspaceId, assignmentRevision, "checkpoint", $"workspace:{workspace.WorkspaceId:N}:{pushed}")
-                { PushedCommitSha = pushed, CommandClass = commandClass, InputFingerprint = inputFingerprint, ResumeSummary = resumeSummary }, ct);
-        return result.Checkpoint ?? new(workspace.WorkspaceId, assignmentRevision, pushed);
+        await _checkpointGate.WaitAsync(ct);
+        try
+        {
+            RequireGitRemote(workspace, assignmentRevision);
+            var tip = await CommitAsync(workspace, commit, ct) ?? await HeadAsync(RequireLocalClone(workspace), ct);
+            if (!HasAcknowledgedSource(workspace, assignmentRevision, tip))
+            {
+                _acknowledged = null;
+                tip = await PushCoreAsync(workspace, assignmentRevision, ct);
+            }
+            return await SyncCheckpointAsync(workspace,
+                new(workspace.WorkspaceId, assignmentRevision, "checkpoint", $"workspace:{workspace.WorkspaceId:N}:{tip}")
+                { PushedCommitSha = tip, CommandClass = commandClass, InputFingerprint = inputFingerprint, ResumeSummary = resumeSummary }, tip, ct);
+        }
+        finally { _checkpointGate.Release(); }
     }
 
     /// <summary>Fetch the repository's current branches into the local clone without changing the working tree.</summary>
@@ -132,7 +171,22 @@ public sealed partial class PlatformGitWorkspaceClient
     /// only this assignment's branch and applies its push rules; a refusal is reported with the
     /// platform's reason in <see cref="GitWorkspaceCommandException.Detail"/>.
     /// </summary>
-    public async Task<string> PushAsync(GitWorkspaceResult workspace, long assignmentRevision, CancellationToken ct = default)
+    public Task<string> PushAsync(GitWorkspaceResult workspace, long assignmentRevision, CancellationToken ct = default) =>
+        ChangeRemoteAsync(() => PushCoreAsync(workspace, assignmentRevision, ct), ct);
+
+    // A direct push, refresh, publication or cleanup can replace the tip independently of checkpointing.
+    private async Task<T> ChangeRemoteAsync<T>(Func<Task<T>> change, CancellationToken ct)
+    {
+        await _checkpointGate.WaitAsync(ct);
+        try
+        {
+            _acknowledged = null;
+            return await change();
+        }
+        finally { _checkpointGate.Release(); }
+    }
+
+    private async Task<string> PushCoreAsync(GitWorkspaceResult workspace, long assignmentRevision, CancellationToken ct)
     {
         var (branch, remote) = RequireGitRemote(workspace, assignmentRevision);
         var path = RequireLocalClone(workspace);

@@ -106,13 +106,17 @@ public sealed partial class PlatformGitWorkspaceClient
             return await PushCheckpointAsync(workspace, assignmentRevision,
                 new("chore(wip): save work in progress", author.AuthorName, author.AuthorEmail), ct, commandClass, inputFingerprint, resumeSummary);
         }
-        EnsureNoLinks(path);
-        var archive = await CreateSnapshotAsync(path, ct);
-        var digest = Convert.ToHexStringLower(SHA256.HashData(archive));
-        var result = await InvokeAsync<GitWorkspaceSyncRequest, GitWorkspaceSyncResult>(SyncCapability,
-            new GitWorkspaceSyncRequest(workspace.WorkspaceId, assignmentRevision, "push", $"workspace:{workspace.WorkspaceId:N}:{digest}", archive)
-                { CommandClass = commandClass, InputFingerprint = inputFingerprint, ResumeSummary = resumeSummary }, ct);
-        return result.Checkpoint ?? new(workspace.WorkspaceId, assignmentRevision, digest);
+        await _checkpointGate.WaitAsync(ct);
+        try
+        {
+            EnsureNoLinks(path);
+            var archive = await CreateSnapshotAsync(path, ct);
+            var digest = Convert.ToHexStringLower(SHA256.HashData(archive));
+            return await SyncCheckpointAsync(workspace,
+                new(workspace.WorkspaceId, assignmentRevision, "push", $"workspace:{workspace.WorkspaceId:N}:{digest}", archive)
+                { CommandClass = commandClass, InputFingerprint = inputFingerprint, ResumeSummary = resumeSummary }, digest, ct);
+        }
+        finally { _checkpointGate.Release(); }
     }
 
     internal static async Task ExtractSnapshotAsync(byte[] archive, string root, CancellationToken ct)

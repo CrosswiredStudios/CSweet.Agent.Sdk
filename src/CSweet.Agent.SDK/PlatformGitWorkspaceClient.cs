@@ -33,8 +33,8 @@ public sealed partial class PlatformGitWorkspaceClient
     public Task<GitWorkspaceRefreshResult> RefreshAsync(
         RefreshGitWorkspaceRequest request,
         CancellationToken cancellationToken = default) =>
-        InvokeAsync<RefreshGitWorkspaceRequest, GitWorkspaceRefreshResult>(
-            GitWorkspaceCapabilities.Refresh, request, cancellationToken);
+        ChangeRemoteAsync(() => InvokeAsync<RefreshGitWorkspaceRequest, GitWorkspaceRefreshResult>(
+            GitWorkspaceCapabilities.Refresh, request, cancellationToken), cancellationToken);
 
     /// <summary>Inspect the workspace's changes. For a workspace this runtime cloned with git, the platform
     /// inspects the commit at the local branch head, which must already be pushed.</summary>
@@ -49,20 +49,20 @@ public sealed partial class PlatformGitWorkspaceClient
 
     /// <summary>Publish the workspace. For a workspace this runtime cloned with git, the commit at the local
     /// branch head is published unless the request names another; it must already be pushed.</summary>
-    public async Task<GitWorkspacePublication> PublishAsync(
+    public Task<GitWorkspacePublication> PublishAsync(
         PublishGitWorkspaceRequest request,
         CancellationToken cancellationToken = default) =>
-        await InvokeAsync<PublishGitWorkspaceRequest, GitWorkspacePublication>(
+        ChangeRemoteAsync(async () => await InvokeAsync<PublishGitWorkspaceRequest, GitWorkspacePublication>(
             GitWorkspaceCapabilities.Publish,
             request.PushedCommitSha is null && await LocalCloneHeadAsync(request.WorkspaceId, cancellationToken) is { } head
                 ? request with { PushedCommitSha = head } : request,
-            cancellationToken);
+            cancellationToken), cancellationToken);
 
     public Task<GitWorkspaceCleanupResult> CleanupAsync(
         CleanupGitWorkspaceRequest request,
         CancellationToken cancellationToken = default) =>
-        InvokeAsync<CleanupGitWorkspaceRequest, GitWorkspaceCleanupResult>(
-            GitWorkspaceCapabilities.Cleanup, request, cancellationToken);
+        ChangeRemoteAsync(() => InvokeAsync<CleanupGitWorkspaceRequest, GitWorkspaceCleanupResult>(
+            GitWorkspaceCapabilities.Cleanup, request, cancellationToken), cancellationToken);
 
     public Task<GitWorkspaceLockResult> ListLocksAsync(ListGitWorkspaceLocksRequest request, CancellationToken cancellationToken = default) =>
         InvokeAsync<ListGitWorkspaceLocksRequest, GitWorkspaceLockResult>(GitWorkspaceCapabilities.ListLocks, request, cancellationToken);
