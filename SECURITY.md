@@ -2,6 +2,11 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Security Policy
 
+Decision questions in SDK 5.45.0 use the decision and audience bound to the human’s chat turn.
+Headquarters selects the evidence contacts and document revisions. Both employees read records
+under their own installations. Clarification passes the work question and shared source references
+to the colleague. Choosing an option or restarting work still requires the corresponding operation.
+
 SDK 5.37.0 availability reads use the existing granted board, personal-work and calendar clients. A caller-supplied planning subject does not expand data access. Discovery is bounded, missing coverage is explicit, and another employee's visible work/calendar entries are excluded from that subject's workload. Inference offers never allocate capacity or bypass staffing, accepted scope or execution preflight.
 
 SDK 5.36.0 requirement follow-through discovers only currently granted model-visible tools.

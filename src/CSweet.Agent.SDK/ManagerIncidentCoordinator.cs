@@ -126,6 +126,9 @@ public static class ManagerIncidentCoordinator
                 Routine investigation, checking a retry, coordinating recovery and monitoring are your work.
                 For those return requiresOwnerInput:false, ownerInputReason:null, options:[], recommendedOptionId:"".
                 A failed model call or an unconfirmed fix alone is not an owner decision.
+                Use the specific stopped collaboration or task to say which operation stopped, its recorded reason,
+                the work affected, and who owns the next step. A blocked or cancelled session alone does not
+                establish disagreement. Missing operational detail belongs with the employee who owns that work.
                 title: at most 100 characters. summary: at most 80 words in 2-4 short sentences covering
                 what is blocked, what can continue, impact and any important uncertainty. recovery:
                 at most 25 words about confirmed attempts, without repeating the summary. nextStep:

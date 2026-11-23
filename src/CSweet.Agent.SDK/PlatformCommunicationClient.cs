@@ -353,6 +353,10 @@ public sealed record AgentCoordinationTurnRequest(
     bool IsFinalization,
     IReadOnlyList<AgentCoordinationTurn> Transcript)
 {
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public Guid? InquiryIncidentId { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<IncidentDocumentReference>? InquiryDocuments { get; init; }
     public string SourceKind { get; init; } = "Chat";
     public AgentCoordinationWorkSource? WorkSource { get; init; }
     public AgentCoordinationBoardSource? BoardSource { get; init; }

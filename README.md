@@ -1,3 +1,5 @@
+SDK 5.45.0 answers decision follow-ups from linked evidence and brings a colleague’s clarification back to the original conversation. [Release notes](releases/5.45.0.md)
+
 SDK 5.44.2 reuses acknowledged workspace checkpoints during an assignment. [Release notes](releases/5.44.2.md)
 
 SDK 5.44.1 reports full availability for the requested AI work. [Release notes](releases/5.44.1.md)
@@ -124,7 +126,7 @@ SDK 3.59.0 adds [hierarchical task/story/epic/release execution](docs/hierarchic
 
 See [Authoring agents under the operating contract](docs/agent-operating-contract.md) for role-policy profiles, exact model-tool exposure, typed attention checkpoints, and memory authority boundaries.
 
-`CSweet.Agent.SDK` 5.44.2 is the supported .NET 10 authoring API for C-Sweet agents and service
+`CSweet.Agent.SDK` 5.45.0 is the supported .NET 10 authoring API for C-Sweet agents and service
 plugins. You implement typed callbacks; the SDK privately manages the outbound runtime,
 authentication, live grants, durable work, retries, progress, and shutdown.
 
@@ -141,7 +143,7 @@ dotnet new csweet-agent --name ResearchAgent `
   --PublisherName "Example" `
   --AgentVersion 0.1.0 `
   --PrimaryCapability research.answer.v1 `
-  --SdkVersion 5.44.2
+  --SdkVersion 5.45.0
 cd ResearchAgent
 dotnet test
 ```
@@ -149,7 +151,7 @@ dotnet test
 To author without the template, add the package directly:
 
 ```powershell
-dotnet add package CSweet.Agent.SDK --version 5.44.2
+dotnet add package CSweet.Agent.SDK --version 5.45.0
 ```
 
 ```csharp

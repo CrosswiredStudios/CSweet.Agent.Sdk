@@ -8,8 +8,8 @@ Processes a bounded request for C-Sweet.
 - Version: `0.1.0`
 - Provides: `example.execute.v1`
 - Activation: manual
-- Requested platform/provider capabilities: none
-- Event subscriptions: none
+- The root manifest lists the requested platform capabilities and event subscriptions. Decision questions use the shared SDK handler, the configured reasoning provider, and read access to the records shared with this employee.
+- The coordination subscription lets the employee ask a colleague for a missing fact, answer a colleague, and return the clarification to the original chat.
 - Network access: none
 
 ## Develop
@@ -27,7 +27,7 @@ Keep `csweet-plugin.json` at the repository root. Import a reviewed GitHub commi
 clone this repository as an immediate child of C-Sweet's configured local agent catalog. Review
 the exact manifest, grants, activation mode, and source before approving installation.
 
-Built with `CSweet.Agent.SDK` 5.44.2.
+Built with `CSweet.Agent.SDK` 5.45.0.
 
 ## Business calendars
 

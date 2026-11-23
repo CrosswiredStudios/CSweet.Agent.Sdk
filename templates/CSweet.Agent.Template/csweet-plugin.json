@@ -202,6 +202,36 @@
       "modelVisible": false
     },
     {
+      "name": "communication.coordination.start.v1",
+      "scope": "organization",
+      "purpose": "Ask a responsible employee for a missing fact on a decision raised in chat.",
+      "modelVisible": false
+    },
+    {
+      "name": "communication.coordination.respond.v1",
+      "scope": "organization",
+      "purpose": "Answer a colleague’s factual question and return the answer to its source conversation.",
+      "modelVisible": false
+    },
+    {
+      "name": "communication.coordination.read.v1",
+      "scope": "organization",
+      "purpose": "Read the employee’s clarification sessions across restarts.",
+      "modelVisible": false
+    },
+    {
+      "name": "platform.artifact.read.v1",
+      "scope": "organization",
+      "purpose": "Read the exact document revisions shared with the employee for a decision question.",
+      "modelVisible": false
+    },
+    {
+      "name": "platform.project-health.diagnostics.read.v1",
+      "scope": "organization",
+      "purpose": "Look up the evidence for an incident within the employee’s project authority.",
+      "modelVisible": false
+    },
+    {
       "name": "communication.chat.read.v1",
       "scope": "organization",
       "purpose": "Use shared SDK delegation, authenticated recipient resolution, canonical work and durable reporting within existing resource authority.",
@@ -232,6 +262,7 @@
       "com.csweet.work.delegation.received.v1",
       "com.csweet.work.tracking.changed.v1",
       "com.csweet.user.message.received.v1",
+      "com.csweet.agent.coordination.turn-requested.v1",
       "com.csweet.agent.attention.review-due.v1"
     ]
   },
