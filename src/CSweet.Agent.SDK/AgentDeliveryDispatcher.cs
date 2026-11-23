@@ -68,6 +68,8 @@ internal sealed class AgentDeliveryDispatcher(ICSweetAgent agent, ILogger logger
                 delivery.Payload,
                 DateTimeOffset.UtcNow,
                 delivery.CorrelationId);
+        if (agent is CSweetAgentBase inquiryAgent && await DecisionInquiry.DispatchAsync(inquiryAgent, envelope, context, cancellationToken))
+            return AgentWorkResult.Success(new { acknowledged = true });
         if (agent is CSweetManagerAgentBase managerAgent && await ManagerIncidentCoordinator.DispatchAsync(managerAgent, envelope, context, cancellationToken))
             return AgentWorkResult.Success(new { acknowledged = true });
         if (agent is CSweetAgentBase delegationAgent && await DelegationRuntime.DispatchAsync(delegationAgent, envelope, context, cancellationToken))
@@ -113,7 +115,9 @@ internal sealed class AgentDeliveryDispatcher(ICSweetAgent agent, ILogger logger
             var request = envelope.Data.Deserialize<AgentCoordinationTurnRequest>(
                 CSweetAgentBase.SerializerOptions)
                 ?? throw new InvalidOperationException("The coordination turn payload is empty.");
-            var result = await baseAgent.HandleCoordinationTurnAsync(request, context, cancellationToken);
+            var result = request.SourceKind == DecisionInquiryContext.SourceKind
+                ? await DecisionInquiry.ClarifyAsync(baseAgent, request, context, cancellationToken)
+                : await baseAgent.HandleCoordinationTurnAsync(request, context, cancellationToken);
             ValidateCoordinationResult(request, result);
             await context.Platform.Communication.RespondToCoordinationAsync(
                 new RespondToAgentCoordinationRequest(

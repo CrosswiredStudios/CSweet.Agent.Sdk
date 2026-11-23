@@ -578,3 +578,11 @@ The model-hidden `platform.workstream.delivery.complete.v1` requires its own rev
 
 
 `DocumentEvidence`, `DocumentWork`, `DocumentResearch` and `WorkRequirementResolution` implement workflow-neutral document evidence and resolution. Hosts must expose a completed attempt's outcome even when a rework stop blocks its stage. A manager-directed retry resumes the retained negative review's author transition once; it neither accepts the artifact nor disables subsequent independent review. Health events are discovery hints: bounded batches may coalesce hints for the same project, target and event only after durable inbox delivery. Offline reads and normal idempotent recovery remain required.
+
+## Decision follow-ups in SDK 5.45.0
+
+`DecisionInquiry` handles a receipt-bound message before role-specific dispatch. Its local read
+tools page the identified incident and exact document revisions through the authenticated platform
+client. `AgentCoordinationEvents.TurnRequested` delivers the colleague’s question and the reporting
+employee’s finalization. Headquarters persists one source summary and checks current audience and
+document access before accepting the reply. Both callbacks can be redelivered after a lost acknowledgement.
