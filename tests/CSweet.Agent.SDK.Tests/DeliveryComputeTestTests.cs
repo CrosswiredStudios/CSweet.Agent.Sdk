@@ -91,6 +91,7 @@ public sealed class DeliveryComputeTestTests
     [InlineData("lost-command-response","approved")]
     [InlineData("lost-publication-response","approved")]
     [InlineData("intervening-generation","changes_requested")]
+    [InlineData("capacity-taken","awaiting-compute")]
     [InlineData("pending-publication","awaiting-compute")]
     [InlineData("archive-changes-once","approved")]
     [InlineData("archive-keeps-changing","changes_requested")]
@@ -151,6 +152,8 @@ public sealed class DeliveryComputeTestTests
                     state=new(Guid.NewGuid(),r.StateKey,r.SchemaId,r.SchemaVersion,r.Status,r.SourceRevisions,r.ConditionCodes,r.DecisionFingerprint,
                         r.OpenCommitmentCorrelations,r.AttentionReviewId,r.Payload,(state?.Revision ?? 0)+1,now,now); return Task.FromResult(state); })
             .RegisterCapability<ProvisionComputeRequest,ComputeEnvironment>(ComputeCapabilities.Provision,(r,_) => {
+                if (condition == "capacity-taken") throw new PlatformCapabilityException(ComputeCapabilities.Provision,
+                    PlatformCapabilityErrorCode.Unavailable, "Office capacity unavailable", failureCode: "compute_capacity_unavailable", retryable: true);
                 provisions++;
                 Assert.Equal(project,r.WorkstreamId);
                 if (networked) {

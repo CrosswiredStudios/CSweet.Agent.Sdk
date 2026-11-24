@@ -38,7 +38,7 @@ safely inferred:
 Default to `OnDemand` activation, one concurrent job, multiple installations supported, no
 configuration, no credentials, and `webAccess.mode` `None`.
 
-Agents that discuss decisions use the common `CSweetAgentBase` handler in SDK 5.45.0.
+Agents that discuss decisions use the common `CSweetAgentBase` handler in SDK 5.46.0.
 Keep the template’s chat and coordination subscriptions and request the coordination start,
 read and respond capabilities. The installation’s document and incident permissions determine
 which evidence the employee can read for the conversation. Configure the employee’s reasoning
@@ -63,7 +63,7 @@ provider and model to answer incoming clarification requests.
      --PublisherName "<publisher name>" `
      --AgentVersion <semantic-version> `
      --PrimaryCapability <capability.v1> `
-     --SdkVersion 5.45.0
+     --SdkVersion 5.46.0
    ```
 
 3. Replace the template request/response contract and handler with purpose-specific typed

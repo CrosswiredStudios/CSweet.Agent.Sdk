@@ -5,6 +5,39 @@ namespace CSweet.Agent.SDK.Tests;
 
 public sealed class PlatformComputeClientTests
 {
+    [Fact]
+    public async Task Retained_workspace_activation_uses_the_existing_identity_and_generation()
+    {
+        var stopped = Environment() with { State = "stopped", DesiredState = "stopped", LeaseExpiresAt = DateTimeOffset.MaxValue };
+        var calls = new List<ComputeLifecycleRequest>();
+        var runtime = new AgentTestRuntime().RegisterCapability<ComputeLifecycleRequest, ComputeEnvironment>(ComputeCapabilities.Start,
+            (request, _) => { calls.Add(request); return Task.FromResult(stopped with { DesiredState = "running" }); });
+        var client = runtime.CreateContext().Platform.Compute;
+        var starting = await client.StartIfStoppedAsync(stopped);
+        await client.StartIfStoppedAsync(stopped);
+        await client.StartIfStoppedAsync(starting);
+        Assert.Equal(2, calls.Count);
+        Assert.Equal(calls[0], calls[1]);
+        Assert.Equal(stopped.Id, calls[0].EnvironmentId);
+        Assert.Equal(stopped.Generation, calls[0].ExpectedGeneration);
+    }
+
+    [Fact]
+    public async Task Only_explicit_task_demand_requests_a_workspace()
+    {
+        var project = Guid.NewGuid();
+        var calls = new List<JsonElement>();
+        var runtime = new AgentTestRuntime().RegisterCapability<JsonElement, ComputeDefaults>(ComputeCapabilities.Read,
+            (input, _) => { calls.Add(input.Clone()); return Task.FromResult(new ComputeDefaults("Pending", project, null, null)); });
+        var client = runtime.CreateContext().Platform.Compute;
+        await client.GetProjectDefaultsAsync(project);
+        await client.RequestProjectWorkspaceAsync(project);
+        Assert.False(calls[0].TryGetProperty("requestWorkspace", out _));
+        Assert.Equal(project, calls[1].GetProperty("workstreamId").GetGuid());
+        Assert.True(calls[1].GetProperty("requestWorkspace").GetBoolean());
+        Assert.Throws<ArgumentException>(() => { _ = client.RequestProjectWorkspaceAsync(Guid.Empty); });
+    }
+
     [Theory]
     [InlineData("linux", "x64", 0)]
     [InlineData("linux", "x64", 3600)]

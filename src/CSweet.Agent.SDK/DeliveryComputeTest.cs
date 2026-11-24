@@ -55,7 +55,7 @@ public static partial class DeliveryComputeTest
         }
         try
         {
-            var options = await context.Platform.Compute.GetProjectDefaultsAsync(plan.WorkstreamId, ct);
+            var options = await context.Platform.Compute.RequestProjectWorkspaceAsync(plan.WorkstreamId, ct);
             if (options is not { State: "Ready", TemplateId: { } template })
                 return Wait("Project compute preparation is pending: " + (options.ErrorCode ?? options.State));
             if (options.WorkstreamId != plan.WorkstreamId)
@@ -104,7 +104,13 @@ public static partial class DeliveryComputeTest
                 return Wait("Project compute provisioning needs provider recovery or confirmed cleanup before another bounded attempt: " + (current.FailureCode ?? current.State));
             if (current.LeaseExpiresAt <= DateTimeOffset.UtcNow)
                 return Wait("Waiting for project test compute: " + (current.FailureCode ?? current.State));
-            if (state.Generation == 0) { state = state with { Generation = current.Generation }; await Save(); }
+            if (state.Generation == 0)
+            {
+                current = await context.Platform.Compute.StartIfStoppedAsync(current, ct);
+                if (current.State != "ready") return Wait("Waiting for the project test workspace to start.");
+                state = state with { Generation = current.Generation };
+                await Save();
+            }
             if (state.Pending is { } pending)
             {
                 // A lost submission response replays the exact persisted request/key. Known operations are read only.
@@ -273,6 +279,8 @@ public static partial class DeliveryComputeTest
                 scope.Planning.AcceptanceCriteria.Select(c => new WorkDeliveryCriterionResult(c, false,
                     "Test readiness needs remediation: " + error.Message)).ToArray(), [error.Message]));
         }
+        catch (PlatformCapabilityException error) when (error.FailureCode == "compute_capacity_unavailable")
+        { return Wait("Waiting for Office capacity for the project test workspace."); }
         catch (PlatformCapabilityException error) when (error.Code == PlatformCapabilityErrorCode.Denied ||
             error.FailureCode == "compute_authority_denied")
         { return Wait(state.Networked == true

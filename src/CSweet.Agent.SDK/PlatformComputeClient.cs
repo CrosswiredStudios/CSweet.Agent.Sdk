@@ -38,6 +38,15 @@ public sealed partial class PlatformComputeClient
     public Task<ComputeDefaults> GetProjectDefaultsAsync(Guid projectId, CancellationToken token = default) =>
         _platform.InvokeAsync<object, ComputeDefaults>(ComputeCapabilities.Read, new { defaults = true, workstreamId = projectId }, token);
 
+    /// <summary>Requests workspace availability for an assigned task that requires an isolated VM.
+    /// Use GetProjectDefaultsAsync for discovery. A request does not create a VM.</summary>
+    public Task<ComputeDefaults> RequestProjectWorkspaceAsync(Guid projectId, CancellationToken token = default)
+    {
+        Id(projectId);
+        return _platform.InvokeAsync<object, ComputeDefaults>(ComputeCapabilities.Read,
+            new { defaults = true, workstreamId = projectId, requestWorkspace = true }, token);
+    }
+
     public Task<ComputeEnvironment> ReadAsync(Guid environmentId, CancellationToken token = default)
     {
         Id(environmentId);
@@ -57,6 +66,15 @@ public sealed partial class PlatformComputeClient
         if (limit is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(limit));
         object input = afterId is null ? new { workstreamId, limit } : new { workstreamId, afterId, limit };
         return _platform.InvokeAsync<object, ComputeEnvironmentPage>(ComputeCapabilities.List, input, token);
+    }
+
+    /// <summary>Resumes the retained VM for a task that requires it. A repeated activation uses the same generation-bound request.</summary>
+    public Task<ComputeEnvironment> StartIfStoppedAsync(ComputeEnvironment environment, CancellationToken token = default)
+    {
+        ArgumentNullException.ThrowIfNull(environment);
+        if (environment.State != "stopped" || environment.DesiredState != "stopped" || environment.LeaseExpiresAt <= DateTimeOffset.UtcNow)
+            return Task.FromResult(environment);
+        return StartAsync(new(environment.Id, environment.Generation, $"workspace-start:{environment.Id:N}:{environment.Generation}"), token);
     }
 
     public Task<ComputeEnvironment> StartAsync(ComputeLifecycleRequest request, CancellationToken token = default) => Lifecycle(ComputeCapabilities.Start, request, token);

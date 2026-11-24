@@ -2,6 +2,9 @@ SDK 5.0.4 runs ordinary networked npm restoration as a durable guest service wit
 
 # Typed compute client
 
+Run routine development in the agent runtime and checkpoint the authorized Git workspace. `GetProjectDefaultsAsync` discovers the Office's capabilities. An assigned deployment or test that needs an isolated VM calls `RequestProjectWorkspaceAsync(projectId)` and then `ProvisionAsync` with a stable task key. When capacity is pending, retain the task and re-read current state on a compute wake. To reuse a stopped VM for that task, read its current state and call `StartIfStoppedAsync` under a reviewed `compute.start.v1` grant. A stopped VM keeps its disk and its lease terms. A fresh runtime can recover checkpointed source independently of any VM.
+
+
 SDK 3.46.1 exposes `context.Platform.Compute`. This calls the same authorized broker as the platform's MCP compute tools; agent authors do not implement MCP, provisioning, UAC or credential handling.
 
 Use `CSweet.Agent.SDK.Compute` for typed requests, results, `ComputeCapabilities` and `ComputeEvents`. Declare only the capabilities your agent uses in its manifest. Declarations do not grant permission. Provisioning, lifecycle changes, command execution and network publication remain separately authorized.
