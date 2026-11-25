@@ -93,12 +93,17 @@ public sealed class AgentTestRuntime
         Func<TRequest, CancellationToken, Task<TResponse>> handler,
         string? toolName = null,
         string? description = null,
-        bool modelVisible = false)
+        bool modelVisible = false) => RegisterCapability(capability, handler,
+            Schema("""{"type":"object","additionalProperties":true}"""), toolName, description, modelVisible);
+
+    internal AgentTestRuntime RegisterCapability<TRequest, TResponse>(
+        string capability, Func<TRequest, CancellationToken, Task<TResponse>> handler,
+        JsonElement inputSchema, string? toolName = null, string? description = null, bool modelVisible = true)
     {
         _capabilities[capability] = new TestCapability(
             toolName ?? ToToolName(capability),
             description ?? $"In-memory test capability {capability}.",
-            Schema("""{"type":"object","additionalProperties":true}"""),
+            inputSchema,
             null,
             modelVisible,
             async (arguments, token) =>

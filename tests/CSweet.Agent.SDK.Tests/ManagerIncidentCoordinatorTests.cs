@@ -1,4 +1,6 @@
 using System.Text.Json;
+using CSweet.Agent.Testing;
+using CSweet.WorkManagement.Contracts;
 using Microsoft.Extensions.AI;
 
 namespace CSweet.Agent.SDK.Tests;
@@ -212,10 +214,10 @@ public sealed class ManagerIncidentCoordinatorTests
         var self = Guid.NewGuid(); var incident = Incident(self); var decision = Guid.NewGuid();
         var resolution = new IncidentResolutionContext(incident, decision, 1, "Coordinate recovery", "a", null, false)
             { TurnId = Guid.NewGuid(), ConversationId = Guid.NewGuid(), SourceMessageId = Guid.NewGuid() };
-        var capture = new CapturingFunction(); var function = new ManagerIncidentCoordinator.RecoveryFunction(capture, resolution, self.ToString());
+        var capture = new CapturingFunction(); var function = new ManagerIncidentCoordinator.RecoveryFunction(capture, resolution, self.ToString(), true);
         for (var attempt = 0; attempt < 2; attempt++)
             await function.InvokeAsync(new AIFunctionArguments(new Dictionary<string, object?> {
-                ["idempotencyKey"] = Guid.NewGuid().ToString(), ["targetOrganizationUserId"] = Guid.NewGuid(),
+                ["idempotencyKey"] = Guid.NewGuid().ToString(),
                 ["sourceConversationId"] = Guid.NewGuid(), ["sourceMessageId"] = Guid.NewGuid(), ["correlationId"] = Guid.NewGuid().ToString() }));
         Assert.Equal(capture.Calls[0]["idempotencyKey"], capture.Calls[1]["idempotencyKey"]);
         Assert.All(capture.Calls, args => {
@@ -230,6 +232,134 @@ public sealed class ManagerIncidentCoordinatorTests
     private static ManagementIncident Incident(Guid self) => new(Guid.NewGuid(), Guid.NewGuid(), self, Guid.NewGuid(), "Open",
         "Scope reconciliation is blocked", Guid.NewGuid(), DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, null, 4,
         "Recorded blocker", "Unknown", "Missing logistics facts", "Reconcile the accepted brief", []);
+
+    [Theory, Trait("Category", "AgentHarness")]
+    [InlineData("Use code-made visuals for the paddle and bricks.")]
+    [InlineData("Use the approved finance source for the forecast.")]
+    public async Task Owner_correction_reaches_the_existing_work_owner_once_across_restart(string direction)
+    {
+        var manager = Guid.NewGuid();
+        var worker = Guid.NewGuid();
+        var incident = Incident(manager);
+        var decision = Guid.NewGuid();
+        var turn = Guid.NewGuid();
+        var chat = Guid.NewGuid();
+        var message = Guid.NewGuid();
+        var board = Guid.NewGuid();
+        var item = JsonSerializer.Deserialize<PersonalTodoItem>("{}")! with {
+            Id = incident.AffectedWorkItemId!.Value, BoardId = board, OwnerOrganizationUserId = worker,
+            Status = PersonalTodoStatuses.Blocked, WorkContext = new() { WorkstreamId = incident.WorkstreamId } };
+        var delegations = new List<DelegateWithTrackingRequest>();
+        var accidentalCards = new List<AddPersonalTodoItemRequest>();
+        DelegationSnapshot? snapshot = null;
+        string? outcome = null;
+        var runtime = new AgentTestRuntime()
+            .RegisterCapability<ReadIncidentResolution, IncidentResolutionContext>(ProjectHealthCapabilities.Resolution, (_, _) =>
+                Task.FromResult(new IncidentResolutionContext(incident, decision, 1, direction, "correct", null, outcome is not null) {
+                    ConversationId = chat, TurnId = turn, SourceMessageId = message, RecordedOutcome = outcome }))
+            .RegisterCapability<ReadManagementIncidents, ManagementIncidentPage>(ProjectHealthCapabilities.Incidents, (_, _) =>
+                Task.FromResult(new ManagementIncidentPage([incident], null)))
+            .RegisterCapability<UpdateManagementIncidentPresentation, ManagementIncident>(ProjectHealthCapabilities.Presentation, (request, _) =>
+            { outcome = request.ResolutionOutcome; return Task.FromResult(incident); })
+            .RegisterCapability<object, PersonalTodoDirectory>(PersonalTodoCapabilities.Read, (_, _) =>
+                Task.FromResult(new PersonalTodoDirectory([new(board, worker, "Worker", null, null, 1, [item])])))
+            .RegisterCapability<AddPersonalTodoItemRequest, PersonalTodoItem>(PersonalTodoCapabilities.Add, (request, _) =>
+            { accidentalCards.Add(request); return Task.FromResult(item with { OwnerOrganizationUserId = manager }); },
+                new CapturingFunction().JsonSchema, "add_personal_todo")
+            .RegisterCapability<DelegateWithTrackingRequest, DelegationSnapshot>(DelegationCapabilities.Create, (request, _) =>
+            {
+                delegations.Add(request);
+                return Task.FromResult(snapshot = new DelegationSnapshot(Guid.NewGuid(), 1, incident.CurrentRecipientId, manager,
+                    worker, "Manager", "Worker", request.Instruction, request.IntendedOutcome, "AwaitingAcknowledgement", true, chat, Guid.NewGuid(), Guid.NewGuid(),
+                    item.Id, null, Guid.NewGuid(), null, request.WorkContext, DateTimeOffset.UtcNow, [], []));
+            });
+        var provider = new CorrectionClient(worker);
+        var identity = new AgentIdentity(manager.ToString(), "Manager", null, null, null, [], null, null, null);
+        var incoming = new CommunicationMessageReceivedEvent(Guid.NewGuid(), chat.ToString(), incident.CurrentRecipientId.ToString(),
+            direction, new Dictionary<string, string> { [ManagerIncidentCoordinator.DecisionContextKey] = decision.ToString() }, turn, 1, message);
+        var eventId = Guid.NewGuid();
+        for (var delivery = 0; delivery < 2; delivery++)
+        {
+            var result = await new AgentTestHost(new CorrectionManager(provider), runtime, identity)
+                .DeliverEventAsync(CommunicationEvents.MessageReceived, incoming, eventId);
+            Assert.True(result.Succeeded, result.Error);
+        }
+
+        Assert.Empty(accidentalCards);
+        var accepted = Assert.Single(delegations);
+        Assert.Equal(worker, accepted.RecipientOrganizationUserId);
+        Assert.Equal(direction, accepted.Instruction);
+        Assert.Equal(chat, accepted.SourceConversationId);
+        Assert.Equal(message, accepted.SourceMessageId);
+        Assert.Equal(item.Id, accepted.WorkContext!.WorkItemId);
+        Assert.Equal(incident.WorkstreamId, accepted.WorkContext.WorkstreamId);
+        Assert.Contains("queued", outcome, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(3, provider.Calls);
+
+        var acknowledgements = new List<DelegationResponseRequest>();
+        var recipientRuntime = new AgentTestRuntime()
+            .RegisterCapability<ReadDelegationRequest, IReadOnlyList<DelegationSnapshot>>(DelegationCapabilities.Read,
+                (request, _) => { Assert.Equal(snapshot!.Id, request.DelegationId); return Task.FromResult<IReadOnlyList<DelegationSnapshot>>([snapshot]); })
+            .RegisterCapability<DelegationResponseRequest, DelegationSnapshot>(DelegationCapabilities.Respond, (request, _) =>
+            {
+                Assert.Equal(snapshot!.Revision, request.ExpectedRevision);
+                acknowledgements.Add(request);
+                return Task.FromResult(snapshot = snapshot with { Status = "Active", Revision = snapshot.Revision + 1 });
+            });
+        var recipient = new AgentIdentity(worker.ToString(), "Worker", null, null, null, [], null, null, null);
+        var received = new DelegationWake(snapshot!.Id);
+        var receivedEvent = Guid.NewGuid();
+        for (var delivery = 0; delivery < 2; delivery++)
+        {
+            var result = await new AgentTestHost(new CorrectionWorker(direction), recipientRuntime, recipient)
+                .DeliverEventAsync(DelegationCapabilities.Received, received, receivedEvent);
+            Assert.True(result.Succeeded, result.Error);
+        }
+        var acknowledgement = Assert.Single(acknowledgements);
+        Assert.Equal("Accepted", acknowledgement.Disposition);
+        Assert.Equal(item.Id, acknowledgement.WorkItemId);
+    }
+
+    private sealed class CorrectionWorker(string approvedDirection) : CSweetAgentBase
+    {
+        public override string AgentId => "example.correction-worker";
+        public override string Version => "1.0.0";
+        public override Task<DelegationResponse> HandleDelegationReceivedAsync(DelegationSnapshot delegation,
+            AgentRuntimeContext context, CancellationToken token)
+        {
+            Assert.Equal(approvedDirection, delegation.Instruction);
+            return Task.FromResult<DelegationResponse>(new DelegationResponse.Acceptance("Apply the approved correction to the existing work.",
+                delegation.WorkContext!.WorkItemId));
+        }
+    }
+
+    private sealed class CorrectionManager(IChatClient client) : CSweetManagerAgentBase
+    {
+        public override string AgentId => "example.correction-manager";
+        public override string Version => "1.0.0";
+        protected override string ManagementResponsibility => "Review and coordinate corrections";
+        protected override IChatClient CreateIncidentChatClient(AgentRuntimeContext context) => client;
+    }
+
+    private sealed class CorrectionClient(Guid worker) : IChatClient
+    {
+        public int Calls;
+        public void Dispose() { }
+        public object? GetService(Type serviceType, object? serviceKey = null) => null;
+        public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null,
+            CancellationToken cancellationToken = default)
+        {
+            ChatMessage reply = ++Calls switch {
+                1 => new(ChatRole.Assistant, [new FunctionCallContent("wrong-primitive", "add_personal_todo",
+                    new Dictionary<string, object?> { ["title"] = "Apply correction", ["priority"] = "High", ["targetOrganizationUserId"] = worker.ToString() })]),
+                2 => new(ChatRole.Assistant, [new FunctionCallContent("bound-handoff", "delegate_incident_correction", new Dictionary<string, object?>())]),
+                _ => new(ChatRole.Assistant, "")
+            };
+            return Task.FromResult(new ChatResponse(reply));
+        }
+        public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null,
+            CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    }
 
     [Theory]
     [InlineData("creative direction")]

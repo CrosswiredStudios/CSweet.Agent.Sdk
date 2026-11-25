@@ -192,8 +192,19 @@ public static class ManagerIncidentCoordinator
         // Tool authority remains in the broker. Confine recovery to management operations with durable keys.
         var allowed = ResolutionCapabilities(descriptors, resolution.IsFollowUp);
         var tools = await context.Platform.GetModelToolsAsync(allowed, deadline.Token);
+        var personalTool = descriptors.SingleOrDefault(d => d.Capability == PersonalTodoCapabilities.Add && d.ModelVisible)?.Name;
+        var handoff = resolution.Incident.AffectedWorkItemId is not null &&
+            descriptors.Any(d => d.Capability == PersonalTodoCapabilities.Read) &&
+            descriptors.Any(d => d.Capability == DelegationCapabilities.Create)
+            ? new IncidentCorrectionHandoff(resolution, context) : null;
+        var recoveryTools = tools.Select(x => x is AIFunction f
+            ? (AITool)new RecoveryFunction(f, resolution, context.Identity?.EmployeeId, f.Name == personalTool, handoff) : x).ToList();
+        if (handoff is not null) recoveryTools.Add(handoff);
         var invoking = new FunctionInvokingChatClient(client) { MaximumIterationsPerRequest = 8 };
-        var response = await invoking.GetResponseAsync([
+        ChatResponse? response = null;
+        try
+        {
+            response = await invoking.GetResponseAsync([
             new ChatMessage(ChatRole.System, """
                 Handle the authenticated human's selected blocker fix as its coordinating manager.
                 Keep the owner-facing response to at most 80 words using everyday language. Put the
@@ -204,6 +215,9 @@ public static class ManagerIncidentCoordinator
                 to its actual accountable employee with a durable tracked request. Do not reject coordination
                 merely because execution belongs to another role. Never silently change accepted scope,
                 spend money, accept documents, or claim a queued/delegated action has cleared the blocker.
+                If the approved answer requires correction by the owner of the affected work, use
+                delegate_incident_correction after recording any required project decision. It uses the
+                existing work and approved direction. Use add_personal_todo only for your own follow-up.
                 For longer manager work create or reuse a canonical personal commitment with the exact
                 project context, intended outcome and reporting conversation. Actual development stays on
                 its project board. Ask for precise missing evidence when you cannot safely proceed.
@@ -213,9 +227,15 @@ public static class ManagerIncidentCoordinator
                 blocker and next step. Do not claim an action without a successful tool receipt.
                 """),
             new ChatMessage(ChatRole.User, JsonSerializer.Serialize(new { responsibility, resolution, identity = context.Identity }, CSweetAgentBase.SerializerOptions))
-        ], new ChatOptions { Tools = tools.Select(x => x is AIFunction f ?
-            (AITool)new RecoveryFunction(f, resolution, context.Identity?.EmployeeId) : x).ToList() }, deadline.Token);
-        if (string.IsNullOrWhiteSpace(response.Text)) throw new InvalidOperationException("No recovery outcome was returned.");
+            ], new ChatOptions { Tools = recoveryTools }, deadline.Token);
+        }
+        catch (Exception error) when ((error is not OperationCanceledException || !deadline.IsCancellationRequested) && handoff?.Accepted is not null)
+        {
+            // A lost narrative response cannot undo an accepted delegation.
+        }
+        if (handoff?.Accepted is { } accepted)
+            return $"The correction is queued for {accepted.RecipientName} on the affected work. The blocker stays open until recovery is confirmed.";
+        if (string.IsNullOrWhiteSpace(response?.Text)) throw new InvalidOperationException("No recovery outcome was returned.");
         return response.Text[..Math.Min(4000, response.Text.Length)];
     }
 
@@ -305,24 +325,36 @@ public static class ManagerIncidentCoordinator
         return true;
     }
 
-    internal sealed class RecoveryFunction(AIFunction inner, IncidentResolutionContext resolution, string? employeeId) : AIFunction
+    internal sealed class RecoveryFunction(AIFunction inner, IncidentResolutionContext resolution, string? employeeId,
+        bool personalCommitment, IncidentCorrectionHandoff? handoff = null) : AIFunction
     {
         public override string Name => inner.Name;
         public override string Description => inner.Description;
         public override JsonElement JsonSchema => inner.JsonSchema;
         public override JsonElement? ReturnJsonSchema => inner.ReturnJsonSchema;
-        protected override ValueTask<object?> InvokeCoreAsync(AIFunctionArguments arguments, CancellationToken token)
+        protected override async ValueTask<object?> InvokeCoreAsync(AIFunctionArguments arguments, CancellationToken token)
         {
             if (JsonSchema.TryGetProperty("properties", out var properties))
             {
-                if (properties.TryGetProperty("correlationId", out _) && properties.TryGetProperty("sourceConversationId", out _) &&
-                    properties.TryGetProperty("targetOrganizationUserId", out _))
+                if (personalCommitment)
                 {
+                    if (arguments.TryGetValue("targetOrganizationUserId", out var supplied) && supplied is not null and
+                        not JsonElement { ValueKind: JsonValueKind.Null })
+                    {
+                        if (!Guid.TryParse(supplied.ToString(), out var target) || target == Guid.Empty)
+                            throw new ArgumentException("A supplied work recipient must identify an employee.");
+                        if (!Guid.TryParse(employeeId, out var manager) || target != manager)
+                        {
+                            if (handoff is not null) return await handoff.DelegateAsync(target, token);
+                            throw new InvalidOperationException("Use tracked delegation for work owned by another employee.");
+                        }
+                    }
                     arguments["correlationId"] = $"{PersonalCommitmentPrefix}{resolution.DecisionId:N}:{resolution.TurnId:N}";
                     arguments["sourceConversationId"] = resolution.ConversationId;
                     arguments["sourceMessageId"] = resolution.SourceMessageId;
                     arguments["targetOrganizationUserId"] = employeeId;
-                    arguments["workContext"] = JsonSerializer.SerializeToElement(new { workstreamId = resolution.Incident.WorkstreamId });
+                    arguments["workContext"] = JsonSerializer.SerializeToElement(new {
+                        workstreamId = resolution.Incident.WorkstreamId, workItemId = resolution.Incident.AffectedWorkItemId });
                 }
                 if (properties.TryGetProperty("idempotencyKey", out _))
                 {
@@ -333,7 +365,37 @@ public static class ManagerIncidentCoordinator
                     arguments["idempotencyKey"] = $"incident-fix:{resolution.DecisionId:N}:{Name}:{hash}";
                 }
             }
-            return inner.InvokeAsync(arguments, token);
+            return await inner.InvokeAsync(arguments, token);
+        }
+    }
+
+    internal sealed class IncidentCorrectionHandoff(IncidentResolutionContext resolution, AgentRuntimeContext context) : AIFunction
+    {
+        public DelegationSnapshot? Accepted { get; private set; }
+        public override string Name => "delegate_incident_correction";
+        public override string Description => "Send the approved correction to the current owner of the exact affected work using tracked delegation.";
+        public override JsonElement JsonSchema { get; } = JsonSerializer.SerializeToElement(new { type = "object", additionalProperties = false });
+
+        protected override async ValueTask<object?> InvokeCoreAsync(AIFunctionArguments arguments, CancellationToken token) =>
+            await DelegateAsync(null, token);
+
+        public async Task<DelegationSnapshot> DelegateAsync(Guid? requestedRecipient, CancellationToken token)
+        {
+            if (Accepted is { } accepted && (requestedRecipient is null || requestedRecipient == accepted.RecipientId)) return accepted;
+
+            var directory = await context.Platform.PersonalTodo.ListAsync(token);
+            var item = directory.Boards.SelectMany(b => b.Items).SingleOrDefault(i => i.Id == resolution.Incident.AffectedWorkItemId);
+            if (item?.WorkContext?.WorkstreamId != resolution.Incident.WorkstreamId || item.ArchivedAt is not null ||
+                item.Status != PersonalTodoStatuses.Blocked || !Guid.TryParse(context.Identity?.EmployeeId, out var manager) ||
+                item.OwnerOrganizationUserId == manager || requestedRecipient is { } requested && requested != item.OwnerOrganizationUserId)
+                throw new InvalidOperationException("The correction needs the current assignee of the exact blocked project work.");
+
+            // The broker verifies the original answer text, work access and current delegation authority.
+            Accepted = await context.Platform.Delegation.DelegateWithTrackingAsync(new(item.OwnerOrganizationUserId,
+                resolution.IntendedOutcome, resolution.IntendedOutcome, resolution.ConversationId, resolution.SourceMessageId,
+                $"incident-correction:{resolution.DecisionId:N}:{item.Id:N}",
+                WorkContext: new(resolution.Incident.WorkstreamId, item.WorkContext.TeamId, item.Id)), token);
+            return Accepted;
         }
     }
 }
